@@ -23,6 +23,6 @@ USER osmium
 
 VOLUME ["/home/osmium"]
 
-EXPOSE 9998 9999 19998 19999
+EXPOSE 9968 9969 19968 19969
 
 WORKDIR /home/osmium
