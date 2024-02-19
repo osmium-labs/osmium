@@ -39,7 +39,7 @@ public:
     virtual bool HasEncryptionKeys() const = 0;
     virtual bool IsLocked(bool fForMixing = false) const = 0;
 
-    // methods below are unique from Dash due to different implementation of HD
+    // methods below are unique from Osmium due to different implementation of HD
     virtual void NewKeyPoolCallback() = 0;
     virtual void KeepDestinationCallback(bool erased) = 0;
 };

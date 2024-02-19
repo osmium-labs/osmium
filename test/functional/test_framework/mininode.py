@@ -4,7 +4,7 @@
 # Copyright (c) 2010-2020 The Bitcoin Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
-"""Dash P2P network half-a-node.
+"""Osmium P2P network half-a-node.
 
 This python code was modified from ArtForz' public domain half-a-node, as
 found in the mini-node branch of http://github.com/jgarzik/pynode.
@@ -111,7 +111,7 @@ MESSAGEMAP = {
     b"tx": msg_tx,
     b"verack": msg_verack,
     b"version": msg_version,
-    # Dash Specific
+    # Osmium Specific
     b"clsig": msg_clsig,
     b"getmnlistd": msg_getmnlistd,
     b"getsporks": None,
@@ -181,7 +181,7 @@ class P2PConnection(asyncio.Protocol):
         else:
             self.strSubVer = MY_SUBVERSION % b""
 
-        logger.debug('Connecting to Dash Node: %s:%d' % (self.dstaddr, self.dstport))
+        logger.debug('Connecting to Osmium Node: %s:%d' % (self.dstaddr, self.dstport))
 
         loop = NetworkThread.network_event_loop
         conn_gen_unsafe = loop.create_connection(lambda: self, host=self.dstaddr, port=self.dstport)

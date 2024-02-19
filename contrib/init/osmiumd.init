@@ -1,0 +1,67 @@
+#!/usr/bin/env bash
+#
+#  osmiumd The Osmium Core server.
+#
+#
+# chkconfig: 345 80 20
+# description: osmiumd
+# processname: osmiumd
+#
+
+# Source function library.
+. /etc/init.d/functions
+
+# you can override defaults in /etc/sysconfig/osmiumd, see below
+if [ -f /etc/sysconfig/osmiumd ]; then
+        . /etc/sysconfig/osmiumd
+fi
+
+RETVAL=0
+
+prog=osmiumd
+# you can override the lockfile via BITCOIND_LOCKFILE in /etc/sysconfig/osmiumd
+lockfile=${BITCOIND_LOCKFILE-/var/lock/subsys/osmiumd}
+
+# osmiumd defaults to /usr/bin/osmiumd, override with BITCOIND_BIN
+osmiumd=${BITCOIND_BIN-/usr/bin/osmiumd}
+
+# osmiumd opts default to -disablewallet, override with BITCOIND_OPTS
+osmiumd_opts=${BITCOIND_OPTS--disablewallet}
+
+start() {
+    echo -n $"Starting $prog: "
+    daemon $DAEMONOPTS $osmiumd $osmiumd_opts
+    RETVAL=$?
+    echo
+    [ $RETVAL -eq 0 ] && touch $lockfile
+    return $RETVAL
+}
+
+stop() {
+    echo -n $"Stopping $prog: "
+    killproc $prog -t600
+    RETVAL=$?
+    echo
+    [ $RETVAL -eq 0 ] && rm -f $lockfile
+    return $RETVAL
+}
+
+case "$1" in
+    start)
+        start
+        ;;
+    stop)
+        stop
+        ;;
+    status)
+        status $prog
+        ;;
+    restart)
+        stop
+        start
+        ;;
+    *)
+        echo "Usage: service $prog {start|stop|status|restart}"
+        exit 1
+        ;;
+esac

@@ -5,7 +5,7 @@ set -eo pipefail
 if [[ -n "${1}" ]]; then
     WORKSPACE_PATH="$1"
 else
-    WORKSPACE_PATH="/src/dash"
+    WORKSPACE_PATH="/src/osmium"
 fi
 
 if [[ ! -d "$WORKSPACE_PATH" ]]; then
@@ -19,9 +19,9 @@ COMMIT_ID="$(git rev-parse --short=12 HEAD)"
 printf "\nBinaries:\n\n"
 ( \
 SRC_PATH_PREFIX="guix-build-${COMMIT_ID}/distsrc-" && \
-sha256sum ${SRC_PATH_PREFIX}*/src/dash{d,-cli,-tx,-wallet}{,.exe} && \
-sha256sum ${SRC_PATH_PREFIX}*/src/qt/dash-qt{,.exe} && \
-sha256sum ${SRC_PATH_PREFIX}*/src/test/test_dash{,.exe} \
+sha256sum ${SRC_PATH_PREFIX}*/src/osmium{d,-cli,-tx,-wallet}{,.exe} && \
+sha256sum ${SRC_PATH_PREFIX}*/src/qt/osmium-qt{,.exe} && \
+sha256sum ${SRC_PATH_PREFIX}*/src/test/test_osmium{,.exe} \
 ) | sort -k 2
 
 printf "\nArchives:\n\n"

@@ -272,7 +272,7 @@ static UniValue generatetoaddress(const JSONRPCRequest& request)
         RPCExamples{
     "\nGenerate 11 blocks to myaddress\n"
     + HelpExampleCli("generatetoaddress", "11 \"myaddress\"")
-        + "If you are running the Dash Core wallet, you can get a new address to send the newly generated coins to with:\n"
+        + "If you are running the Osmium Core wallet, you can get a new address to send the newly generated coins to with:\n"
             + HelpExampleCli("getnewaddress", "")},
     }.Check(request);
 
@@ -471,7 +471,7 @@ static UniValue prioritisetransaction(const JSONRPCRequest& request)
         "Accepts the transaction into mined blocks at a higher (or lower) priority\n",
         {
             {"txid", RPCArg::Type::STR_HEX, RPCArg::Optional::NO, "The transaction id."},
-            {"fee_delta", RPCArg::Type::NUM, RPCArg::Optional::NO, "The fee value (in duffs) to add (or subtract, if negative).\n"
+            {"fee_delta", RPCArg::Type::NUM, RPCArg::Optional::NO, "The fee value (in muffs) to add (or subtract, if negative).\n"
     "                  Note, that this value is not a fee rate. It is a value to modify absolute fee of the TX.\n"
     "                  The fee is not actually paid, only the algorithm for selecting transactions into a block\n"
     "                  considers the transaction as it would have paid a higher (or lower) fee."},

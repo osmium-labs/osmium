@@ -166,7 +166,7 @@ const CLogCategoryDesc LogCategories[] =
     {BCLog::ALL, "1"},
     {BCLog::ALL, "all"},
 
-    //Start Dash
+    //Start Osmium
     {BCLog::CHAINLOCKS, "chainlocks"},
     {BCLog::GOBJECT, "gobject"},
     {BCLog::INSTANTSEND, "instantsend"},
@@ -180,8 +180,8 @@ const CLogCategoryDesc LogCategories[] =
     {BCLog::NETCONN, "netconn"},
     {BCLog::CREDITPOOL, "creditpool"},
     {BCLog::EHF, "ehf"},
-    {BCLog::DASH, "dash"},
-    //End Dash
+    {BCLog::OSMIUM, "osmium"},
+    //End Osmium
 };
 
 bool GetLogCategory(BCLog::LogFlags& flag, const std::string& str)
@@ -204,7 +204,7 @@ std::vector<LogCategory> BCLog::Logger::LogCategoriesList(bool enabled_only) con
     std::vector<LogCategory> ret;
     for (const CLogCategoryDesc& category_desc : LogCategories) {
         // Omit the special cases.
-        if (category_desc.flag != BCLog::NONE && category_desc.flag != BCLog::ALL && category_desc.flag != BCLog::DASH) {
+        if (category_desc.flag != BCLog::NONE && category_desc.flag != BCLog::ALL && category_desc.flag != BCLog::OSMIUM) {
             LogCategory catActive;
             catActive.category = category_desc.category;
             catActive.active = WillLogCategory(category_desc.flag);
@@ -269,7 +269,7 @@ void BCLog::Logger::LogPrintStr(const std::string& str)
     std::string str_prefixed = LogEscapeMessage(str);
 
     if (m_log_threadnames && m_started_new_line) {
-        // 16 chars total, "dash-" is 5 of them and another 1 is a NUL terminator
+        // 16 chars total, "osmium-" is 5 of them and another 1 is a NUL terminator
         str_prefixed.insert(0, "[" + strprintf("%10s", util::ThreadGetInternalName()) + "] ");
     }
 

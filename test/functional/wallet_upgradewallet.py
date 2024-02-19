@@ -37,7 +37,7 @@ class UpgradeWalletTest(BitcoinTestFramework):
         self.skip_if_no_bdb()
         self.skip_if_no_previous_releases()
         # TODO: this test doesn't work yet
-        raise SkipTest("Test wallet_upgradewallet.py is not adapted for Dash Core yet.")
+        raise SkipTest("Test wallet_upgradewallet.py is not adapted for Osmium Core yet.")
 
     def setup_network(self):
         self.setup_nodes()
@@ -48,7 +48,7 @@ class UpgradeWalletTest(BitcoinTestFramework):
             160300,
             150200,
         ])
-        # adapt dash.conf, because older dashd's don't recognize config sections
+        # adapt osmium.conf, because older osmiumd's don't recognize config sections
         adjust_bitcoin_conf_for_pre_16(self.nodes[2].bitcoinconf)
         self.start_nodes()
         self.import_deterministic_coinbase_privkeys()
@@ -96,7 +96,7 @@ class UpgradeWalletTest(BitcoinTestFramework):
         v15_2_wallet       = os.path.join(v15_2_node.datadir, "regtest/wallet.dat")
         self.stop_nodes()
 
-        # Copy the 0.16.3 wallet to the last Dash Core version and open it:
+        # Copy the 0.16.3 wallet to the last Osmium Core version and open it:
         shutil.rmtree(node_master_wallet_dir)
         os.mkdir(node_master_wallet_dir)
         shutil.copy(
@@ -119,7 +119,7 @@ class UpgradeWalletTest(BitcoinTestFramework):
         assert_equal(wallet.getbalance(), v16_3_balance)
 
         self.stop_node(0)
-        # Copy the 0.15.2 wallet to the last Dash Core version and open it:
+        # Copy the 0.15.2 wallet to the last Osmium Core version and open it:
         shutil.rmtree(node_master_wallet_dir)
         os.mkdir(node_master_wallet_dir)
         shutil.copy(

@@ -1,9 +1,9 @@
 Release Process
 ====================
 
-* Update translations, see [translation_process.md](https://github.com/dashpay/dash/blob/master/doc/translation_process.md#synchronising-translations).
+* Update translations, see [translation_process.md](https://github.com/osmium-labs/osmium/blob/master/doc/translation_process.md#synchronising-translations).
 
-* Update manpages, see [gen-manpages.sh](https://github.com/dashpay/dash/blob/master/contrib/devtools/README.md#gen-manpagessh).
+* Update manpages, see [gen-manpages.sh](https://github.com/osmium-labs/osmium/blob/master/contrib/devtools/README.md#gen-manpagessh).
 * Update release candidate version in `configure.ac` (`CLIENT_VERSION_RC`)
 
 Before every minor and major release:
@@ -20,7 +20,7 @@ Before every minor and major release:
 
 Before every major release:
 
-* Update hardcoded [seeds](/contrib/seeds/README.md). TODO: Give example PR for Dash
+* Update hardcoded [seeds](/contrib/seeds/README.md). TODO: Give example PR for Osmium
 * Update [`src/chainparams.cpp`](/src/chainparams.cpp) m_assumed_blockchain_size and m_assumed_chain_state_size with the current size plus some overhead (see [this](#how-to-calculate-m_assumed_blockchain_size-and-m_assumed_chain_state_size) for information on how to calculate them).
 * Update `src/chainparams.cpp` chainTxData with statistics about the transaction count and rate. Use the output of the RPC `getchaintxstats`, see
   [this pull request](https://github.com/bitcoin/bitcoin/pull/12270) for an example. Reviewers can verify the results by running `getchaintxstats <window_block_count> <window_last_block_hash>` with the `window_block_count` and `window_last_block_hash` from your output.
@@ -33,11 +33,11 @@ Install Guix using one of the installation methods detailed in
 Check out the source code in the following directory hierarchy.
 
 	cd /path/to/your/toplevel/build
-	git clone https://github.com/dashpay/guix.sigs.git
-	git clone https://github.com/dashpay/dash-detached-sigs.git
-	git clone https://github.com/dashpay/dash.git
+	git clone https://github.com/osmium-labs/guix.sigs.git
+	git clone https://github.com/osmium-labs/osmium-detached-sigs.git
+	git clone https://github.com/osmium-labs/osmium.git
 
-### Dash Core maintainers/release engineers, suggestion for writing release notes
+### Osmium Core maintainers/release engineers, suggestion for writing release notes
 
 Write release notes. git shortlog helps a lot, for example:
 
@@ -53,10 +53,10 @@ Tag version (or release candidate) in git
 
 ### Setup and perform Guix builds
 
-Checkout the Dash Core version you'd like to build:
+Checkout the Osmium Core version you'd like to build:
 
 ```sh
-pushd ./dash
+pushd ./osmium
 export SIGNER='(your builder key, ie UdjinM6, Pasta, etc)'
 export VERSION='(new version, e.g. 20.0.0)'
 git fetch "v${VERSION}"
@@ -85,7 +85,7 @@ Follow the relevant Guix README.md sections:
 
 ### Verify other builders' signatures to your own. (Optional)
 
-Add other builders keys to your gpg keyring, and/or refresh keys: See `../dash/contrib/builder-keys/README.md`.
+Add other builders keys to your gpg keyring, and/or refresh keys: See `../osmium/contrib/builder-keys/README.md`.
 
 Follow the relevant Guix README.md sections:
 - [Verifying build output attestations](/contrib/guix/README.md#verifying-build-output-attestations)
@@ -108,15 +108,15 @@ Codesigner only: Create Windows/macOS detached signatures:
 
 Codesigner only: Sign the macOS binary:
 
-    transfer dashcore-osx-unsigned.tar.gz to macOS for signing
-    tar xf dashcore-osx-unsigned.tar.gz
+    transfer osmiumcore-osx-unsigned.tar.gz to macOS for signing
+    tar xf osmiumcore-osx-unsigned.tar.gz
     ./detached-sig-create.sh -s "Key ID" -o runtime
     Enter the keychain password and authorize the signature
     Move signature-osx.tar.gz back to the guix-build host
 
 Codesigner only: Sign the windows binaries:
 
-    tar xf dashcore-win-unsigned.tar.gz
+    tar xf osmiumcore-win-unsigned.tar.gz
     ./detached-sig-create.sh -key /path/to/codesign.key
     Enter the passphrase for the key when prompted
     signature-win.tar.gz will be created
@@ -124,7 +124,7 @@ Codesigner only: Sign the windows binaries:
 Codesigner only: Commit the detached codesign payloads:
 
 ```sh
-pushd ~/dashcore-detached-sigs
+pushd ~/osmiumcore-detached-sigs
 # checkout the appropriate branch for this release series
 rm -rf *
 tar xf signature-osx.tar.gz
@@ -139,7 +139,7 @@ popd
 Non-codesigners: wait for Windows/macOS detached signatures:
 
 - Once the Windows/macOS builds each have 3 matching signatures, they will be signed with their respective release keys.
-- Detached signatures will then be committed to the [dash-detached-sigs](https://github.com/dashpay/dash-detached-sigs) repository, which can be combined with the unsigned apps to create signed binaries.
+- Detached signatures will then be committed to the [osmium-detached-sigs](https://github.com/osmium-labs/osmium-detached-sigs) repository, which can be combined with the unsigned apps to create signed binaries.
 
 Create (and optionally verify) the codesigned outputs:
 - [Codesigning](/contrib/guix/README.md#codesigning)
@@ -162,8 +162,8 @@ Combine the `all.SHA256SUMS.asc` file from all signers into `SHA256SUMS.asc`:
 cat "$VERSION"/*/all.SHA256SUMS.asc > SHA256SUMS.asc
 ```
 
-- Upload to the dash.org server:
-    1. The contents of each `./dash/guix-build-${VERSION}/output/${HOST}/` directory, except for
+- Upload to the osmium.org server:
+    1. The contents of each `./osmium/guix-build-${VERSION}/output/${HOST}/` directory, except for
        `*-debug*` files.
 
        Guix will output all of the results into host subdirectories, but the SHA256SUMS
@@ -175,10 +175,10 @@ cat "$VERSION"/*/all.SHA256SUMS.asc > SHA256SUMS.asc
        for troubleshooting by developers. It is assumed that anyone that is
        interested in debugging can run guix to generate the files for
        themselves. To avoid end-user confusion about which file to pick, as well
-       as save storage space *do not upload these to the dash.org server*.
+       as save storage space *do not upload these to the osmium.org server*.
 
        ```sh
-       find guix-build-${VERSION}/output/ -maxdepth 2 -type f -not -name "SHA256SUMS.part" -and -not -name "*debug*" -exec scp {} user@dash.org:/var/www/bin/dash-core-${VERSION} \;
+       find guix-build-${VERSION}/output/ -maxdepth 2 -type f -not -name "SHA256SUMS.part" -and -not -name "*debug*" -exec scp {} user@osmium.org:/var/www/bin/osmium-core-${VERSION} \;
        ```
 
     2. The `SHA256SUMS` file
@@ -187,15 +187,11 @@ cat "$VERSION"/*/all.SHA256SUMS.asc > SHA256SUMS.asc
 
 - Announce the release:
 
-  - Release on Dash forum: https://www.dash.org/forum/topic/official-announcements.54/
-
-  - Optionally Discord, twitter, reddit /r/Dashpay, ... but this will usually sort out itself
-
-  - Notify flare so that he can start building [the PPAs](https://launchpad.net/~dash.org/+archive/ubuntu/dash)
+  - Discord, twitter, reddit, ... but this will usually sort out itself
 
   - Archive release notes for the new version to `doc/release-notes/` (branch `master` and branch of the release)
 
-  - Create a [new GitHub release](https://github.com/dashpay/dash/releases/new) with a link to the archived release notes.
+  - Create a [new GitHub release](https://github.com/osmium-labs/osmium/releases/new) with a link to the archived release notes.
 
   - Celebrate
 
@@ -215,7 +211,7 @@ Open Terminal, and navigate to the location of the .dmg file.
 Then, run the following command to notarize the .dmg file:
 
 ```
-xcrun notarytool submit dashcore-{version}-osx.dmg --keychain-profile "AC_PASSWORD" --wait
+xcrun notarytool submit osmiumcore-{version}-osx.dmg --keychain-profile "AC_PASSWORD" --wait
 ```
 Replace "{version}" with the version you are notarizing. This command uploads the .dmg file to Apple's notary service.
 
@@ -225,13 +221,13 @@ If the notarization process is successful, the notary service generates a log fi
 
 #### Notarization Validation
 
-After successfully notarizing the .dmg file, extract "Dash-Qt.app" from the .dmg.
+After successfully notarizing the .dmg file, extract "Osmium-Qt.app" from the .dmg.
 To verify that the notarization process was successful, run the following command:
 
 ```
-spctl -a -vv -t install Dash-Qt.app
+spctl -a -vv -t install Osmium-Qt.app
 ```
-Replace "Dash-Qt.app" with the path to your .app file. This command checks whether your .app file passes Gatekeeper’s
+Replace "Osmium-Qt.app" with the path to your .app file. This command checks whether your .app file passes Gatekeeper’s
 checks. If the app is successfully notarized, the command line will include a line stating source=Notarized Developer ID.
 
 ### Additional information
@@ -242,7 +238,7 @@ Both variables are used as a guideline for how much space the user needs on thei
 Note that all values should be taken from a **fully synced** node and have an overhead of 5-10% added on top of its base value.
 
 To calculate `m_assumed_blockchain_size`:
-- For `mainnet` -> Take the size of the Dash Core data directory, excluding `/regtest` and `/testnet3` directories.
+- For `mainnet` -> Take the size of the Osmium Core data directory, excluding `/regtest` and `/testnet3` directories.
 - For `testnet` -> Take the size of the `/testnet3` directory.
 
 

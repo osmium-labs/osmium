@@ -1,0 +1,6 @@
+usr/local/bin/osmium-qt usr/bin
+share/pixmaps/osmium32.xpm usr/share/pixmaps
+share/pixmaps/osmium16.xpm usr/share/pixmaps
+share/pixmaps/osmium128.png usr/share/pixmaps
+debian/osmium-qt.desktop usr/share/applications
+debian/osmium-qt.protocol usr/share/kde4/services/

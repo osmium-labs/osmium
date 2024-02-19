@@ -149,7 +149,7 @@ static constexpr std::chrono::seconds AVG_ADDRESS_BROADCAST_INTERVAL{30};
 static const unsigned int INVENTORY_BROADCAST_INTERVAL = 5;
 /** Maximum number of inventory items to send per transmission.
  *  Limits the impact of low-fee transaction floods.
- *  We have 4 times smaller block times in Dash, so we need to push 4 times more invs per 1MB. */
+ *  We have 4 times smaller block times in Osmium, so we need to push 4 times more invs per 1MB. */
 static constexpr unsigned int INVENTORY_BROADCAST_MAX_PER_1MB_BLOCK = 4 * 7 * INVENTORY_BROADCAST_INTERVAL;
 /** Maximum number of compact filters that may be requested with one getcfilters. See BIP 157. */
 static constexpr uint32_t MAX_GETCFILTERS_SIZE = 1000;
@@ -1850,7 +1850,7 @@ bool PeerManagerImpl::AlreadyHave(const CInv& inv)
         return m_chainman.m_blockman.LookupBlockIndex(inv.hash) != nullptr;
 
     /*
-        Dash Related Inventory Messages
+        Osmium Related Inventory Messages
 
         --
 
@@ -5189,7 +5189,7 @@ bool PeerManagerImpl::SendMessages(CNode* pto)
             state.m_object_download.m_check_expiry_timer = current_time + GetObjectExpiryInterval(MSG_TX)/2 + GetRandMicros(GetObjectExpiryInterval(MSG_TX));
         }
 
-        // DASH this code also handles non-TXs (Dash specific messages)
+        // OSMIUM this code also handles non-TXs (Osmium specific messages)
         auto& object_process_time = state.m_object_download.m_object_process_time;
         while (!object_process_time.empty() && object_process_time.begin()->first <= current_time && state.m_object_download.m_object_in_flight.size() < MAX_PEER_OBJECT_IN_FLIGHT) {
             const CInv inv = object_process_time.begin()->second;

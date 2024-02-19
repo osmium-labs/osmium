@@ -138,7 +138,7 @@ BASE_SCRIPTS = [
     'rpc_quorum.py',
     'wallet_keypool_topup.py',
     'feature_fee_estimation.py',
-    'interface_zmq_dash.py',
+    'interface_zmq_osmium.py',
     'interface_zmq.py',
     'interface_bitcoin_cli.py',
     'mempool_resurrect.py',
@@ -433,12 +433,12 @@ def main():
 def run_tests(*, test_list, src_dir, build_dir, tmpdir, jobs=1, attempts=1, enable_coverage=False, args=None, combined_logs_len=0,failfast=False, use_term_control):
     args = args or []
 
-    # Warn if dashd is already running
+    # Warn if osmiumd is already running
     # pidof might fail or return an empty string if bitcoind is not running
     try:
-        pidof_output = subprocess.check_output(["pidof", "dashd"])
+        pidof_output = subprocess.check_output(["pidof", "osmiumd"])
         if not (pidof_output is None or pidof_output == b''):
-            print("%sWARNING!%s There is already a dashd process running on this system. Tests may fail unexpectedly due to resource contention!" % (BOLD[1], BOLD[0]))
+            print("%sWARNING!%s There is already a osmiumd process running on this system. Tests may fail unexpectedly due to resource contention!" % (BOLD[1], BOLD[0]))
     except (OSError, subprocess.SubprocessError):
         pass
 
@@ -735,7 +735,7 @@ class RPCCoverage():
     Coverage calculation works by having each test script subprocess write
     coverage files into a particular directory. These files contain the RPC
     commands invoked during testing, as well as a complete listing of RPC
-    commands per `dash-cli help` (`rpc_interface.txt`).
+    commands per `osmium-cli help` (`rpc_interface.txt`).
 
     After all tests complete, the commands run are combined and diff'd against
     the complete list to calculate uncovered RPC commands.

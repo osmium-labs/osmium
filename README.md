@@ -1,41 +1,41 @@
-Dash Core staging tree
+Osmium Core staging tree
 ===========================
 
 |CI|master|develop|
 |-|-|-|
-|Gitlab|[![Build Status](https://gitlab.com/dashpay/dash/badges/master/pipeline.svg)](https://gitlab.com/dashpay/dash/-/tree/master)|[![Build Status](https://gitlab.com/dashpay/dash/badges/develop/pipeline.svg)](https://gitlab.com/dashpay/dash/-/tree/develop)|
+|Gitlab|[![Build Status](https://gitlab.com/osmium-labs/osmium/badges/master/pipeline.svg)](https://gitlab.com/osmium-labs/osmium/-/tree/master)|[![Build Status](https://gitlab.com/osmium-labs/osmium/badges/develop/pipeline.svg)](https://gitlab.com/osmium-labs/osmium/-/tree/develop)|
 
-https://www.dash.org
+https://www.osmium.space
 
-For an immediately usable, binary version of the Dash Core software, see
-https://www.dash.org/downloads/.
+For an immediately usable, binary version of the Osmium Core software, see
+https://www.osmium.space/downloads/.
 
-Further information about Dash Core is available in the [doc folder](/doc).
+Further information about Osmium Core is available in the [doc folder](/doc).
 
-What is Dash?
--------------
+What is Osmium?
+---------------
 
-Dash is an experimental digital currency that enables instant, private
-payments to anyone, anywhere in the world. Dash uses peer-to-peer technology
+Osmium is an experimental digital currency that enables instant, private
+payments to anyone, anywhere in the world. Osmium uses peer-to-peer technology
 to operate with no central authority: managing transactions and issuing money
-are carried out collectively by the network. Dash Core is the name of the open
+are carried out collectively by the network. Osmium Core is the name of the open
 source software which enables the use of this currency.
 
 
-For more information read the original Dash whitepaper.
+For more information read the original Osmium whitepaper.
 
 License
 -------
 
-Dash Core is released under the terms of the MIT license. See [COPYING](COPYING) for more
+Osmium Core is released under the terms of the MIT license. See [COPYING](COPYING) for more
 information or see https://opensource.org/licenses/MIT.
 
 Development Process
 -------------------
 
 The `master` branch is meant to be stable. Development is normally done in separate branches.
-[Tags](https://github.com/dashpay/dash/tags) are created to indicate new official,
-stable release versions of Dash Core.
+[Tags](https://github.com/osmium-labs/osmium/tags) are created to indicate new official,
+stable release versions of Osmium Core.
 
 The contribution workflow is described in [CONTRIBUTING.md](CONTRIBUTING.md)
 and useful hints for developers can be found in [doc/developer-notes.md](doc/developer-notes.md).

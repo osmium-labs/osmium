@@ -58,7 +58,7 @@ struct NodeContext {
     interfaces::WalletLoader* wallet_loader{nullptr};
     std::unique_ptr<CScheduler> scheduler;
     std::function<void()> rpc_interruption_point = [] {};
-    //! Dash
+    //! Osmium
     std::unique_ptr<LLMQContext> llmq_ctx;
     std::unique_ptr<CCreditPoolManager> creditPoolManager;
     std::unique_ptr<CMNHFManager> mnhf_manager;

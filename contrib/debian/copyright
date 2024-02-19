@@ -1,7 +1,7 @@
 Format: http://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
-Upstream-Name: Dash Core
-Upstream-Contact: Dash Core Group, Inc https://www.dash.org/team/
-Source: https://github.com/dashpay/dash
+Upstream-Name: Osmium Core
+Upstream-Contact: Osmium Core Group, Inc https://www.osmium.space/team/
+Source: https://github.com/osmium-labs/osmium
 
 Files: *
 Copyright: 2009-2020, Bitcoin Core Developers,

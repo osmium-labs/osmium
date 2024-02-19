@@ -1,0 +1,25 @@
+<!DOCTYPE RCC><RCC version="1.0">
+    <qresource prefix="/translations">
+        <file alias="ar">locale/osmium_ar.qm</file>
+        <file alias="bg">locale/osmium_bg.qm</file>
+        <file alias="de">locale/osmium_de.qm</file>
+        <file alias="en">locale/osmium_en.qm</file>
+        <file alias="es">locale/osmium_es.qm</file>
+        <file alias="fi">locale/osmium_fi.qm</file>
+        <file alias="fr">locale/osmium_fr.qm</file>
+        <file alias="it">locale/osmium_it.qm</file>
+        <file alias="ja">locale/osmium_ja.qm</file>
+        <file alias="ko">locale/osmium_ko.qm</file>
+        <file alias="nl">locale/osmium_nl.qm</file>
+        <file alias="pl">locale/osmium_pl.qm</file>
+        <file alias="pt">locale/osmium_pt.qm</file>
+        <file alias="ro">locale/osmium_ro.qm</file>
+        <file alias="ru">locale/osmium_ru.qm</file>
+        <file alias="sk">locale/osmium_sk.qm</file>
+        <file alias="th">locale/osmium_th.qm</file>
+        <file alias="tr">locale/osmium_tr.qm</file>
+        <file alias="vi">locale/osmium_vi.qm</file>
+        <file alias="zh_CN">locale/osmium_zh_CN.qm</file>
+        <file alias="zh_TW">locale/osmium_zh_TW.qm</file>
+    </qresource>
+</RCC>

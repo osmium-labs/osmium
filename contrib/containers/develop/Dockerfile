@@ -34,14 +34,14 @@ RUN apt-get update && \
 # Gitian's requirements
 #
 RUN groupadd docker && \
-    usermod -aG sudo,docker dash && \
+    usermod -aG sudo,docker osmium && \
     echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
 
 # Disable noninteractive mode
 ENV DEBIAN_FRONTEND="dialog"
 
-# Expose Dash P2P and RPC ports for main network and test networks
+# Expose Osmium P2P and RPC ports for main network and test networks
 EXPOSE 9998 9999 19998 19999
 
 # We're done, switch back to non-privileged user
-USER dash
+USER osmium

@@ -37,7 +37,7 @@ class TxViewDelegate : public QAbstractItemDelegate
     Q_OBJECT
 public:
     explicit TxViewDelegate(QObject* parent = nullptr) :
-        QAbstractItemDelegate(), unit(BitcoinUnits::DASH)
+        QAbstractItemDelegate(), unit(BitcoinUnits::OSU)
     {
 
     }
@@ -264,7 +264,7 @@ void OverviewPage::setWalletModel(WalletModel *model)
     this->walletModel = model;
     if(model && model->getOptionsModel())
     {
-        // update the display unit, to not use the default ("DASH")
+        // update the display unit, to not use the default ("OSU")
         updateDisplayUnit();
         // Keep up to date with wallet
         interfaces::Wallet& wallet = model->wallet();

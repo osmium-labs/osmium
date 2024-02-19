@@ -10,7 +10,7 @@ from test_framework.mininode import (
     mininode_lock,
     P2PInterface,
 )
-from test_framework.test_framework import DashTestFramework
+from test_framework.test_framework import OsmiumTestFramework
 from test_framework.util import (
     assert_equal,
     assert_raises_rpc_error,
@@ -120,10 +120,10 @@ class QuorumDataInterface(P2PInterface):
             assert not self.message_count["qdata"]
 
 
-class QuorumDataMessagesTest(DashTestFramework):
+class QuorumDataMessagesTest(OsmiumTestFramework):
     def set_test_params(self):
         extra_args = [["-llmq-data-recovery=0"]] * 4
-        self.set_dash_test_params(4, 3, fast_dip3_enforcement=True, extra_args=extra_args)
+        self.set_osmium_test_params(4, 3, fast_dip3_enforcement=True, extra_args=extra_args)
 
     def restart_mn(self, mn, reindex=False):
         args = self.extra_args[mn.node.index] + ['-masternodeblsprivkey=%s' % mn.keyOperator]

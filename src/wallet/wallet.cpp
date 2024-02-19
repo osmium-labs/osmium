@@ -963,7 +963,7 @@ bool CWallet::AddToWallet(const CWalletTx& wtxIn, bool fFlushOnClose)
 
 void CWallet::LoadToWallet(CWalletTx& wtxIn)
 {
-    // If wallet doesn't have a chain (e.g dash-wallet), don't bother to update txn.
+    // If wallet doesn't have a chain (e.g osmium-wallet), don't bother to update txn.
     if (HaveChain()) {
         bool active;
         int height;
@@ -3672,7 +3672,7 @@ bool CWallet::CreateTransaction(const std::vector<CRecipient>& vecSend, CTransac
                         nAmountToSelectAdditional += abs(getChange());
                     } else if (nAmountToSelectAdditional > 0 && nValueToSelect == nAmountAvailable) {
                         // We tried selecting more and failed. We have no extra funds left,
-                        // so just add 1 duff to fail in the next loop step with a correct reason
+                        // so just add 1 muff to fail in the next loop step with a correct reason
                         nAmountToSelectAdditional += 1;
                     }
                     continue;

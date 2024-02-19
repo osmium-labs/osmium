@@ -13,6 +13,6 @@ export TEST_RUNNER_EXTRA="--extended --exclude feature_pruning,feature_dbcrash,w
 export GOAL="install"
 export BITCOIN_CONFIG="--enable-zmq --enable-reduce-exports --enable-crash-hooks --enable-suppress-external-warnings --with-sanitizers=thread"
 export BITCOIN_CONFIG="${BITCOIN_CONFIG} CC=clang-15 CXX=clang++-15 CXXFLAGS=-Werror=thread-safety"
-export CPPFLAGS="-DDEBUG_LOCKORDER -DENABLE_DASH_DEBUG -DARENA_DEBUG"
+export CPPFLAGS="-DDEBUG_LOCKORDER -DENABLE_OSMIUM_DEBUG -DARENA_DEBUG"
 export PYZMQ=true
 export RUN_SYMBOL_TESTS=false

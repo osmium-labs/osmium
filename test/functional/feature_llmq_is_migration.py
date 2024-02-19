@@ -5,7 +5,7 @@
 import time
 
 from test_framework.messages import CTransaction, FromHex, hash256, ser_compact_size, ser_string
-from test_framework.test_framework import DashTestFramework
+from test_framework.test_framework import OsmiumTestFramework
 from test_framework.util import wait_until
 
 '''
@@ -15,11 +15,11 @@ Test IS LLMQ migration with DIP0024
 
 '''
 
-class LLMQISMigrationTest(DashTestFramework):
+class LLMQISMigrationTest(OsmiumTestFramework):
     def set_test_params(self):
         # -whitelist is needed to avoid the trickling logic on node0
-        self.set_dash_test_params(16, 15, [["-whitelist=127.0.0.1"], [], [], [], [], [], [], [], [], [], [], [], [], [], [], []], fast_dip3_enforcement=True)
-        self.set_dash_llmq_test_params(4, 4)
+        self.set_osmium_test_params(16, 15, [["-whitelist=127.0.0.1"], [], [], [], [], [], [], [], [], [], [], [], [], [], [], []], fast_dip3_enforcement=True)
+        self.set_osmium_llmq_test_params(4, 4)
 
     def get_request_id(self, tx_hex):
         tx = FromHex(CTransaction(), tx_hex)
