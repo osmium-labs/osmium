@@ -266,7 +266,8 @@ static UniValue masternode_status(const JSONRPCRequest& request)
     }
     if (dmn) {
         mnObj.pushKV("proTxHash", dmn->proTxHash.ToString());
-        mnObj.pushKV("type", std::string(GetMnType(dmn->nType).description));
+        // Disable EvoNodes
+        // mnObj.pushKV("type", std::string(GetMnType(dmn->nType).description));
         mnObj.pushKV("collateralHash", dmn->collateralOutpoint.hash.ToString());
         mnObj.pushKV("collateralIndex", (int)dmn->collateralOutpoint.n);
         mnObj.pushKV("dmnState", dmn->pdmnState->ToJson(dmn->nType));

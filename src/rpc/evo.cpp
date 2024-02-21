@@ -587,13 +587,15 @@ static UniValue protx_register_common_wrapper(const JSONRPCRequest& request,
 {
     const bool isEvoRequested = mnType == MnType::Evo;
     if (isEvoRequested) {
-        if (isFundRegister && (request.fHelp || (request.params.size() < 10 || request.params.size() > 12))) {
-            protx_register_fund_evo_help(request);
-        } else if (isExternalRegister && (request.fHelp || (request.params.size() < 11 || request.params.size() > 13))) {
-            protx_register_evo_help(request);
-        } else if (isPrepareRegister && (request.fHelp || (request.params.size() != 11 && request.params.size() != 12))) {
-            protx_register_prepare_evo_help(request);
-        }
+        // Disable EvoNodes
+        throw JSONRPCError(RPC_INVALID_REQUEST, "EvoNodes aren't allowed");
+        // if (isFundRegister && (request.fHelp || (request.params.size() < 10 || request.params.size() > 12))) {
+        //     protx_register_fund_evo_help(request);
+        // } else if (isExternalRegister && (request.fHelp || (request.params.size() < 11 || request.params.size() > 13))) {
+        //     protx_register_evo_help(request);
+        // } else if (isPrepareRegister && (request.fHelp || (request.params.size() != 11 && request.params.size() != 12))) {
+        //     protx_register_prepare_evo_help(request);
+        // }
     } else {
         if (isFundRegister && (request.fHelp || (request.params.size() < 7 || request.params.size() > 9))) {
             protx_register_fund_help(request, specific_legacy_bls_scheme);
@@ -905,7 +907,9 @@ static UniValue protx_update_service_common_wrapper(const JSONRPCRequest& reques
 
     const bool isEvoRequested = mnType == MnType::Evo;
     if (isEvoRequested) {
-        protx_update_service_evo_help(request);
+        // Disable EvoNodes
+        throw JSONRPCError(RPC_INVALID_REQUEST, "EvoNodes aren't allowed");
+        // protx_update_service_evo_help(request);
     } else {
         protx_update_service_help(request);
     }
@@ -1583,9 +1587,9 @@ static UniValue protx_listdiff(const JSONRPCRequest& request, const ChainstateMa
         "  register                 - Create and send ProTx to network\n"
         "  register_fund            - Fund, create and send ProTx to network\n"
         "  register_prepare         - Create an unsigned ProTx\n"
-        "  register_evo             - Create and send ProTx to network for an EvoNode\n"
-        "  register_fund_evo        - Fund, create and send ProTx to network for an EvoNode\n"
-        "  register_prepare_evo     - Create an unsigned ProTx for an EvoNode\n"
+        // "  register_evo             - Create and send ProTx to network for an EvoNode\n"
+        // "  register_fund_evo        - Fund, create and send ProTx to network for an EvoNode\n"
+        // "  register_prepare_evo     - Create an unsigned ProTx for an EvoNode\n"
         "  register_legacy          - Create a ProTx by parsing BLS using the legacy scheme and send it to network\n"
         "  register_fund_legacy     - Fund and create a ProTx by parsing BLS using the legacy scheme, then send it to network\n"
         "  register_prepare_legacy  - Create an unsigned ProTx by parsing BLS using the legacy scheme\n"
@@ -1595,7 +1599,7 @@ static UniValue protx_listdiff(const JSONRPCRequest& request, const ChainstateMa
         "  info                     - Return information about a ProTx\n"
 #ifdef ENABLE_WALLET
         "  update_service           - Create and send ProUpServTx to network\n"
-        "  update_service_evo       - Create and send ProUpServTx to network for an EvoNode\n"
+        // "  update_service_evo       - Create and send ProUpServTx to network for an EvoNode\n"
         "  update_registrar         - Create and send ProUpRegTx to network\n"
         "  update_registrar_legacy  - Create ProUpRegTx by parsing BLS using the legacy scheme, then send it to network\n"
         "  revoke                   - Create and send ProUpRevTx to network\n"

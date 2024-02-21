@@ -45,7 +45,8 @@ UniValue CDeterministicMN::ToJson() const
     UniValue obj;
     obj.setObject();
 
-    obj.pushKV("type", std::string(GetMnType(nType).description));
+    // Disable EvoNodes
+    // obj.pushKV("type", std::string(GetMnType(nType).description));
     obj.pushKV("proTxHash", proTxHash.ToString());
     obj.pushKV("collateralHash", collateralOutpoint.hash.ToString());
     obj.pushKV("collateralIndex", (int)collateralOutpoint.n);
