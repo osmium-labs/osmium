@@ -15,7 +15,8 @@
 #include <script/sign.h>
 #include <script/signingprovider.h>
 #include <script/standard.h>
-#include <univalue.h>
+// #include <univalue.h>
+#include <univalue/include/univalue.h>
 #include <util/check.h>
 #include <util/strencodings.h>
 

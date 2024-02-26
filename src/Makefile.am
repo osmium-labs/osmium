@@ -658,6 +658,7 @@ libbitcoin_consensus_a_SOURCES = \
   consensus/params.h \
   consensus/tx_check.cpp \
   consensus/validation.h \
+  devfee_payment.cpp \
   hash.cpp \
   hash.h \
   prevector.h \
@@ -699,6 +700,7 @@ libbitcoin_common_a_SOURCES = \
   core_read.cpp \
   core_write.cpp \
   deploymentinfo.cpp \
+  devfee_payment.cpp \
   key.cpp \
   key_io.cpp \
   merkleblock.cpp \

@@ -649,7 +649,7 @@ bool MemPoolAccept::PreChecks(ATMPArgs& args, Workspace& ws)
     std::unique_ptr<CTxMemPoolEntry>& entry = ws.m_entry;
     CAmount& nModifiedFees = ws.m_modified_fees;
 
-    if (!CheckTransaction(tx, state))
+    if (!CheckTransaction(tx, state, 0, 0))
         return false; // state filled in by CheckTransaction
 
     assert(std::addressof(::ChainstateActive()) == std::addressof(m_active_chainstate));
@@ -1122,54 +1122,66 @@ NOTE:   unlike bitcoin we are using PREVIOUS block height here,
 */
 static std::pair<CAmount, CAmount> GetBlockSubsidyHelper(int nPrevBits, int nPrevHeight, const Consensus::Params& consensusParams, bool fV20Active)
 {
-    double dDiff;
+    // double dDiff;
     CAmount nSubsidyBase;
 
-    if (nPrevHeight <= 4500 && Params().NetworkIDString() == CBaseChainParams::MAIN) {
-        /* a bug which caused diff to not be correctly calculated */
-        dDiff = (double)0x0000ffff / (double)(nPrevBits & 0x00ffffff);
-    } else {
-        dDiff = ConvertBitsToDouble(nPrevBits);
-    }
+    // if (nPrevHeight <= 4500 && Params().NetworkIDString() == CBaseChainParams::MAIN) {
+    //     /* a bug which caused diff to not be correctly calculated */
+    //     dDiff = (double)0x0000ffff / (double)(nPrevBits & 0x00ffffff);
+    // } else {
+    //     dDiff = ConvertBitsToDouble(nPrevBits);
+    // }
 
     const bool isDevnet = Params().NetworkIDString() == CBaseChainParams::DEVNET;
-    const bool force_fixed_base_subsidy = fV20Active || (isDevnet && nPrevHeight >= consensusParams.nHighSubsidyBlocks);
-    if (force_fixed_base_subsidy) {
+    if (nPrevHeight < 1) {
+      nSubsidyBase = 10000;
+    } else if (nPrevHeight < 100) {
+      nSubsidyBase = 0;
+    } else {
+      nSubsidyBase = 1.5;
+    }
+    // const bool force_fixed_base_subsidy = fV20Active || (isDevnet && nPrevHeight >= consensusParams.nHighSubsidyBlocks);
+    // if (force_fixed_base_subsidy) {
         // Originally, nSubsidyBase calculations relied on difficulty. Once Platform is live,
         // it must be able to calculate platformReward. However, we don't want it to constantly
         // get blocks difficulty from the payment chain, so we set the nSubsidyBase to a fixed
         // value starting from V20 activation. Note, that it doesn't affect mainnet really
         // because blocks difficulty there is very high already.
         // Devnets get fixed nSubsidyBase starting from nHighSubsidyBlocks to better mimic mainnet.
-        nSubsidyBase = 5;
-    } else if (nPrevHeight < 5465) {
-        // Early ages...
-        // 1111/((x+1)^2)
-        nSubsidyBase = (1111.0 / (pow((dDiff+1.0),2.0)));
-        if(nSubsidyBase > 500) nSubsidyBase = 500;
-        else if(nSubsidyBase < 1) nSubsidyBase = 1;
-    } else if (nPrevHeight < 17000 || (dDiff <= 75 && nPrevHeight < 24000)) {
-        // CPU mining era
-        // 11111/(((x+51)/6)^2)
-        nSubsidyBase = (11111.0 / (pow((dDiff+51.0)/6.0,2.0)));
-        if(nSubsidyBase > 500) nSubsidyBase = 500;
-        else if(nSubsidyBase < 25) nSubsidyBase = 25;
-    } else {
-        // GPU/ASIC mining era
-        // 2222222/(((x+2600)/9)^2)
-        nSubsidyBase = (2222222.0 / (pow((dDiff+2600.0)/9.0,2.0)));
-        if(nSubsidyBase > 25) nSubsidyBase = 25;
-        else if(nSubsidyBase < 5) nSubsidyBase = 5;
-    }
+        // nSubsidyBase = 100;
+    // } else if (nPrevHeight < 5465) {
+    //     // Early ages...
+    //     // 1111/((x+1)^2)
+    //     nSubsidyBase = (1111.0 / (pow((dDiff+1.0),2.0)));
+    //     if(nSubsidyBase > 500) nSubsidyBase = 500;
+    //     else if(nSubsidyBase < 1) nSubsidyBase = 1;
+    // } else if (nPrevHeight < 17000 || (dDiff <= 75 && nPrevHeight < 24000)) {
+    //     // CPU mining era
+    //     // 11111/(((x+51)/6)^2)
+    //     nSubsidyBase = (11111.0 / (pow((dDiff+51.0)/6.0,2.0)));
+    //     if(nSubsidyBase > 500) nSubsidyBase = 500;
+    //     else if(nSubsidyBase < 25) nSubsidyBase = 25;
+    // } else {
+    //     // GPU/ASIC mining era
+    //     // 2222222/(((x+2600)/9)^2)
+    //     nSubsidyBase = (2222222.0 / (pow((dDiff+2600.0)/9.0,2.0)));
+    //     if(nSubsidyBase > 25) nSubsidyBase = 25;
+    //     else if(nSubsidyBase < 5) nSubsidyBase = 5;
+    // }
 
     CAmount nSubsidy = nSubsidyBase * COIN;
 
     // yearly decline of production by ~7.1% per year, projected ~18M coins max by year 2050+.
+    // semiyearly decline of production ~21.4% per 6 months, projected ~1.21M coins max by year 2030.
     for (int i = consensusParams.nSubsidyHalvingInterval; i <= nPrevHeight; i += consensusParams.nSubsidyHalvingInterval) {
-        nSubsidy -= nSubsidy/14;
+        // nSubsidy -= nSubsidy/14;
+        // nSubsidy -= nSubsidy * 0.214;
+        nSubsidy -= nSubsidy * 0.1;
     }
 
-    if (nPrevHeight < consensusParams.nHighSubsidyBlocks) {
+    // if (nPrevHeight < consensusParams.nHighSubsidyBlocks) {
+    // Bypass for Genesis block
+    if (nPrevHeight > 0 && nPrevHeight < consensusParams.nHighSubsidyBlocks) {
         assert(isDevnet);
         nSubsidy *= consensusParams.nHighSubsidyFactor;
     }
@@ -1204,8 +1216,11 @@ CAmount GetBlockSubsidy(const CBlockIndex* const pindex, const Consensus::Params
 
 CAmount GetMasternodePayment(int nHeight, CAmount blockValue, bool fV20Active)
 {
-    CAmount ret = blockValue/5; // start at 20%
+    // CAmount ret = blockValue/5; // start at 20%
+    CAmount ret = blockValue / 1000 * 475; // masternode reward starts at 47.5%
+    return ret;
 
+    // Rest is ignored
     const int nMNPIBlock = Params().GetConsensus().nMasternodePaymentsIncreaseBlock;
     const int nMNPIPeriod = Params().GetConsensus().nMasternodePaymentsIncreasePeriod;
     const int nReallocActivationHeight = Params().GetConsensus().BRRHeight;
@@ -2050,7 +2065,7 @@ bool CChainState::ConnectBlock(const CBlock& block, BlockValidationState& state,
     // is enforced in ContextualCheckBlockHeader(); we wouldn't want to
     // re-enforce that rule here (at least until we make it impossible for
     // GetAdjustedTime() to go backward).
-    if (!CheckBlock(block, state, m_params.GetConsensus(), !fJustCheck, !fJustCheck)) {
+    if (!CheckBlock(block, state, m_params.GetConsensus(), pindex->nHeight, !fJustCheck, !fJustCheck)) {
         if (state.GetResult() == BlockValidationResult::BLOCK_MUTATED) {
             // We don't write down blocks to disk if they may have been
             // corrupted, so this should be impossible unless we're having hardware
@@ -3768,7 +3783,7 @@ static bool CheckBlockHeader(const CBlockHeader& block, const uint256& hash, Blo
     return true;
 }
 
-bool CheckBlock(const CBlock& block, BlockValidationState& state, const Consensus::Params& consensusParams, bool fCheckPOW, bool fCheckMerkleRoot)
+bool CheckBlock(const CBlock& block, BlockValidationState& state, const Consensus::Params& consensusParams, int nHeight, bool fCheckPOW, bool fCheckMerkleRoot)
 {
     // These are checks that are independent of context.
 
@@ -3813,9 +3828,10 @@ bool CheckBlock(const CBlock& block, BlockValidationState& state, const Consensu
 
     // Check transactions
     // Must check for duplicate inputs (see CVE-2018-17144)
+    CAmount blockSubsidy = GetBlockSubsidyInner(1, nHeight - 1, Params().GetConsensus(), false);
     for (const auto& tx : block.vtx) {
         TxValidationState tx_state;
-        if (!CheckTransaction(*tx, tx_state)) {
+        if (!CheckTransaction(*tx, tx_state, nHeight - 1, blockSubsidy)) {
             // CheckBlock() does context-free validation checks. The only
             // possible failures are consensus failures.
             assert(tx_state.GetResult() == TxValidationResult::TX_CONSENSUS);
@@ -4191,7 +4207,7 @@ bool CChainState::AcceptBlock(const std::shared_ptr<const CBlock>& pblock, Block
         if (pindex->nChainWork < nMinimumChainWork) return true;
     }
 
-    if (!CheckBlock(block, state, m_params.GetConsensus()) ||
+    if (!CheckBlock(block, state, m_params.GetConsensus(), pindex->nHeight) ||
         !ContextualCheckBlock(block, state, m_params.GetConsensus(), pindex->pprev)) {
         if (state.IsInvalid() && state.GetResult() != BlockValidationResult::BLOCK_MUTATED) {
             pindex->nStatus |= BLOCK_FAILED_VALID;
@@ -4251,7 +4267,8 @@ bool ChainstateManager::ProcessNewBlock(const CChainParams& chainparams, const s
         // malleability that cause CheckBlock() to fail; see e.g. CVE-2012-2459 and
         // https://lists.linuxfoundation.org/pipermail/bitcoin-dev/2019-February/016697.html.  Because CheckBlock() is
         // not very expensive, the anti-DoS benefits of caching failure (of a definitely-invalid block) are not substantial.
-        bool ret = CheckBlock(*pblock, state, chainparams.GetConsensus());
+        int nHeight = ChainActive().Height() + 1;
+        bool ret = CheckBlock(*pblock, state, chainparams.GetConsensus(), nHeight);
         if (ret) {
             // Store to disk
             ret = ActiveChainstate().AcceptBlock(pblock, state, &pindex, fForceProcessing, nullptr, fNewBlock);
@@ -4308,7 +4325,7 @@ bool TestBlockValidity(BlockValidationState& state,
     assert(std::addressof(g_chainman.m_blockman) == std::addressof(chainstate.m_blockman));
     if (!ContextualCheckBlockHeader(block, state, chainstate.m_blockman, chainparams, pindexPrev, GetAdjustedTime()))
         return error("%s: Consensus::ContextualCheckBlockHeader: %s", __func__, state.ToString());
-    if (!CheckBlock(block, state, chainparams.GetConsensus(), fCheckPOW, fCheckMerkleRoot))
+    if (!CheckBlock(block, state, chainparams.GetConsensus(), indexDummy.nHeight, fCheckPOW, fCheckMerkleRoot))
         return error("%s: Consensus::CheckBlock: %s", __func__, state.ToString());
     if (!ContextualCheckBlock(block, state, chainparams.GetConsensus(), pindexPrev))
         return error("%s: Consensus::ContextualCheckBlock: %s", __func__, state.ToString());
@@ -4763,7 +4780,7 @@ bool CVerifyDB::VerifyDB(
         if (!ReadBlockFromDisk(block, pindex, chainparams.GetConsensus()))
             return error("VerifyDB(): *** ReadBlockFromDisk failed at %d, hash=%s", pindex->nHeight, pindex->GetBlockHash().ToString());
         // check level 1: verify block validity
-        if (nCheckLevel >= 1 && !CheckBlock(block, state, chainparams.GetConsensus()))
+        if (nCheckLevel >= 1 && !CheckBlock(block, state, chainparams.GetConsensus(), pindex->nHeight))
             return error("%s: *** found bad block at %d, hash=%s (%s)\n", __func__,
                          pindex->nHeight, pindex->GetBlockHash().ToString(), state.ToString());
         // check level 2: verify undo validity
@@ -5096,15 +5113,15 @@ bool CChainState::LoadGenesisBlock()
         if (!AddGenesisBlock(m_params.GenesisBlock(), state))
             return false;
 
-        if (m_params.NetworkIDString() == CBaseChainParams::DEVNET) {
-            // We can't continue if devnet genesis block is invalid
-            std::shared_ptr<const CBlock> shared_pblock = std::make_shared<const CBlock>(
-                    m_params.DevNetGenesisBlock());
-            bool fCheckBlock = CheckBlock(*shared_pblock, state, m_params.GetConsensus());
-            assert(fCheckBlock);
-            if (!AcceptBlock(shared_pblock, state, nullptr, true, nullptr, nullptr))
-                return false;
-        }
+        // if (m_params.NetworkIDString() == CBaseChainParams::DEVNET) {
+        //     // We can't continue if devnet genesis block is invalid
+        //     std::shared_ptr<const CBlock> shared_pblock = std::make_shared<const CBlock>(
+        //             m_params.DevNetGenesisBlock());
+        //     bool fCheckBlock = CheckBlock(*shared_pblock, state, m_params.GetConsensus());
+        //     assert(fCheckBlock);
+        //     if (!AcceptBlock(shared_pblock, state, nullptr, true, nullptr, nullptr))
+        //         return false;
+        // }
     } catch (const std::runtime_error &e) {
         return error("%s: failed to initialize block database: %s", __func__, e.what());
     }

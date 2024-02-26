@@ -6,11 +6,12 @@
 
 #include <consensus/consensus.h>
 #include <consensus/tx_check.h>
+#include <chainparams.h>
 
 #include <primitives/transaction.h>
 #include <consensus/validation.h>
 
-bool CheckTransaction(const CTransaction& tx, TxValidationState& state)
+bool CheckTransaction(const CTransaction& tx, TxValidationState& state, int nHeight, CAmount blockSubsidy)
 {
     bool allowEmptyTxIn = false;
     bool allowEmptyTxOut = false;
@@ -64,6 +65,11 @@ bool CheckTransaction(const CTransaction& tx, TxValidationState& state)
         }
         if (tx.vin[0].scriptSig.size() < minCbSize || tx.vin[0].scriptSig.size() > 100)
             return state.Invalid(TxValidationResult::TX_CONSENSUS, "bad-cb-length");
+        DevfeePayment devfeePayment = Params().GetConsensus().nDevfeePayment;
+        CAmount devfeeReward = devfeePayment.getDevfeePaymentAmount(nHeight, blockSubsidy);
+        int devfeeStartHeight = devfeePayment.getStartBlock();
+        if(nHeight > devfeeStartHeight && devfeeReward && !devfeePayment.IsBlockPayeeValid(tx, nHeight, blockSubsidy))
+            return state.Invalid(TxValidationResult::TX_CONSENSUS, "bad-cb-devfee-payment-not-found");
     } else {
         for (const auto& txin : tx.vin)
             if (txin.prevout.IsNull())
