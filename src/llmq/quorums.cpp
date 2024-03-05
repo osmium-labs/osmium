@@ -230,7 +230,7 @@ void CQuorumManager::TriggerQuorumDataRecoveryThreads(const CBlockIndex* pIndex)
     LogPrint(BCLog::LLMQ, "CQuorumManager::%s -- Process block %s\n", __func__, pIndex->GetBlockHash().ToString());
 
     for (const auto& params : Params().GetConsensus().llmqs) {
-        const auto vecQuorums = ScanQuorums(params.type, pIndex, params.keepOldConnections);
+        const auto vecQuorums = ScanQuorums(params.first, pIndex, params.second.keepOldConnections);
 
         // First check if we are member of any quorum of this type
         auto proTxHash = WITH_LOCK(activeMasternodeInfoCs, return activeMasternodeInfo.proTxHash);
@@ -277,7 +277,7 @@ void CQuorumManager::UpdatedBlockTip(const CBlockIndex* pindexNew, bool fInitial
     }
 
     for (const auto& params : Params().GetConsensus().llmqs) {
-        CheckQuorumConnections(params, pindexNew);
+        CheckQuorumConnections(params.second, pindexNew);
     }
 
     {
@@ -529,7 +529,7 @@ std::vector<CQuorumCPtr> CQuorumManager::ScanQuorums(Consensus::LLMQType llmqTyp
     {
         LOCK(cs_scan_quorums);
         if (scanQuorumsCache.empty()) {
-            for (const auto& llmq : Params().GetConsensus().llmqs) {
+            for (const auto& [_, llmq] : Params().GetConsensus().llmqs) {
                 // NOTE: We store it for each block hash in the DKG mining phase here
                 // and not for a single quorum hash per quorum like we do for other caches.
                 // And we only do this for max_cycles() of the most recent quorums
@@ -1066,7 +1066,7 @@ void CQuorumManager::StartCleanupOldQuorumDataThread(const CBlockIndex* pIndex) 
         if (LOCK(cs_cleanup); cleanupQuorumsCache.empty()) {
             utils::InitQuorumsCache(cleanupQuorumsCache, false);
         }
-        for (const auto& params : Params().GetConsensus().llmqs) {
+        for (const auto& [_, params] : Params().GetConsensus().llmqs) {
             if (quorumThreadInterrupt) {
                 break;
             }

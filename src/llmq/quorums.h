@@ -85,7 +85,7 @@ public:
     };
 
 private:
-    Consensus::LLMQType llmqType{Consensus::LLMQType::LLMQ_NONE};
+    Consensus::LLMQType llmqType{Consensus::LLMQ_NONE};
     uint256 quorumHash;
     uint16_t nDataMask{0};
     uint256 proTxHash;

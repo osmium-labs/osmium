@@ -134,6 +134,7 @@ public:
     void UpdateDIP8Parameters(int nActivationHeight);
     void UpdateBudgetParameters(int nMasternodePaymentsStartBlock, int nBudgetPaymentsStartBlock, int nSuperblockStartBlock);
     void UpdateLLMQInstantSend(Consensus::LLMQType llmqType);
+    void UpdateLLMQParams(size_t totalMnCount, int height);
     /**
      * Validate params for Masternodes EHF
      *
@@ -184,7 +185,6 @@ protected:
     uint16_t nDefaultPlatformP2PPort;
     uint16_t nDefaultPlatformHTTPPort;
 
-    void AddLLMQ(Consensus::LLMQType llmqType);
 };
 
 /**
@@ -192,7 +192,7 @@ protected:
  * @returns a CChainParams* of the chosen chain.
  * @throws a std::runtime_error if the chain is not supported.
  */
-std::unique_ptr<const CChainParams> CreateChainParams(const std::string& chain);
+std::unique_ptr<CChainParams> CreateChainParams(const std::string& chain);
 
 /**
  * Return the currently selected parameters. This won't change after app
@@ -205,5 +205,7 @@ const CChainParams &Params();
  * @throws std::runtime_error when the chain is not supported.
  */
 void SelectParams(const std::string& chain);
+
+void UpdateLLMQParams(size_t totalMnCount, int height);
 
 #endif // BITCOIN_CHAINPARAMS_H

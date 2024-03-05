@@ -494,8 +494,8 @@ void CInstantSendManager::ProcessTx(const CTransaction& tx, bool fRetroactive, c
         return;
     }
 
-    if (params.llmqTypeInstantSend == Consensus::LLMQType::LLMQ_NONE ||
-        params.llmqTypeDIP0024InstantSend == Consensus::LLMQType::LLMQ_NONE) {
+    if (params.llmqTypeInstantSend == Consensus::LLMQ_NONE ||
+        params.llmqTypeDIP0024InstantSend == Consensus::LLMQ_NONE) {
         return;
     }
 
@@ -651,8 +651,8 @@ void CInstantSendManager::HandleNewRecoveredSig(const CRecoveredSig& recoveredSi
         return;
     }
 
-    if (Params().GetConsensus().llmqTypeInstantSend == Consensus::LLMQType::LLMQ_NONE ||
-        Params().GetConsensus().llmqTypeDIP0024InstantSend == Consensus::LLMQType::LLMQ_NONE) {
+    if (Params().GetConsensus().llmqTypeInstantSend == Consensus::LLMQ_NONE ||
+        Params().GetConsensus().llmqTypeDIP0024InstantSend == Consensus::LLMQ_NONE) {
         return;
     }
 

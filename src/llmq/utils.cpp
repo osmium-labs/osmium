@@ -25,8 +25,6 @@
 #include <atomic>
 #include <optional>
 
-static constexpr int TESTNET_LLMQ_25_67_ACTIVATION_HEIGHT = 847000;
-
 /**
  * Forward declarations
  */
@@ -652,7 +650,7 @@ static bool EvalSpork(Consensus::LLMQType llmqType, int64_t spork_value)
     if (spork_value == 0) {
         return true;
     }
-    if (spork_value == 1 && llmqType != Consensus::LLMQType::LLMQ_100_67 && llmqType != Consensus::LLMQType::LLMQ_400_60 && llmqType != Consensus::LLMQType::LLMQ_400_85) {
+    if (spork_value == 1 && llmqType != Consensus::LLMQ_100_67 && llmqType != Consensus::LLMQ_400_60 && llmqType != Consensus::LLMQ_400_85) {
         return true;
     }
     return false;
@@ -979,9 +977,9 @@ bool IsQuorumTypeEnabledInternal(Consensus::LLMQType llmqType, const CQuorumMana
 
     switch (llmqType)
     {
-        case Consensus::LLMQType::LLMQ_TEST_INSTANTSEND:
-        case Consensus::LLMQType::LLMQ_DEVNET:
-        case Consensus::LLMQType::LLMQ_50_60: {
+        case Consensus::LLMQ_TEST_INSTANTSEND:
+        case Consensus::LLMQ_DEVNET:
+        case Consensus::LLMQ_50_60: {
             if (IsInstantSendLLMQTypeShared()) return true;
 
             bool fDIP0024IsActive = optDIP0024IsActive.has_value() ? *optDIP0024IsActive : IsDIP0024Active(pindex);
@@ -992,27 +990,25 @@ bool IsQuorumTypeEnabledInternal(Consensus::LLMQType llmqType, const CQuorumMana
                             consensusParams.llmqTypeDIP0024InstantSend, pindex, 1).empty();
             return !fHaveDIP0024Quorums;
         }
-        case Consensus::LLMQType::LLMQ_TEST:
-        case Consensus::LLMQType::LLMQ_TEST_PLATFORM:
-        case Consensus::LLMQType::LLMQ_400_60:
-        case Consensus::LLMQType::LLMQ_400_85:
-        case Consensus::LLMQType::LLMQ_DEVNET_PLATFORM:
+        case Consensus::LLMQ_TEST:
+        case Consensus::LLMQ_TEST_PLATFORM:
+        case Consensus::LLMQ_400_60:
+        case Consensus::LLMQ_400_85:
+        case Consensus::LLMQ_DEVNET_PLATFORM:
             return true;
 
-        case Consensus::LLMQType::LLMQ_TEST_V17: {
+        case Consensus::LLMQ_TEST_V17: {
             return llmq_versionbitscache.State(pindex, consensusParams, Consensus::DEPLOYMENT_TESTDUMMY) == ThresholdState::ACTIVE;
         }
-        case Consensus::LLMQType::LLMQ_100_67:
+        case Consensus::LLMQ_100_67:
             return pindex->nHeight + 1 >= consensusParams.DIP0020Height;
 
-        case Consensus::LLMQType::LLMQ_60_75:
-        case Consensus::LLMQType::LLMQ_DEVNET_DIP0024:
-        case Consensus::LLMQType::LLMQ_TEST_DIP0024: {
+        case Consensus::LLMQ_60_75:
+        case Consensus::LLMQ_DEVNET_DIP0024:
+        case Consensus::LLMQ_TEST_DIP0024: {
             bool fDIP0024IsActive = optDIP0024IsActive.has_value() ? *optDIP0024IsActive : IsDIP0024Active(pindex);
             return fDIP0024IsActive;
         }
-        case Consensus::LLMQType::LLMQ_25_67:
-            return pindex->nHeight >= TESTNET_LLMQ_25_67_ACTIVATION_HEIGHT;
 
         default:
             throw std::runtime_error(strprintf("%s: Unknown LLMQ type %d", __func__, ToUnderlying(llmqType)));
@@ -1027,8 +1023,8 @@ std::vector<Consensus::LLMQType> GetEnabledQuorumTypes(gsl::not_null<const CBloc
     std::vector<Consensus::LLMQType> ret;
     ret.reserve(Params().GetConsensus().llmqs.size());
     for (const auto& params : Params().GetConsensus().llmqs) {
-        if (IsQuorumTypeEnabled(params.type, *llmq::quorumManager, pindex)) {
-            ret.push_back(params.type);
+        if (IsQuorumTypeEnabled(params.second.type, *llmq::quorumManager, pindex)) {
+            ret.push_back(params.second.type);
         }
     }
     return ret;
@@ -1039,9 +1035,11 @@ std::vector<std::reference_wrapper<const Consensus::LLMQParams>> GetEnabledQuoru
     std::vector<std::reference_wrapper<const Consensus::LLMQParams>> ret;
     ret.reserve(Params().GetConsensus().llmqs.size());
 
-    std::copy_if(Params().GetConsensus().llmqs.begin(), Params().GetConsensus().llmqs.end(), std::back_inserter(ret),
-                 [&pindex](const auto& params){return IsQuorumTypeEnabled(params.type, *llmq::quorumManager, pindex);});
-
+    for (const auto &[type, params]: Params().GetConsensus().llmqs) {
+        if (IsQuorumTypeEnabled(type, *llmq::quorumManager, pindex)) {
+            ret.emplace_back(params);
+        }
+    }
     return ret;
 }
 
@@ -1060,7 +1058,7 @@ std::map<Consensus::LLMQType, QvvecSyncMode> GetEnabledQuorumVvecSyncEntries()
 {
     std::map<Consensus::LLMQType, QvvecSyncMode> mapQuorumVvecSyncEntries;
     for (const auto& strEntry : gArgs.GetArgs("-llmq-qvvec-sync")) {
-        Consensus::LLMQType llmqType = Consensus::LLMQType::LLMQ_NONE;
+        Consensus::LLMQType llmqType = Consensus::LLMQ_NONE;
         QvvecSyncMode mode{QvvecSyncMode::Invalid};
         std::istringstream ssEntry(strEntry);
         std::string strLLMQType, strMode, strTest;
@@ -1072,8 +1070,8 @@ std::map<Consensus::LLMQType, QvvecSyncMode> GetEnabledQuorumVvecSyncEntries()
         }
 
         if (auto optLLMQParams = ranges::find_if_opt(Params().GetConsensus().llmqs,
-                                                     [&strLLMQType](const auto& params){return params.name == strLLMQType;})) {
-            llmqType = optLLMQParams->type;
+                                                     [&strLLMQType](const auto& params){return params.second.name == strLLMQType;})) {
+            llmqType = optLLMQParams->second.type;
         } else {
             throw std::invalid_argument(strprintf("Invalid llmqType in -llmq-qvvec-sync: %s", strEntry));
         }
@@ -1106,7 +1104,7 @@ std::map<Consensus::LLMQType, QvvecSyncMode> GetEnabledQuorumVvecSyncEntries()
 template <typename CacheType>
 void InitQuorumsCache(CacheType& cache, bool limit_by_connections)
 {
-    for (const auto& llmq : Params().GetConsensus().llmqs) {
+    for (const auto& [_, llmq] : Params().GetConsensus().llmqs) {
         cache.emplace(std::piecewise_construct, std::forward_as_tuple(llmq.type),
                       std::forward_as_tuple(limit_by_connections ? llmq.keepOldConnections : llmq.keepOldKeys));
     }
