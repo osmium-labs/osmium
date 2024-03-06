@@ -1,11 +1,11 @@
 Sample configuration files for:
 ```
-systemd: dashd.service
-Upstart: dashd.conf
-OpenRC:  dashd.openrc
-         dashd.openrcconf
-CentOS:  dashd.init
-macOS:   org.dash.dashd.plist
+systemd: osmiumd.service
+Upstart: osmiumd.conf
+OpenRC:  osmiumd.openrc
+         osmiumd.openrcconf
+CentOS:  osmiumd.init
+macOS:   org.osmium.osmiumd.plist
 ```
 have been made available to assist packagers in creating node packages here.
 
