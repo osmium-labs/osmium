@@ -38,7 +38,7 @@ RUN groupadd docker && \
 ENV DEBIAN_FRONTEND="dialog"
 
 # Expose Osmium P2P and RPC ports for main network and test networks
-EXPOSE 9998 9999 19998 19999
+EXPOSE 9968 9969 19968 19969
 
 # We're done, switch back to non-privileged user
 USER osmium

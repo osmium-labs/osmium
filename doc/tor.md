@@ -163,12 +163,12 @@ config file): *Needed for Tor version 0.2.7.0 and older versions of Tor only. Fo
 versions of Tor see [Section 4](#4-automatically-listen-on-tor).*
 
 	HiddenServiceDir /var/lib/tor/osmiumcore-service/
-	HiddenServicePort 9999 127.0.0.1:9996
-	HiddenServicePort 19999 127.0.0.1:19996
+	HiddenServicePort 9969 127.0.0.1:9966
+	HiddenServicePort 19969 127.0.0.1:19966
 
 The directory can be different of course, but virtual port numbers should be equal to
-your osmiumd's P2P listen port (9999 by default), and target addresses and ports
-should be equal to binding address and port for inbound Tor connections (127.0.0.1:9996 by default).
+your osmiumd's P2P listen port (9969 by default), and target addresses and ports
+should be equal to binding address and port for inbound Tor connections (127.0.0.1:9966 by default).
 
 	-externalip=X   You can tell Osmium Core about its publicly reachable addresses using
 	                this option, and this can be an onion address. Given the above
@@ -208,7 +208,7 @@ as well, use `discover` instead:
 
 	./osmiumd ... -discover
 
-and open port 9999 on your firewall (or use port mapping, i.e., `-upnp` or `-natpmp`).
+and open port 9969 on your firewall (or use port mapping, i.e., `-upnp` or `-natpmp`).
 
 If you only want to use Tor to reach .onion addresses, but not use it as a proxy
 for normal IPv4/IPv6 communication, use:
@@ -227,7 +227,7 @@ fq63mjtyamklhxtskvvdf7tcdckwvtoo7kb5eazi34tsxuvexveyroad.onion
 
 You can easily validate which of these are still online via nc such as
 ```
-nc -v -x 127.0.0.1:9050 -z *.onion 9999
+nc -v -x 127.0.0.1:9050 -z *.onion 9969
 ```
 
 ## 4. Privacy recommendations
