@@ -273,7 +273,8 @@ static UniValue masternode_status(const JSONRPCRequest& request)
     }
     if (dmn) {
         mnObj.pushKV("proTxHash", dmn->proTxHash.ToString());
-        mnObj.pushKV("type", std::string(GetMnType(dmn->nType).description));
+        // Disable Evonodes
+        // mnObj.pushKV("type", std::string(GetMnType(dmn->nType).description));
         mnObj.pushKV("collateralHash", dmn->collateralOutpoint.hash.ToString());
         mnObj.pushKV("collateralIndex", (int)dmn->collateralOutpoint.n);
         mnObj.pushKV("dmnState", dmn->pdmnState->ToJson(dmn->nType));
@@ -702,12 +703,13 @@ static UniValue masternodelist(const JSONRPCRequest& request, ChainstateManager&
             objMN.pushKV("address", dmn.pdmnState->addr.ToString());
             objMN.pushKV("payee", payeeStr);
             objMN.pushKV("status", dmnToStatus(dmn));
-            objMN.pushKV("type", std::string(GetMnType(dmn.nType).description));
-            if (dmn.nType == MnType::Evo) {
-                objMN.pushKV("platformNodeID", dmn.pdmnState->platformNodeID.ToString());
-                objMN.pushKV("platformP2PPort", dmn.pdmnState->platformP2PPort);
-                objMN.pushKV("platformHTTPPort", dmn.pdmnState->platformHTTPPort);
-            }
+            // Disable Evonodes
+            // objMN.pushKV("type", std::string(GetMnType(dmn.nType).description));
+            // if (dmn.nType == MnType::Evo) {
+            //     objMN.pushKV("platformNodeID", dmn.pdmnState->platformNodeID.ToString());
+            //     objMN.pushKV("platformP2PPort", dmn.pdmnState->platformP2PPort);
+            //     objMN.pushKV("platformHTTPPort", dmn.pdmnState->platformHTTPPort);
+            // }
             objMN.pushKV("pospenaltyscore", dmn.pdmnState->nPoSePenalty);
             objMN.pushKV("consecutivePayments", dmn.pdmnState->nConsecutivePayments);
             objMN.pushKV("lastpaidtime", dmnToLastPaidTime(dmn));

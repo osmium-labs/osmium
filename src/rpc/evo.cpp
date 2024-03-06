@@ -588,13 +588,15 @@ static UniValue protx_register_common_wrapper(const JSONRPCRequest& request,
 {
     const bool isEvoRequested = mnType == MnType::Evo;
     if (isEvoRequested) {
-        if (isFundRegister && (request.fHelp || (request.params.size() < 10 || request.params.size() > 12))) {
-            protx_register_fund_evo_help(request);
-        } else if (isExternalRegister && (request.fHelp || (request.params.size() < 11 || request.params.size() > 13))) {
-            protx_register_evo_help(request);
-        } else if (isPrepareRegister && (request.fHelp || (request.params.size() != 11 && request.params.size() != 12))) {
-            protx_register_prepare_evo_help(request);
-        }
+      // Disable Evonodes
+      throw JSONRPCError(RPC_INVALID_REQUEST, "EvoNodes aren't allowed");
+        // if (isFundRegister && (request.fHelp || (request.params.size() < 10 || request.params.size() > 12))) {
+        //     protx_register_fund_evo_help(request);
+        // } else if (isExternalRegister && (request.fHelp || (request.params.size() < 11 || request.params.size() > 13))) {
+        //     protx_register_evo_help(request);
+        // } else if (isPrepareRegister && (request.fHelp || (request.params.size() != 11 && request.params.size() != 12))) {
+        //     protx_register_prepare_evo_help(request);
+        // }
     } else {
         if (isFundRegister && (request.fHelp || (request.params.size() < 7 || request.params.size() > 9))) {
             protx_register_fund_help(request, specific_legacy_bls_scheme);
@@ -683,24 +685,26 @@ static UniValue protx_register_common_wrapper(const JSONRPCRequest& request,
     }
 
     if (isEvoRequested) {
-        if (!IsHex(request.params[paramIdx + 6].get_str())) {
-            throw JSONRPCError(RPC_INVALID_PARAMETER, "platformNodeID must be hexadecimal string");
-        }
-        ptx.platformNodeID.SetHex(request.params[paramIdx + 6].get_str());
+        // Disable Evonodes
+        throw JSONRPCError(RPC_INVALID_REQUEST, "EvoNodes aren't allowed");
+        // if (!IsHex(request.params[paramIdx + 6].get_str())) {
+        //     throw JSONRPCError(RPC_INVALID_PARAMETER, "platformNodeID must be hexadecimal string");
+        // }
+        // ptx.platformNodeID.SetHex(request.params[paramIdx + 6].get_str());
 
-        int32_t requestedPlatformP2PPort = ParseInt32V(request.params[paramIdx + 7], "platformP2PPort");
-        if (!ValidatePlatformPort(requestedPlatformP2PPort)) {
-            throw JSONRPCError(RPC_INVALID_PARAMETER, "platformP2PPort must be a valid port [1-65535]");
-        }
-        ptx.platformP2PPort = static_cast<uint16_t>(requestedPlatformP2PPort);
+        // int32_t requestedPlatformP2PPort = ParseInt32V(request.params[paramIdx + 7], "platformP2PPort");
+        // if (!ValidatePlatformPort(requestedPlatformP2PPort)) {
+        //     throw JSONRPCError(RPC_INVALID_PARAMETER, "platformP2PPort must be a valid port [1-65535]");
+        // }
+        // ptx.platformP2PPort = static_cast<uint16_t>(requestedPlatformP2PPort);
 
-        int32_t requestedPlatformHTTPPort = ParseInt32V(request.params[paramIdx + 8], "platformHTTPPort");
-        if (!ValidatePlatformPort(requestedPlatformHTTPPort)) {
-            throw JSONRPCError(RPC_INVALID_PARAMETER, "platformHTTPPort must be a valid port [1-65535]");
-        }
-        ptx.platformHTTPPort = static_cast<uint16_t>(requestedPlatformHTTPPort);
+        // int32_t requestedPlatformHTTPPort = ParseInt32V(request.params[paramIdx + 8], "platformHTTPPort");
+        // if (!ValidatePlatformPort(requestedPlatformHTTPPort)) {
+        //     throw JSONRPCError(RPC_INVALID_PARAMETER, "platformHTTPPort must be a valid port [1-65535]");
+        // }
+        // ptx.platformHTTPPort = static_cast<uint16_t>(requestedPlatformHTTPPort);
 
-        paramIdx += 3;
+        // paramIdx += 3;
     }
 
     ptx.keyIDVoting = keyIDVoting;
@@ -923,7 +927,9 @@ static UniValue protx_update_service_common_wrapper(const JSONRPCRequest& reques
 
     const bool isEvoRequested = mnType == MnType::Evo;
     if (isEvoRequested) {
-        protx_update_service_evo_help(request);
+        // Disable Evonodes
+        throw JSONRPCError(RPC_INVALID_REQUEST, "EvoNodes aren't allowed");
+        // protx_update_service_evo_help(request);
     } else {
         protx_update_service_help(request);
     }
@@ -953,24 +959,26 @@ static UniValue protx_update_service_common_wrapper(const JSONRPCRequest& reques
 
     size_t paramIdx = 3;
     if (isEvoRequested) {
-        if (!IsHex(request.params[paramIdx].get_str())) {
-            throw JSONRPCError(RPC_INVALID_PARAMETER, "platformNodeID must be hexadecimal string");
-        }
-        ptx.platformNodeID.SetHex(request.params[paramIdx].get_str());
+        // Disable Evonodes
+        throw JSONRPCError(RPC_INVALID_REQUEST, "EvoNodes aren't allowed");
+        // if (!IsHex(request.params[paramIdx].get_str())) {
+        //     throw JSONRPCError(RPC_INVALID_PARAMETER, "platformNodeID must be hexadecimal string");
+        // }
+        // ptx.platformNodeID.SetHex(request.params[paramIdx].get_str());
 
-        int32_t requestedPlatformP2PPort = ParseInt32V(request.params[paramIdx + 1], "platformP2PPort");
-        if (!ValidatePlatformPort(requestedPlatformP2PPort)) {
-            throw JSONRPCError(RPC_INVALID_PARAMETER, "platformP2PPort must be a valid port [1-65535]");
-        }
-        ptx.platformP2PPort = static_cast<uint16_t>(requestedPlatformP2PPort);
+        // int32_t requestedPlatformP2PPort = ParseInt32V(request.params[paramIdx + 1], "platformP2PPort");
+        // if (!ValidatePlatformPort(requestedPlatformP2PPort)) {
+        //     throw JSONRPCError(RPC_INVALID_PARAMETER, "platformP2PPort must be a valid port [1-65535]");
+        // }
+        // ptx.platformP2PPort = static_cast<uint16_t>(requestedPlatformP2PPort);
 
-        int32_t requestedPlatformHTTPPort = ParseInt32V(request.params[paramIdx + 2], "platformHTTPPort");
-        if (!ValidatePlatformPort(requestedPlatformHTTPPort)) {
-            throw JSONRPCError(RPC_INVALID_PARAMETER, "platformHTTPPort must be a valid port [1-65535]");
-        }
-        ptx.platformHTTPPort = static_cast<uint16_t>(requestedPlatformHTTPPort);
+        // int32_t requestedPlatformHTTPPort = ParseInt32V(request.params[paramIdx + 2], "platformHTTPPort");
+        // if (!ValidatePlatformPort(requestedPlatformHTTPPort)) {
+        //     throw JSONRPCError(RPC_INVALID_PARAMETER, "platformHTTPPort must be a valid port [1-65535]");
+        // }
+        // ptx.platformHTTPPort = static_cast<uint16_t>(requestedPlatformHTTPPort);
 
-        paramIdx += 3;
+        // paramIdx += 3;
     }
 
     auto dmn = node.dmnman->GetListAtChainTip().GetMN(ptx.proTxHash);
@@ -1643,9 +1651,10 @@ static UniValue protx_listdiff(const JSONRPCRequest& request, const ChainstateMa
         "  register                 - Create and send ProTx to network\n"
         "  register_fund            - Fund, create and send ProTx to network\n"
         "  register_prepare         - Create an unsigned ProTx\n"
-        "  register_evo             - Create and send ProTx to network for an EvoNode\n"
-        "  register_fund_evo        - Fund, create and send ProTx to network for an EvoNode\n"
-        "  register_prepare_evo     - Create an unsigned ProTx for an EvoNode\n"
+        // Disable Evonodes
+        // "  register_evo             - Create and send ProTx to network for an EvoNode\n"
+        // "  register_fund_evo        - Fund, create and send ProTx to network for an EvoNode\n"
+        // "  register_prepare_evo     - Create an unsigned ProTx for an EvoNode\n"
         "  register_legacy          - Create a ProTx by parsing BLS using the legacy scheme and send it to network\n"
         "  register_fund_legacy     - Fund and create a ProTx by parsing BLS using the legacy scheme, then send it to network\n"
         "  register_prepare_legacy  - Create an unsigned ProTx by parsing BLS using the legacy scheme\n"
@@ -1655,7 +1664,8 @@ static UniValue protx_listdiff(const JSONRPCRequest& request, const ChainstateMa
         "  info                     - Return information about a ProTx\n"
 #ifdef ENABLE_WALLET
         "  update_service           - Create and send ProUpServTx to network\n"
-        "  update_service_evo       - Create and send ProUpServTx to network for an EvoNode\n"
+        // Disable Evonodes
+        // "  update_service_evo       - Create and send ProUpServTx to network for an EvoNode\n"
         "  update_registrar         - Create and send ProUpRegTx to network\n"
         "  update_registrar_legacy  - Create ProUpRegTx by parsing BLS using the legacy scheme, then send it to network\n"
         "  revoke                   - Create and send ProUpRevTx to network\n"
@@ -1680,16 +1690,16 @@ static UniValue protx(const JSONRPCRequest& request)
 #ifdef ENABLE_WALLET
     if (command == "protxregister" || command == "protxregister_fund" || command == "protxregister_prepare") {
         return protx_register(new_request, chainman);
-    } else if (command == "protxregister_evo" || command == "protxregister_fund_evo" || command == "protxregister_prepare_evo" || command == "protxregister_hpmn" || command == "protxregister_fund_hpmn" || command == "protxregister_prepare_hpmn") {
-        return protx_register_evo(new_request, chainman);
+    // } else if (command == "protxregister_evo" || command == "protxregister_fund_evo" || command == "protxregister_prepare_evo" || command == "protxregister_hpmn" || command == "protxregister_fund_hpmn" || command == "protxregister_prepare_hpmn") {
+    //     return protx_register_evo(new_request, chainman);
     } else if (command == "protxregister_legacy" || command == "protxregister_fund_legacy" || command == "protxregister_prepare_legacy") {
         return protx_register_legacy(new_request, chainman);
     } else if (command == "protxregister_submit") {
         return protx_register_submit(new_request, chainman);
     } else if (command == "protxupdate_service") {
         return protx_update_service_common_wrapper(new_request, chainman, MnType::Regular);
-    } else if (command == "protxupdate_service_evo" || command == "protxupdate_service_hpmn") {
-        return protx_update_service_common_wrapper(new_request, chainman, MnType::Evo);
+    // } else if (command == "protxupdate_service_evo" || command == "protxupdate_service_hpmn") {
+    //     return protx_update_service_common_wrapper(new_request, chainman, MnType::Evo);
     } else if (command == "protxupdate_registrar") {
         return protx_update_registrar(new_request, chainman);
     } else if (command == "protxupdate_registrar_legacy") {

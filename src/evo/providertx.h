@@ -71,12 +71,13 @@ public:
                 obj.scriptPayout,
                 obj.inputsHash
         );
-        if (obj.nType == MnType::Evo) {
-            READWRITE(
-                obj.platformNodeID,
-                obj.platformP2PPort,
-                obj.platformHTTPPort);
-        }
+        // Disable EvoNodes
+        // if (obj.nType == MnType::Evo) {
+        //     READWRITE(
+        //         obj.platformNodeID,
+        //         obj.platformP2PPort,
+        //         obj.platformHTTPPort);
+        // }
         if (!(s.GetType() & SER_GETHASH)) {
             READWRITE(obj.vchSig);
         }
@@ -105,11 +106,12 @@ public:
         }
         obj.pushKV("pubKeyOperator", pubKeyOperator.ToString());
         obj.pushKV("operatorReward", (double)nOperatorReward / 100);
-        if (nType == MnType::Evo) {
-            obj.pushKV("platformNodeID", platformNodeID.ToString());
-            obj.pushKV("platformP2PPort", platformP2PPort);
-            obj.pushKV("platformHTTPPort", platformHTTPPort);
-        }
+        // Disable EvoNodes
+        // if (nType == MnType::Evo) {
+        //     obj.pushKV("platformNodeID", platformNodeID.ToString());
+        //     obj.pushKV("platformP2PPort", platformP2PPort);
+        //     obj.pushKV("platformHTTPPort", platformHTTPPort);
+        // }
         obj.pushKV("inputsHash", inputsHash.ToString());
         return obj;
     }
@@ -159,12 +161,13 @@ public:
                 obj.scriptOperatorPayout,
                 obj.inputsHash
         );
-        if (obj.nType == MnType::Evo) {
-            READWRITE(
-                obj.platformNodeID,
-                obj.platformP2PPort,
-                obj.platformHTTPPort);
-        }
+        // Disable EvoNodes
+        // if (obj.nType == MnType::Evo) {
+        //     READWRITE(
+        //         obj.platformNodeID,
+        //         obj.platformP2PPort,
+        //         obj.platformHTTPPort);
+        // }
         if (!(s.GetType() & SER_GETHASH)) {
             READWRITE(
                     CBLSSignatureVersionWrapper(const_cast<CBLSSignature&>(obj.sig), (obj.nVersion == LEGACY_BLS_VERSION))
@@ -185,11 +188,12 @@ public:
         if (CTxDestination dest; ExtractDestination(scriptOperatorPayout, dest)) {
             obj.pushKV("operatorPayoutAddress", EncodeDestination(dest));
         }
-        if (nType == MnType::Evo) {
-            obj.pushKV("platformNodeID", platformNodeID.ToString());
-            obj.pushKV("platformP2PPort", platformP2PPort);
-            obj.pushKV("platformHTTPPort", platformHTTPPort);
-        }
+        // Disable EvoNodes
+        // if (nType == MnType::Evo) {
+        //     obj.pushKV("platformNodeID", platformNodeID.ToString());
+        //     obj.pushKV("platformP2PPort", platformP2PPort);
+        //     obj.pushKV("platformHTTPPort", platformHTTPPort);
+        // }
         obj.pushKV("inputsHash", inputsHash.ToString());
         return obj;
     }
