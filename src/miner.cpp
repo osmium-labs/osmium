@@ -245,10 +245,13 @@ std::unique_ptr<CBlockTemplate> BlockAssembler::CreateNewBlock(const CScript& sc
         SetTxPayload(coinbaseTx, cbTx);
     }
 
-    // Update coinbase transaction with additional info about masternode and governance payments,
+    // Update coinbase transaction with additional info about masternode, devfee and governance payments,
     // get some info back to pass to getblocktemplate
     MasternodePayments::FillBlockPayments(spork_manager, governance_manager, coinbaseTx, pindexPrev, blockSubsidy, nFees, pblocktemplate->voutMasternodePayments, pblocktemplate->voutSuperblockPayments);
 
+    DevfeePayment devfeePayment = chainparams.GetConsensus().nDevfeePayment;
+    devfeePayment.FillDevfeePayment(coinbaseTx, nHeight, blockSubsidy, pblock->txoutDevfee);
+    
     pblock->vtx[0] = MakeTransactionRef(std::move(coinbaseTx));
     pblocktemplate->vTxFees[0] = -nFees;
 

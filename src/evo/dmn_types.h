@@ -35,8 +35,7 @@ constexpr auto Regular = mntype_struct{
     .description = "Regular",
 };
 constexpr auto Evo = mntype_struct{
-    .voting_weight = 4,
-    
+    .voting_weight = 1,    
     .collat_amount = MAX_MONEY,
     .description = "Evo",
 };

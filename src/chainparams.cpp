@@ -1,6 +1,8 @@
 // Copyright (c) 2010 Satoshi Nakamoto
 // Copyright (c) 2009-2020 The Bitcoin Core developers
 // Copyright (c) 2014-2024 The Dash Core developers
+// Copyright (c) 2022-2024 The Raptoreum Core developers
+// Copyright (c) 2024 The Osmium Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -8,6 +10,7 @@
 
 #include <chainparamsseeds.h>
 #include <consensus/merkle.h>
+#include <consensus/params.h>
 #include <deploymentinfo.h>
 #include <llmq/params.h>
 #include <util/ranges.h>
@@ -301,6 +304,9 @@ public:
         vSporkAddresses = {"Xgtyuk76vhuFW2iT7UAiHgNdWXCf3J34wh"};
         nMinSporkKeys = 1;
 
+        std::vector<DevfeeRewardStructure> rewardStructures = {  {INT_MAX, 5}  }; // 5% dev fee
+        consensus.nDevfeePayment = DevfeePayment(rewardStructures, 100);
+
         checkpointData = {
             {
                 {1500, uint256S("0x000000aaf0300f59f49bc3e970bad15c11f961fe2347accffff19d96ec9778e3")},
@@ -494,6 +500,9 @@ public:
         vSporkAddresses = {"yjPtiKh2uwk3bDutTEA2q9mCtXyiZRWn55"};
         nMinSporkKeys = 1;
 
+        std::vector<DevfeeRewardStructure> rewardStructures = {  {INT_MAX, 5}  }; // 5% dev fee
+        consensus.nDevfeePayment = DevfeePayment(rewardStructures, 100, "yjPtiKh2uwk3bDutTEA2q9mCtXyiZRWn55");
+
         checkpointData = {
             {
                 {261, uint256S("0x00000c26026d0815a7e2ce4fa270775f61403c040647ff2c3091f99e894a4618")},
@@ -676,6 +685,9 @@ public:
 
         vSporkAddresses = {"yjPtiKh2uwk3bDutTEA2q9mCtXyiZRWn55"};
         nMinSporkKeys = 1;
+
+        std::vector<DevfeeRewardStructure> rewardStructures = {  {INT_MAX, 5}  }; // 5% dev fee
+        consensus.nDevfeePayment = DevfeePayment(rewardStructures, 200, "yjPtiKh2uwk3bDutTEA2q9mCtXyiZRWn55");
 
         checkpointData = (CCheckpointData) {
             {
@@ -881,6 +893,9 @@ public:
         // privKey: cP4EKFyJsHT39LDqgdcB43Y3YXjNyjb5Fuas1GQSeAtjnZWmZEQK
         vSporkAddresses = {"yj949n1UH6fDhw6HtVE5VMj2iSTaSWBMcW"};
         nMinSporkKeys = 1;
+
+        std::vector<DevfeeRewardStructure> rewardStructures = {  {INT_MAX, 5}  }; // 5% dev fee
+        consensus.nDevfeePayment = DevfeePayment(rewardStructures, 200, "yj949n1UH6fDhw6HtVE5VMj2iSTaSWBMcW");
 
         checkpointData = {
             {

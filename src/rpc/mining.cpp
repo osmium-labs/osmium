@@ -1,6 +1,7 @@
 // Copyright (c) 2010 Satoshi Nakamoto
 // Copyright (c) 2009-2020 The Bitcoin Core developers
 // Copyright (c) 2014-2024 The Dash Core developers
+// Copyright (c) 2020-2024 The Raptoreum developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -955,6 +956,18 @@ static UniValue getblocktemplate(const JSONRPCRequest& request)
     result.pushKV("superblocks_started", pindexPrev->nHeight + 1 > consensusParams.nSuperblockStartBlock);
     result.pushKV("superblocks_enabled", AreSuperblocksEnabled(*node.sporkman));
 
+    UniValue devfeeObj(UniValue::VOBJ);
+    DevfeePayment devfeePayment = Params().GetConsensus().nDevfeePayment;
+    if(pblock->txoutDevfee != CTxOut()) {
+        CTxDestination devfee_addr;
+        ExtractDestination(pblock->txoutDevfee.scriptPubKey, devfee_addr);
+        devfeeObj.pushKV("payee", EncodeDestination(devfee_addr).c_str());
+        devfeeObj.pushKV("script", HexStr(pblock->txoutDevfee.scriptPubKey));
+        devfeeObj.pushKV("amount", pblock->txoutDevfee.nValue);
+    }
+    result.pushKV("devfee", devfeeObj);
+    result.pushKV("devfee_payments_started", pindexPrev->nHeight + 1 > devfeePayment.getStartBlock());
+    
     result.pushKV("coinbase_payload", HexStr(pblock->vtx[0]->vExtraPayload));
 
     return result;
