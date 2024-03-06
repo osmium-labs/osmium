@@ -998,6 +998,7 @@ bool CDeterministicMNManager::BuildNewListFromBlock(const CBlock& block, gsl::no
 
     mnListRet = std::move(newList);
 
+    UpdateLLMQParams(mnListRet.GetAllMNsCount(), nHeight);
     return true;
 }
 
@@ -1081,7 +1082,9 @@ CDeterministicMNList CDeterministicMNManager::GetListForBlockInternal(gsl::not_n
             mnListsCache.emplace(snapshot.GetBlockHash(), snapshot);
         } else {
             // keep snapshots for yet alive quorums
-            if (ranges::any_of(Params().GetConsensus().llmqs, [&snapshot, this](const auto& params){
+            // if (ranges::any_of(Params().GetConsensus().llmqs, [&snapshot, this](const auto& params){
+            if (ranges::any_of(Params().GetConsensus().llmqs, [&snapshot, this](const auto& p_llmq){
+                const auto &[_, params] = p_llmq;
                 AssertLockHeld(cs);
                 return (snapshot.GetHeight() % params.dkgInterval == 0) &&
                 (snapshot.GetHeight() + params.dkgInterval * (params.keepOldConnections + 1) >= tipIndex->nHeight);
@@ -1092,6 +1095,9 @@ CDeterministicMNList CDeterministicMNManager::GetListForBlockInternal(gsl::not_n
     }
 
     assert(snapshot.GetHeight() != -1);
+    // is this needed?
+    UpdateLLMQParams(snapshot.GetAllMNsCount(), snapshot.GetHeight());
+    
     return snapshot;
 }
 
@@ -1145,7 +1151,9 @@ void CDeterministicMNManager::CleanupCache(int nHeight)
             // it's a snapshot for the tip, keep it
             continue;
         }
-        bool fQuorumCache = ranges::any_of(Params().GetConsensus().llmqs, [&nHeight, &p](const auto& params){
+        // bool fQuorumCache = ranges::any_of(Params().GetConsensus().llmqs, [&nHeight, &p](const auto& params){
+        bool fQuorumCache = ranges::any_of(Params().GetConsensus().llmqs, [&nHeight, &p](const auto& p_llmq){
+            const auto &[_, params] = p_llmq;
             return (p.second.GetHeight() % params.dkgInterval == 0) &&
                    (p.second.GetHeight() + params.dkgInterval * (params.keepOldConnections + 1) >= nHeight);
         });

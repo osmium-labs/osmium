@@ -22,6 +22,9 @@
 
 #include <assert.h>
 
+static size_t lastCheckMnCount = 0;
+static int lastCheckHeight = 0;
+
 static CBlock CreateGenesisBlock(const char* pszTimestamp, const CScript& genesisOutputScript, uint32_t nTime, uint32_t nNonce, uint32_t nBits, int32_t nVersion, const CAmount& genesisReward)
 {
     CMutableTransaction txNew;
@@ -132,24 +135,26 @@ bool CChainParams::IsValidMNActivation(int nBit, int64_t timePast) const
     return true;
 }
 
-void CChainParams::AddLLMQ(Consensus::LLMQType llmqType)
-{
-    assert(!GetLLMQ(llmqType).has_value());
-    for (const auto& llmq_param : Consensus::available_llmqs) {
-        if (llmq_param.type == llmqType) {
-            consensus.llmqs.push_back(llmq_param);
-            return;
-        }
-    }
-    error("CChainParams::%s: unknown LLMQ type %d", __func__, static_cast<uint8_t>(llmqType));
-    assert(false);
-}
+// void CChainParams::AddLLMQ(Consensus::LLMQType llmqType)
+// {
+    // assert(!GetLLMQ(llmqType).has_value());
+    // for (const auto& llmq_param : Consensus::available_llmqs) {
+    //     if (llmq_param.type == llmqType) {
+    //         consensus.llmqs.push_back(llmq_param);
+    //         return;
+    //     }
+    // }
+    // error("CChainParams::%s: unknown LLMQ type %d", __func__, static_cast<uint8_t>(llmqType));
+    // assert(false);
+// }
 
 std::optional<Consensus::LLMQParams> CChainParams::GetLLMQ(Consensus::LLMQType llmqType) const
 {
     for (const auto& llmq_param : consensus.llmqs) {
-        if (llmq_param.type == llmqType) {
-            return std::make_optional(llmq_param);
+        // if (llmq_param.type == llmqType) {
+        //     return std::make_optional(llmq_param);
+        if (llmq_param.second.type == llmqType) {
+            return std::make_optional(llmq_param.second);
         }
     }
     return std::nullopt;
@@ -278,15 +283,25 @@ public:
         vFixedSeeds = std::vector<uint8_t>(std::begin(chainparams_seed_main), std::end(chainparams_seed_main));
 
         // long living quorum params
-        AddLLMQ(Consensus::LLMQType::LLMQ_50_60);
-        AddLLMQ(Consensus::LLMQType::LLMQ_60_75);
-        AddLLMQ(Consensus::LLMQType::LLMQ_400_60);
-        AddLLMQ(Consensus::LLMQType::LLMQ_400_85);
-        AddLLMQ(Consensus::LLMQType::LLMQ_100_67);
-        consensus.llmqTypeChainLocks = Consensus::LLMQType::LLMQ_400_60;
-        consensus.llmqTypeDIP0024InstantSend = Consensus::LLMQType::LLMQ_60_75;
-        consensus.llmqTypePlatform = Consensus::LLMQType::LLMQ_100_67;
-        consensus.llmqTypeMnhf = Consensus::LLMQType::LLMQ_400_85;
+        // AddLLMQ(Consensus::LLMQType::LLMQ_50_60);
+        // AddLLMQ(Consensus::LLMQType::LLMQ_60_75);
+        // AddLLMQ(Consensus::LLMQType::LLMQ_400_60);
+        // AddLLMQ(Consensus::LLMQType::LLMQ_400_85);
+        // AddLLMQ(Consensus::LLMQType::LLMQ_100_67);
+        // consensus.llmqTypeChainLocks = Consensus::LLMQType::LLMQ_400_60;
+        // consensus.llmqTypeDIP0024InstantSend = Consensus::LLMQType::LLMQ_60_75;
+        // consensus.llmqTypePlatform = Consensus::LLMQType::LLMQ_100_67;
+        // consensus.llmqTypeMnhf = Consensus::LLMQType::LLMQ_400_85;
+        consensus.llmqs[Consensus::LLMQ_50_60] = Consensus::llmq_50_60;
+        consensus.llmqs[Consensus::LLMQ_60_75] = Consensus::llmq_60_75;
+        consensus.llmqs[Consensus::LLMQ_400_60] = Consensus::llmq_20_60;
+        consensus.llmqs[Consensus::LLMQ_400_85] = Consensus::llmq_20_85;
+        consensus.llmqs[Consensus::LLMQ_100_67] = Consensus::llmq_100_67;
+        consensus.llmqTypeChainLocks = Consensus::LLMQ_400_60;
+        // consensus.llmqTypeInstantSend = Consensus::LLMQ_50_60;
+        consensus.llmqTypeDIP0024InstantSend = Consensus::LLMQ_60_75;
+        consensus.llmqTypePlatform = Consensus::LLMQ_100_67;
+        consensus.llmqTypeMnhf = Consensus::LLMQ_400_85;
 
         fDefaultConsistencyChecks = false;
         fRequireStandard = true;
@@ -473,16 +488,26 @@ public:
         nExtCoinType = 1;
 
         // long living quorum params
-        AddLLMQ(Consensus::LLMQType::LLMQ_50_60);
-        AddLLMQ(Consensus::LLMQType::LLMQ_60_75);
-        AddLLMQ(Consensus::LLMQType::LLMQ_400_60);
-        AddLLMQ(Consensus::LLMQType::LLMQ_400_85);
-        AddLLMQ(Consensus::LLMQType::LLMQ_100_67);
-        AddLLMQ(Consensus::LLMQType::LLMQ_25_67);
-        consensus.llmqTypeChainLocks = Consensus::LLMQType::LLMQ_50_60;
-        consensus.llmqTypeDIP0024InstantSend = Consensus::LLMQType::LLMQ_60_75;
-        consensus.llmqTypePlatform = Consensus::LLMQType::LLMQ_25_67;
-        consensus.llmqTypeMnhf = Consensus::LLMQType::LLMQ_50_60;
+        // AddLLMQ(Consensus::LLMQType::LLMQ_50_60);
+        // AddLLMQ(Consensus::LLMQType::LLMQ_60_75);
+        // AddLLMQ(Consensus::LLMQType::LLMQ_400_60);
+        // AddLLMQ(Consensus::LLMQType::LLMQ_400_85);
+        // AddLLMQ(Consensus::LLMQType::LLMQ_100_67);
+        // AddLLMQ(Consensus::LLMQType::LLMQ_25_67);
+        // consensus.llmqTypeChainLocks = Consensus::LLMQType::LLMQ_50_60;
+        // consensus.llmqTypeDIP0024InstantSend = Consensus::LLMQType::LLMQ_60_75;
+        // consensus.llmqTypePlatform = Consensus::LLMQType::LLMQ_25_67;
+        // consensus.llmqTypeMnhf = Consensus::LLMQType::LLMQ_50_60;
+        consensus.llmqs[Consensus::LLMQ_50_60] = Consensus::llmq_50_60;
+        consensus.llmqs[Consensus::LLMQ_60_75] = Consensus::llmq_60_75;
+        consensus.llmqs[Consensus::LLMQ_400_60] = Consensus::llmq_20_60;
+        consensus.llmqs[Consensus::LLMQ_400_85] = Consensus::llmq_20_85;
+        consensus.llmqs[Consensus::LLMQ_100_67] = Consensus::llmq_100_67;
+        consensus.llmqTypeChainLocks = Consensus::LLMQ_400_60;
+        // consensus.llmqTypeInstantSend = Consensus::LLMQ_50_60;
+        consensus.llmqTypeDIP0024InstantSend = Consensus::LLMQ_60_75;
+        consensus.llmqTypePlatform = Consensus::LLMQ_100_67;
+        consensus.llmqTypeMnhf = Consensus::LLMQ_400_85;
 
         fDefaultConsistencyChecks = false;
         fRequireStandard = false;
@@ -650,18 +675,31 @@ public:
         nExtCoinType = 1;
 
         // long living quorum params
-        AddLLMQ(Consensus::LLMQType::LLMQ_50_60);
-        AddLLMQ(Consensus::LLMQType::LLMQ_60_75);
-        AddLLMQ(Consensus::LLMQType::LLMQ_400_60);
-        AddLLMQ(Consensus::LLMQType::LLMQ_400_85);
-        AddLLMQ(Consensus::LLMQType::LLMQ_100_67);
-        AddLLMQ(Consensus::LLMQType::LLMQ_DEVNET);
-        AddLLMQ(Consensus::LLMQType::LLMQ_DEVNET_DIP0024);
-        AddLLMQ(Consensus::LLMQType::LLMQ_DEVNET_PLATFORM);
-        consensus.llmqTypeChainLocks = Consensus::LLMQType::LLMQ_DEVNET;
-        consensus.llmqTypeDIP0024InstantSend = Consensus::LLMQType::LLMQ_DEVNET_DIP0024;
-        consensus.llmqTypePlatform = Consensus::LLMQType::LLMQ_DEVNET_PLATFORM;
-        consensus.llmqTypeMnhf = Consensus::LLMQType::LLMQ_DEVNET;
+        // AddLLMQ(Consensus::LLMQType::LLMQ_50_60);
+        // AddLLMQ(Consensus::LLMQType::LLMQ_60_75);
+        // AddLLMQ(Consensus::LLMQType::LLMQ_400_60);
+        // AddLLMQ(Consensus::LLMQType::LLMQ_400_85);
+        // AddLLMQ(Consensus::LLMQType::LLMQ_100_67);
+        // AddLLMQ(Consensus::LLMQType::LLMQ_DEVNET);
+        // AddLLMQ(Consensus::LLMQType::LLMQ_DEVNET_DIP0024);
+        // AddLLMQ(Consensus::LLMQType::LLMQ_DEVNET_PLATFORM);
+        // consensus.llmqTypeChainLocks = Consensus::LLMQType::LLMQ_DEVNET;
+        // consensus.llmqTypeDIP0024InstantSend = Consensus::LLMQType::LLMQ_DEVNET_DIP0024;
+        // consensus.llmqTypePlatform = Consensus::LLMQType::LLMQ_DEVNET_PLATFORM;
+        // consensus.llmqTypeMnhf = Consensus::LLMQType::LLMQ_DEVNET;
+        consensus.llmqs[Consensus::LLMQ_50_60] = Consensus::llmq_50_60;
+        consensus.llmqs[Consensus::LLMQ_60_75] = Consensus::llmq_60_75;
+        consensus.llmqs[Consensus::LLMQ_400_60] = Consensus::llmq_20_60;
+        consensus.llmqs[Consensus::LLMQ_400_85] = Consensus::llmq_20_85;
+        consensus.llmqs[Consensus::LLMQ_100_67] = Consensus::llmq_100_67;
+        consensus.llmqs[Consensus::LLMQ_DEVNET] = Consensus::llmq_devnet;
+        consensus.llmqs[Consensus::LLMQ_DEVNET_DIP0024] = Consensus::llmq_devnet_dip0024;
+        consensus.llmqs[Consensus::LLMQ_DEVNET_PLATFORM] = Consensus::llmq_devnet_platform;
+        consensus.llmqTypeChainLocks = Consensus::LLMQ_DEVNET;
+        // consensus.llmqTypeInstantSend = Consensus::LLMQ_DEVNET;
+        consensus.llmqTypeDIP0024InstantSend = Consensus::LLMQ_DEVNET_DIP0024;
+        consensus.llmqTypePlatform = Consensus::LLMQ_DEVNET_PLATFORM;
+        consensus.llmqTypeMnhf = Consensus::LLMQ_DEVNET;
 
         UpdateDevnetLLMQChainLocksFromArgs(args);
         UpdateDevnetLLMQInstantSendDIP0024FromArgs(args);
@@ -760,12 +798,13 @@ public:
      */
     void UpdateLLMQDevnetParameters(int size, int threshold)
     {
-        auto params = ranges::find_if(consensus.llmqs, [](const auto& llmq){ return llmq.type == Consensus::LLMQType::LLMQ_DEVNET;});
+        // auto params = ranges::find_if(consensus.llmqs, [](const auto& llmq){ return llmq.type == Consensus::LLMQType::LLMQ_DEVNET;});
+        auto params = consensus.llmqs.find(Consensus::LLMQ_DEVNET);
         assert(params != consensus.llmqs.end());
-        params->size = size;
-        params->minSize = threshold;
-        params->threshold = threshold;
-        params->dkgBadVotesThreshold = threshold;
+        params->second.size = size;
+        params->second.minSize = threshold;
+        params->second.threshold = threshold;
+        params->second.dkgBadVotesThreshold = threshold;
     }
     void UpdateLLMQDevnetParametersFromArgs(const ArgsManager& args);
     void UpdateDevnetLLMQInstantSendFromArgs(const ArgsManager& args);
@@ -935,18 +974,30 @@ public:
         nExtCoinType = 1;
 
         // long living quorum params
-        AddLLMQ(Consensus::LLMQType::LLMQ_TEST);
-        AddLLMQ(Consensus::LLMQType::LLMQ_TEST_INSTANTSEND);
-        AddLLMQ(Consensus::LLMQType::LLMQ_TEST_V17);
-        AddLLMQ(Consensus::LLMQType::LLMQ_TEST_DIP0024);
-        AddLLMQ(Consensus::LLMQType::LLMQ_TEST_PLATFORM);
-        consensus.llmqTypeChainLocks = Consensus::LLMQType::LLMQ_TEST;
-        consensus.llmqTypeDIP0024InstantSend = Consensus::LLMQType::LLMQ_TEST_DIP0024;
-        consensus.llmqTypePlatform = Consensus::LLMQType::LLMQ_TEST_PLATFORM;
-        consensus.llmqTypeMnhf = Consensus::LLMQType::LLMQ_TEST;
+        // AddLLMQ(Consensus::LLMQType::LLMQ_TEST);
+        // AddLLMQ(Consensus::LLMQType::LLMQ_TEST_INSTANTSEND);
+        // AddLLMQ(Consensus::LLMQType::LLMQ_TEST_V17);
+        // AddLLMQ(Consensus::LLMQType::LLMQ_TEST_DIP0024);
+        // AddLLMQ(Consensus::LLMQType::LLMQ_TEST_PLATFORM);
+        // consensus.llmqTypeChainLocks = Consensus::LLMQType::LLMQ_TEST;
+        // consensus.llmqTypeDIP0024InstantSend = Consensus::LLMQType::LLMQ_TEST_DIP0024;
+        // consensus.llmqTypePlatform = Consensus::LLMQType::LLMQ_TEST_PLATFORM;
+        // consensus.llmqTypeMnhf = Consensus::LLMQType::LLMQ_TEST;
+        consensus.llmqs[Consensus::LLMQ_TEST] = Consensus::llmq_test;
+        consensus.llmqs[Consensus::LLMQ_TEST_INSTANTSEND] = Consensus::llmq_test_instantsend;
+        consensus.llmqs[Consensus::LLMQ_TEST_V17] = Consensus::llmq_test_v17;
+        consensus.llmqs[Consensus::LLMQ_TEST_DIP0024] = Consensus::llmq_test_dip0024;
+        consensus.llmqs[Consensus::LLMQ_TEST_PLATFORM] = Consensus::llmq_test_platform;
+        consensus.llmqTypeChainLocks = Consensus::LLMQ_TEST;
+        // consensus.llmqTypeInstantSend = Consensus::LLMQ_TEST_INSTANTSEND;
+        consensus.llmqTypeDIP0024InstantSend = Consensus::LLMQ_TEST_DIP0024;
+        consensus.llmqTypePlatform = Consensus::LLMQ_TEST_PLATFORM;
+        consensus.llmqTypeMnhf = Consensus::LLMQ_TEST;
 
-        UpdateLLMQTestParametersFromArgs(args, Consensus::LLMQType::LLMQ_TEST);
-        UpdateLLMQTestParametersFromArgs(args, Consensus::LLMQType::LLMQ_TEST_INSTANTSEND);
+        // UpdateLLMQTestParametersFromArgs(args, Consensus::LLMQType::LLMQ_TEST);
+        // UpdateLLMQTestParametersFromArgs(args, Consensus::LLMQType::LLMQ_TEST_INSTANTSEND);
+        UpdateLLMQTestParametersFromArgs(args, Consensus::LLMQ_TEST);
+        UpdateLLMQTestParametersFromArgs(args, Consensus::LLMQ_TEST_INSTANTSEND);
         UpdateLLMQInstantSendDIP0024FromArgs(args);
     }
 
@@ -1010,12 +1061,13 @@ public:
      */
     void UpdateLLMQTestParameters(int size, int threshold, const Consensus::LLMQType llmqType)
     {
-        auto params = ranges::find_if(consensus.llmqs, [llmqType](const auto& llmq){ return llmq.type == llmqType;});
+        // auto params = ranges::find_if(consensus.llmqs, [llmqType](const auto& llmq){ return llmq.type == llmqType;});
+        auto params = consensus.llmqs.find(llmqType);
         assert(params != consensus.llmqs.end());
-        params->size = size;
-        params->minSize = threshold;
-        params->threshold = threshold;
-        params->dkgBadVotesThreshold = threshold;
+        params->second.size = size;
+        params->second.minSize = threshold;
+        params->second.threshold = threshold;
+        params->second.dkgBadVotesThreshold = threshold;
     }
 
     /**
@@ -1146,10 +1198,12 @@ void CRegTestParams::UpdateBudgetParametersFromArgs(const ArgsManager& args)
 
 void CRegTestParams::UpdateLLMQTestParametersFromArgs(const ArgsManager& args, const Consensus::LLMQType llmqType)
 {
-    assert(llmqType == Consensus::LLMQType::LLMQ_TEST || llmqType == Consensus::LLMQType::LLMQ_TEST_INSTANTSEND);
+    // assert(llmqType == Consensus::LLMQType::LLMQ_TEST || llmqType == Consensus::LLMQType::LLMQ_TEST_INSTANTSEND);
+    assert(llmqType == Consensus::LLMQ_TEST || llmqType == Consensus::LLMQ_TEST_INSTANTSEND);
 
     std::string cmd_param{"-llmqtestparams"}, llmq_name{"LLMQ_TEST"};
-    if (llmqType == Consensus::LLMQType::LLMQ_TEST_INSTANTSEND) {
+    // if (llmqType == Consensus::LLMQType::LLMQ_TEST_INSTANTSEND) {
+    if (llmqType == Consensus::LLMQ_TEST_INSTANTSEND) {
         cmd_param = "-llmqtestinstantsendparams";
         llmq_name = "LLMQ_TEST_INSTANTSEND";
     }
@@ -1181,13 +1235,17 @@ void CRegTestParams::UpdateLLMQInstantSendDIP0024FromArgs(const ArgsManager& arg
 
     std::string strLLMQType = gArgs.GetArg("-llmqtestinstantsenddip0024", std::string(llmq_params_opt->name));
 
-    Consensus::LLMQType llmqType = Consensus::LLMQType::LLMQ_NONE;
+    // Consensus::LLMQType llmqType = Consensus::LLMQType::LLMQ_NONE;
+    Consensus::LLMQType llmqType = Consensus::LLMQ_NONE;
     for (const auto& params : consensus.llmqs) {
-        if (params.name == strLLMQType) {
-            llmqType = params.type;
+        // if (params.name == strLLMQType) {
+        //     llmqType = params.type;
+        if (params.second.name == strLLMQType) {
+            llmqType = params.second.type;
         }
     }
-    if (llmqType == Consensus::LLMQType::LLMQ_NONE) {
+    // if (llmqType == Consensus::LLMQType::LLMQ_NONE) {
+    if (llmqType == Consensus::LLMQ_NONE) {
         throw std::runtime_error("Invalid LLMQ type specified for -llmqtestinstantsenddip0024.");
     }
     LogPrintf("Setting llmqtestinstantsenddip0024 to %ld\n", ToUnderlying(llmqType));
@@ -1214,16 +1272,21 @@ void CDevNetParams::UpdateDevnetLLMQChainLocksFromArgs(const ArgsManager& args)
 
     std::string strLLMQType = gArgs.GetArg("-llmqchainlocks", std::string(llmq_params_opt->name));
 
-    Consensus::LLMQType llmqType = Consensus::LLMQType::LLMQ_NONE;
+    // Consensus::LLMQType llmqType = Consensus::LLMQType::LLMQ_NONE;
+    Consensus::LLMQType llmqType = Consensus::LLMQ_NONE;
     for (const auto& params : consensus.llmqs) {
-        if (params.name == strLLMQType) {
-            if (params.useRotation) {
+        // if (params.name == strLLMQType) {
+        //     if (params.useRotation) {
+        if (params.second.name == strLLMQType) {
+            if (params.second.useRotation) {
                 throw std::runtime_error("LLMQ type specified for -llmqchainlocks must NOT use rotation");
             }
-            llmqType = params.type;
+            // llmqType = params.type;
+            llmqType = params.second.type;
         }
     }
-    if (llmqType == Consensus::LLMQType::LLMQ_NONE) {
+    // if (llmqType == Consensus::LLMQType::LLMQ_NONE) {
+    if (llmqType == Consensus::LLMQ_NONE) {
         throw std::runtime_error("Invalid LLMQ type specified for -llmqchainlocks.");
     }
     LogPrintf("Setting llmqchainlocks to size=%ld\n", static_cast<uint8_t>(llmqType));
@@ -1239,16 +1302,21 @@ void CDevNetParams::UpdateDevnetLLMQInstantSendDIP0024FromArgs(const ArgsManager
 
     std::string strLLMQType = gArgs.GetArg("-llmqinstantsenddip0024", std::string(llmq_params_opt->name));
 
-    Consensus::LLMQType llmqType = Consensus::LLMQType::LLMQ_NONE;
+    // Consensus::LLMQType llmqType = Consensus::LLMQType::LLMQ_NONE;
+    Consensus::LLMQType llmqType = Consensus::LLMQ_NONE;
     for (const auto& params : consensus.llmqs) {
-        if (params.name == strLLMQType) {
-            if (!params.useRotation) {
+        // if (params.name == strLLMQType) {
+        //     if (!params.useRotation) {
+        if (params.second.name == strLLMQType) {
+            if (!params.second.useRotation) {
                 throw std::runtime_error("LLMQ type specified for -llmqinstantsenddip0024 must use rotation");
             }
-            llmqType = params.type;
+            // llmqType = params.type;
+            llmqType = params.second.type;
         }
     }
-    if (llmqType == Consensus::LLMQType::LLMQ_NONE) {
+    // if (llmqType == Consensus::LLMQType::LLMQ_NONE) {
+    if (llmqType == Consensus::LLMQ_NONE) {
         throw std::runtime_error("Invalid LLMQ type specified for -llmqinstantsenddip0024.");
     }
     LogPrintf("Setting llmqinstantsenddip0024 to size=%ld\n", static_cast<uint8_t>(llmqType));
@@ -1264,13 +1332,17 @@ void CDevNetParams::UpdateDevnetLLMQPlatformFromArgs(const ArgsManager& args)
 
     std::string strLLMQType = gArgs.GetArg("-llmqplatform", std::string(llmq_params_opt->name));
 
-    Consensus::LLMQType llmqType = Consensus::LLMQType::LLMQ_NONE;
+    // Consensus::LLMQType llmqType = Consensus::LLMQType::LLMQ_NONE;
+    Consensus::LLMQType llmqType = Consensus::LLMQ_NONE;
     for (const auto& params : consensus.llmqs) {
-        if (params.name == strLLMQType) {
-            llmqType = params.type;
+        // if (params.name == strLLMQType) {
+        //     llmqType = params.type;
+        if (params.second.name == strLLMQType) {
+            llmqType = params.second.type;
         }
     }
-    if (llmqType == Consensus::LLMQType::LLMQ_NONE) {
+    // if (llmqType == Consensus::LLMQType::LLMQ_NONE) {
+    if (llmqType == Consensus::LLMQ_NONE) {
         throw std::runtime_error("Invalid LLMQ type specified for -llmqplatform.");
     }
     LogPrintf("Setting llmqplatform to size=%ld\n", static_cast<uint8_t>(llmqType));
@@ -1286,13 +1358,17 @@ void CDevNetParams::UpdateDevnetLLMQMnhfFromArgs(const ArgsManager& args)
 
     std::string strLLMQType = gArgs.GetArg("-llmqmnhf", std::string(llmq_params_opt->name));
 
-    Consensus::LLMQType llmqType = Consensus::LLMQType::LLMQ_NONE;
+    // Consensus::LLMQType llmqType = Consensus::LLMQType::LLMQ_NONE;
+    Consensus::LLMQType llmqType = Consensus::LLMQ_NONE;
     for (const auto& params : consensus.llmqs) {
-        if (params.name == strLLMQType) {
-            llmqType = params.type;
+        // if (params.name == strLLMQType) {
+            // llmqType = params.type;
+        if (params.second.name == strLLMQType) {
+            llmqType = params.second.type;
         }
     }
-    if (llmqType == Consensus::LLMQType::LLMQ_NONE) {
+    // if (llmqType == Consensus::LLMQType::LLMQ_NONE) {
+    if (llmqType == Consensus::LLMQ_NONE) {
         throw std::runtime_error("Invalid LLMQ type specified for -llmqmnhf.");
     }
     LogPrintf("Setting llmqmnhf to size=%ld\n", static_cast<uint8_t>(llmqType));
@@ -1338,14 +1414,16 @@ void CDevNetParams::UpdateLLMQDevnetParametersFromArgs(const ArgsManager& args)
     UpdateLLMQDevnetParameters(size, threshold);
 }
 
-static std::unique_ptr<const CChainParams> globalChainParams;
+// static std::unique_ptr<const CChainParams> globalChainParams;
+static std::unique_ptr<CChainParams> globalChainParams;
 
 const CChainParams &Params() {
     assert(globalChainParams);
     return *globalChainParams;
 }
 
-std::unique_ptr<const CChainParams> CreateChainParams(const ArgsManager& args, const std::string& chain)
+// std::unique_ptr<const CChainParams> CreateChainParams(const ArgsManager& args, const std::string& chain)
+std::unique_ptr<CChainParams> CreateChainParams(const ArgsManager& args, const std::string& chain)
 {
     if (chain == CBaseChainParams::MAIN) {
         return std::unique_ptr<CChainParams>(new CMainParams());
@@ -1363,4 +1441,54 @@ void SelectParams(const std::string& network)
 {
     SelectBaseParams(network);
     globalChainParams = CreateChainParams(gArgs, network);
+}
+
+void UpdateLLMQParams(size_t totalMnCount, int height) {
+    globalChainParams->UpdateLLMQParams(totalMnCount, height);
+}
+
+bool IsMiningPhase(const Consensus::LLMQParams &params, int nHeight) {
+    int phaseIndex = nHeight % params.dkgInterval;
+    if (phaseIndex >= params.dkgMiningWindowStart && phaseIndex <= params.dkgMiningWindowEnd) {
+        return true;
+    }
+    return false;
+}
+
+bool IsLLMQsMiningPhase(int nHeight) {
+    for (auto &it: globalChainParams->GetConsensus().llmqs) {
+        if (IsMiningPhase(it.second, nHeight)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+void CChainParams::UpdateLLMQParams(size_t totalMnCount, int height) {
+    if (Params().NetworkIDString() == CBaseChainParams::DEVNET || Params().NetworkIDString() == CBaseChainParams::REGTEST)
+        return;
+
+    bool isNotLLMQsMiningPhase;
+    if ((lastCheckHeight < height && (lastCheckMnCount != totalMnCount) &&
+        (isNotLLMQsMiningPhase = !IsLLMQsMiningPhase(height))) || lastCheckHeight == 0) {
+        LogPrintf("---UpdateLLMQParams %d-%d-%ld-%ld-%d\n", lastCheckHeight, height, lastCheckMnCount, totalMnCount,
+                  isNotLLMQsMiningPhase);
+        lastCheckMnCount = totalMnCount;
+        lastCheckHeight = height;
+        bool isTestNet = strcmp(Params().NetworkIDString().c_str(), "test") == 0;
+        if ((totalMnCount < 80 && isTestNet) || (totalMnCount < 100 && !isTestNet)) {
+            consensus.llmqs[Consensus::LLMQ_50_60] = Consensus::llmq_10_60;
+            consensus.llmqs[Consensus::LLMQ_400_60] = Consensus::llmq_20_60;
+            consensus.llmqs[Consensus::LLMQ_400_85] = Consensus::llmq_20_85;
+        } else if (totalMnCount < 600) {
+            consensus.llmqs[Consensus::LLMQ_50_60] = Consensus::llmq_50_60;
+            consensus.llmqs[Consensus::LLMQ_400_60] = Consensus::llmq_40_60;
+            consensus.llmqs[Consensus::LLMQ_400_85] = Consensus::llmq_40_85;
+        } else {
+            consensus.llmqs[Consensus::LLMQ_50_60] = Consensus::llmq_50_60;
+            consensus.llmqs[Consensus::LLMQ_400_60] = Consensus::llmq_400_60;
+            consensus.llmqs[Consensus::LLMQ_400_85] = Consensus::llmq_400_85;
+        }
+    }
+
 }
