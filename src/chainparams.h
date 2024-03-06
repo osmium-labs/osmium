@@ -19,9 +19,6 @@
 #include <string>
 #include <vector>
 
-static size_t lastCheckMnCount = 0;
-static int lastCheckHeight = 0;
-
 typedef std::map<int, uint256> MapCheckpoints;
 
 struct CCheckpointData {

@@ -174,9 +174,7 @@ std::vector<Consensus::LLMQType> GetEnabledQuorumTypes(gsl::not_null<const CBloc
     std::vector<Consensus::LLMQType> ret;
     ret.reserve(Params().GetConsensus().llmqs.size());
     for (const auto& params : Params().GetConsensus().llmqs) {
-        // if (IsQuorumTypeEnabled(params.type, pindex)) {
-        //     ret.push_back(params.type);
-        if (IsQuorumTypeEnabled(params.second.type, *llmq::quorumManager, pindex)) {
+        if (IsQuorumTypeEnabled(params.second.type, pindex)) {
             ret.push_back(params.second.type);
         }
     }
@@ -191,7 +189,7 @@ std::vector<std::reference_wrapper<const Consensus::LLMQParams>> GetEnabledQuoru
     // std::copy_if(Params().GetConsensus().llmqs.begin(), Params().GetConsensus().llmqs.end(), std::back_inserter(ret),
     //              [&pindex](const auto& params){return IsQuorumTypeEnabled(params.type, pindex);});
     for (const auto &[type, params]: Params().GetConsensus().llmqs) {
-        if (IsQuorumTypeEnabled(type, *llmq::quorumManager, pindex)) {
+        if (IsQuorumTypeEnabled(type, pindex)) {
             ret.emplace_back(params);
         }
     }
