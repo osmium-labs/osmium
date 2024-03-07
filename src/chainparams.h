@@ -190,7 +190,6 @@ protected:
     uint16_t nDefaultPlatformP2PPort;
     uint16_t nDefaultPlatformHTTPPort;
 
-    // void AddLLMQ(Consensus::LLMQType llmqType);
 };
 
 /**
@@ -198,7 +197,6 @@ protected:
  * @returns a CChainParams* of the chosen chain.
  * @throws a std::runtime_error if the chain is not supported.
  */
-// std::unique_ptr<const CChainParams> CreateChainParams(const ArgsManager& args, const std::string& chain);
 std::unique_ptr<CChainParams> CreateChainParams(const ArgsManager& args, const std::string& chain);
 
 /**

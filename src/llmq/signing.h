@@ -41,7 +41,6 @@ static constexpr int64_t DEFAULT_MAX_RECOVERED_SIGS_AGE{60 * 60 * 24 * 7};
 class CSigBase
 {
 protected:
-    // Consensus::LLMQType llmqType{Consensus::LLMQType::LLMQ_NONE};
     Consensus::LLMQType llmqType{Consensus::LLMQ_NONE};
     uint256 quorumHash;
     uint256 id;

@@ -85,7 +85,6 @@ public:
 class CDKGComplaint
 {
 public:
-    // Consensus::LLMQType llmqType{Consensus::LLMQType::LLMQ_NONE};
     Consensus::LLMQType llmqType{Consensus::LLMQ_NONE};
     uint256 quorumHash;
     uint256 proTxHash;
@@ -156,7 +155,6 @@ public:
 class CDKGPrematureCommitment
 {
 public:
-    // Consensus::LLMQType llmqType{Consensus::LLMQType::LLMQ_NONE};
     Consensus::LLMQType llmqType{Consensus::LLMQ_NONE};
     uint256 quorumHash;
     uint256 proTxHash;
