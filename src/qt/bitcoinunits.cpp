@@ -49,10 +49,10 @@ QString BitcoinUnits::name(int unit)
     {
         switch(unit)
         {
-            case OSMIUM: return QString("OSMIUM");
-            case mOSMIUM: return QString("mOSMIUM");
-            case uOSMIUM: return QString::fromUtf8("μOSMIUM");
-            case duffs: return QString("duffs");
+            case OSMIUM: return QString("OSMI");
+            case mOSMIUM: return QString("mOSMI");
+            case uOSMIUM: return QString::fromUtf8("μOSMI");
+            case duffs: return QString("muffs");
             default: return QString("???");
         }
     }
@@ -60,10 +60,10 @@ QString BitcoinUnits::name(int unit)
     {
         switch(unit)
         {
-            case OSMIUM: return QString("tOSMIUM");
-            case mOSMIUM: return QString("mtOSMIUM");
-            case uOSMIUM: return QString::fromUtf8("μtOSMIUM");
-            case duffs: return QString("tduffs");
+            case OSMIUM: return QString("tOSMI");
+            case mOSMIUM: return QString("mtOSMI");
+            case uOSMIUM: return QString::fromUtf8("μtOSMI");
+            case duffs: return QString("tmuffs");
             default: return QString("???");
         }
     }

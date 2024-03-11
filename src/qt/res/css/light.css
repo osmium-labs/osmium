@@ -647,26 +647,32 @@ QToolBar / QToolButton
 ******************************************************/
 
 QToolBar {
-    background-color: #008de4;
+    background-color: #ffffff;
 }
 
 QToolBar > QToolButton {
-    background-color: #00000000;
-    color: #f2f2f4;
+    background-color: #ffffff;
+    color: #1E1E1E;
 }
 
 QToolBar > QToolButton:hover:!checked {
-    background-color: #0f75b5;
-    color: #dcdcdc;
+    background-color: #ffffff;
+    color: #AB84BB;
 }
 
 QToolBar > QToolButton:checked {
-    background-color: #f2f2f4;
-    color: #555;
+    background-color: #ffffff;
+    color: #AB84BB;
 }
 
 QToolBar > QToolButton:disabled {
     color: #a7a7a7;
+}
+
+QToolBar QLabel#lblToolbarLogo {
+  padding: 12px;
+  image: url(':/images/osmium_logo_toolbar_light');
+  height: 2.5em;
 }
 
 /******************************************************
