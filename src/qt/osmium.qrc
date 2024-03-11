@@ -91,6 +91,8 @@
         <file alias="checkbox_partly_checked_hover_light">res/images/checkbox_partly_checked_hover_light.png</file>
         <file alias="checkbox_partly_checked_disabled_light">res/images/checkbox_partly_checked_disabled_dark.png</file>
         <file alias="osmium_logo_toolbar">res/images/osmium_logo_toolbar.png</file>
+        <file alias="osmium_logo_toolbar_dark">res/images/osmium_logo_toolbar_dark.png</file>
+        <file alias="osmium_logo_toolbar_light">res/images/osmium_logo_toolbar_light.png</file>
         <file alias="osmium_logo_toolbar_blue">res/images/osmium_logo_toolbar_blue.png</file>
         <file alias="radio_normal_dark">res/images/radio_normal_dark.png</file>
         <file alias="radio_normal_hover_dark">res/images/radio_normal_hover_dark.png</file>
