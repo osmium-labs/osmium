@@ -20,7 +20,7 @@ using namespace std;
 static const string DEFAULT_DEVFEE_ADDRESS = "Xgtyuk76vhuFW2iT7UAiHgNdWXCf3J34wh";
 struct DevfeeRewardStructure {
 	  int blockHeight;
-	  int rewardPercentage;
+	  int rewardDivisor;
 };
 
 class DevfeePayment {

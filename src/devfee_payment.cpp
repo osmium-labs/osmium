@@ -23,7 +23,7 @@ CAmount DevfeePayment::getDevfeePaymentAmount(int blockHeight, CAmount blockSubs
 	  for(int i = 0; i < rewardStructures.size(); i++) {
 		    DevfeeRewardStructure rewardStructure = rewardStructures[i];
 		    if(rewardStructure.blockHeight == INT_MAX || blockHeight <= rewardStructure.blockHeight) {
-			      return blockSubsidy * rewardStructure.rewardPercentage / 100;
+			      return blockSubsidy / rewardStructure.rewardDivisor;
 		    }
 	  }
 	  return 0;
