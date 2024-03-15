@@ -11,16 +11,16 @@
 
 #include <string>
 
-const std::string CURRENCY_UNIT = "OSMIUM"; // One formatted unit
-const std::string CURRENCY_ATOM = "duff"; // One indivisible minimum value unit
+const std::string CURRENCY_UNIT = "OSMI"; // One formatted unit
+const std::string CURRENCY_ATOM = "muff"; // One indivisible minimum value unit
 
 /* Used to determine type of fee estimation requested */
 enum class FeeEstimateMode {
     UNSET,        //!< Use default settings based on other criteria
     ECONOMICAL,   //!< Force estimateSmartFee to use non-conservative estimates
     CONSERVATIVE, //!< Force estimateSmartFee to use conservative estimates
-    OSMIUM_KB,      //!< Use explicit OSMIUM/kB fee given in coin control
-    DUFF_B,       //!< Use explicit duff/B fee given in coin control
+    OSMIUM_KB,      //!< Use explicit OSMI/kB fee given in coin control
+    MUFF_B,       //!< Use explicit muff/B fee given in coin control
 };
 
 /**

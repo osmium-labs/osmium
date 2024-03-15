@@ -692,7 +692,7 @@ static UniValue getaddressmempool(const JSONRPCRequest& request)
                     {RPCResult::Type::STR, "address", "The base58check encoded address"},
                     {RPCResult::Type::STR_HEX, "txid", "The related txid"},
                     {RPCResult::Type::NUM, "index", "The related input or output index"},
-                    {RPCResult::Type::NUM, "satoshis", "The difference of duffs"},
+                    {RPCResult::Type::NUM, "satoshis", "The difference of muffs"},
                     {RPCResult::Type::NUM_TIME, "timestamp", "The time the transaction entered the mempool (seconds)"},
                     {RPCResult::Type::STR_HEX, "prevtxid", "The previous txid (if spending)"},
                     {RPCResult::Type::NUM, "prevout", "The previous transaction output index (if spending)"},
@@ -763,7 +763,7 @@ static UniValue getaddressutxos(const JSONRPCRequest& request)
                     {RPCResult::Type::STR_HEX, "txid", "The output txid"},
                     {RPCResult::Type::NUM, "index", "The output index"},
                     {RPCResult::Type::STR_HEX, "script", "The script hex-encoded"},
-                    {RPCResult::Type::NUM, "satoshis", "The number of duffs of the output"},
+                    {RPCResult::Type::NUM, "satoshis", "The number of muffs of the output"},
                     {RPCResult::Type::NUM, "height", "The block height"},
                 }},
             }},
@@ -826,7 +826,7 @@ static UniValue getaddressdeltas(const JSONRPCRequest& request)
             {
                 {RPCResult::Type::OBJ, "", "",
                 {
-                    {RPCResult::Type::NUM, "satoshis", "The difference of duffs"},
+                    {RPCResult::Type::NUM, "satoshis", "The difference of muffs"},
                     {RPCResult::Type::STR_HEX, "txid", "The related txid"},
                     {RPCResult::Type::NUM, "index", "The related input or output index"},
                     {RPCResult::Type::NUM, "blockindex", "The related block index"},
@@ -910,10 +910,10 @@ static UniValue getaddressbalance(const JSONRPCRequest& request)
         RPCResult{
             RPCResult::Type::OBJ, "", "",
                 {
-                    {RPCResult::Type::NUM, "balance", "The current total balance in duffs"},
-                    {RPCResult::Type::NUM, "balance_immature", "The current immature balance in duffs"},
-                    {RPCResult::Type::NUM, "balance_spendable", "The current spendable balance in duffs"},
-                    {RPCResult::Type::NUM, "received", "The total number of duffs received (including change)"},
+                    {RPCResult::Type::NUM, "balance", "The current total balance in muffs"},
+                    {RPCResult::Type::NUM, "balance_immature", "The current immature balance in muffs"},
+                    {RPCResult::Type::NUM, "balance_spendable", "The current spendable balance in muffs"},
+                    {RPCResult::Type::NUM, "received", "The total number of muffs received (including change)"},
                 }},
         RPCExamples{
             HelpExampleCli("getaddressbalance", "'{\"addresses\": [\"" + EXAMPLE_ADDRESS[0] + "\"]}'")

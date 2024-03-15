@@ -985,8 +985,8 @@
         <translation>Questa etichetta diventerà rossa se uno qualsiasi dei destinatari riceverà un importo inferiore alla corrente soglia minima per la movimentazione della valuta.</translation>
     </message>
     <message>
-        <source>Can vary +/- %1 duff(s) per input.</source>
-        <translation>Può variare di +/- %1 duff per input.</translation>
+        <source>Can vary +/- %1 muff(s) per input.</source>
+        <translation>Può variare di +/- %1 muff per input.</translation>
     </message>
     <message>
         <source>Some coins were unselected because they were spent.</source>
@@ -3263,8 +3263,8 @@ https://www.transifex.com/projects/p/osmium/</translation>
         <translation>Obiettivo del tempo di conferma:</translation>
     </message>
     <message>
-        <source>If the custom fee is set to 1000 duffs and the transaction is only 250 bytes, then "per kilobyte" only pays 250 duffs in fee,&lt;br /&gt;while "at least" pays 1000 duffs. For transactions bigger than a kilobyte both pay by kilobyte.</source>
-        <translation>Se la tariffa personalizzata è impostata su 1000 duff e la transazione è di soli 250 byte, paga solo 250 duff "per kilobyte" di Fee, &lt;br /&gt;mentre paga "almeno"  1000 duff. Per le transazioni più grandi di un kilobyte pagate entrambi per kilobyte.</translation>
+        <source>If the custom fee is set to 1000 muffs and the transaction is only 250 bytes, then "per kilobyte" only pays 250 muffs in fee,&lt;br /&gt;while "at least" pays 1000 muffs. For transactions bigger than a kilobyte both pay by kilobyte.</source>
+        <translation>Se la tariffa personalizzata è impostata su 1000 muff e la transazione è di soli 250 byte, paga solo 250 muff "per kilobyte" di Fee, &lt;br /&gt;mentre paga "almeno"  1000 muff. Per le transazioni più grandi di un kilobyte pagate entrambi per kilobyte.</translation>
     </message>
     <message>
         <source>per kilobyte</source>

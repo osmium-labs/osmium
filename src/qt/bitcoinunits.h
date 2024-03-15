@@ -44,7 +44,7 @@ public:
         OSMIUM,
         mOSMIUM,
         uOSMIUM,
-        duffs
+        muffs
     };
 
     enum class SeparatorStyle

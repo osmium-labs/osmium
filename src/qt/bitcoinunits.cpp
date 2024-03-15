@@ -25,7 +25,7 @@ QList<BitcoinUnits::Unit> BitcoinUnits::availableUnits()
     unitlist.append(OSMIUM);
     unitlist.append(mOSMIUM);
     unitlist.append(uOSMIUM);
-    unitlist.append(duffs);
+    unitlist.append(muffs);
     return unitlist;
 }
 
@@ -36,7 +36,7 @@ bool BitcoinUnits::valid(int unit)
     case OSMIUM:
     case mOSMIUM:
     case uOSMIUM:
-    case duffs:
+    case muffs:
         return true;
     default:
         return false;
@@ -52,7 +52,7 @@ QString BitcoinUnits::name(int unit)
             case OSMIUM: return QString("OSMI");
             case mOSMIUM: return QString("mOSMI");
             case uOSMIUM: return QString::fromUtf8("μOSMI");
-            case duffs: return QString("muffs");
+            case muffs: return QString("muffs");
             default: return QString("???");
         }
     }
@@ -63,7 +63,7 @@ QString BitcoinUnits::name(int unit)
             case OSMIUM: return QString("tOSMI");
             case mOSMIUM: return QString("mtOSMI");
             case uOSMIUM: return QString::fromUtf8("μtOSMI");
-            case duffs: return QString("tmuffs");
+            case muffs: return QString("tmuffs");
             default: return QString("???");
         }
     }
@@ -78,7 +78,7 @@ QString BitcoinUnits::description(int unit)
             case OSMIUM: return QString("Osmium");
             case mOSMIUM: return QString("Milli-Osmium (1 / 1" THIN_SP_UTF8 "000)");
             case uOSMIUM: return QString("Micro-Osmium (1 / 1" THIN_SP_UTF8 "000" THIN_SP_UTF8 "000)");
-            case duffs: return QString("Ten Nano-Osmium (1 / 100" THIN_SP_UTF8 "000" THIN_SP_UTF8 "000)");
+            case muffs: return QString("Ten Nano-Osmium (1 / 100" THIN_SP_UTF8 "000" THIN_SP_UTF8 "000)");
             default: return QString("???");
         }
     }
@@ -89,7 +89,7 @@ QString BitcoinUnits::description(int unit)
             case OSMIUM: return QString("TestOsmiums");
             case mOSMIUM: return QString("Milli-TestOsmium (1 / 1" THIN_SP_UTF8 "000)");
             case uOSMIUM: return QString("Micro-TestOsmium (1 / 1" THIN_SP_UTF8 "000" THIN_SP_UTF8 "000)");
-            case duffs: return QString("Ten Nano-TestOsmium (1 / 100" THIN_SP_UTF8 "000" THIN_SP_UTF8 "000)");
+            case muffs: return QString("Ten Nano-TestOsmium (1 / 100" THIN_SP_UTF8 "000" THIN_SP_UTF8 "000)");
             default: return QString("???");
         }
     }
@@ -102,7 +102,7 @@ qint64 BitcoinUnits::factor(int unit)
     case OSMIUM:  return 100000000;
     case mOSMIUM: return 100000;
     case uOSMIUM: return 100;
-    case duffs: return 1;
+    case muffs: return 1;
     default:   return 100000000;
     }
 }
@@ -114,7 +114,7 @@ int BitcoinUnits::decimals(int unit)
     case OSMIUM: return 8;
     case mOSMIUM: return 5;
     case uOSMIUM: return 2;
-    case duffs: return 0;
+    case muffs: return 0;
     default: return 0;
     }
 }

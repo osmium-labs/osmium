@@ -931,8 +931,8 @@
         <translation>Cette étiquette devient rouge si l'un des destinataires reçoit un montant inférieur au niveau de "poussière".</translation>
     </message>
     <message>
-        <source>Can vary +/- %1 duff(s) per input.</source>
-        <translation>Peut varier de ± %1 duff(s) par entrée.</translation>
+        <source>Can vary +/- %1 muff(s) per input.</source>
+        <translation>Peut varier de ± %1 muff(s) par entrée.</translation>
     </message>
     <message>
         <source>Some coins were unselected because they were spent.</source>
@@ -2871,8 +2871,8 @@ https://www.transifex.com/projects/p/osmium/</translation>
         <translation>Estimation du délai de confirmation :</translation>
     </message>
     <message>
-        <source>If the custom fee is set to 1000 duffs and the transaction is only 250 bytes, then "per kilobyte" only pays 250 duffs in fee,&lt;br /&gt;while "at least" pays 1000 duffs. For transactions bigger than a kilobyte both pay by kilobyte.</source>
-        <translation>Si les frais personnalisés sont à 1000 duffs et que la transaction fait seulement 250 octets, alors "par kilooctet" coûtera seulement 250 duffs de frais,&lt;br /&gt;alors que "au moins" coûtera 1000 duffs. Pour les transactions de plus d'un kilooctet, les deux coûts seront calculés au kilooctet.</translation>
+        <source>If the custom fee is set to 1000 muffs and the transaction is only 250 bytes, then "per kilobyte" only pays 250 muffs in fee,&lt;br /&gt;while "at least" pays 1000 muffs. For transactions bigger than a kilobyte both pay by kilobyte.</source>
+        <translation>Si les frais personnalisés sont à 1000 muffs et que la transaction fait seulement 250 octets, alors "par kilooctet" coûtera seulement 250 muffs de frais,&lt;br /&gt;alors que "au moins" coûtera 1000 muffs. Pour les transactions de plus d'un kilooctet, les deux coûts seront calculés au kilooctet.</translation>
     </message>
     <message>
         <source>per kilobyte</source>

@@ -931,8 +931,8 @@
         <translation>Deze label wordt rood als een ontvanger een hoeveelheid kleiner dan de huidige dust-drempel krijgt.</translation>
     </message>
     <message>
-        <source>Can vary +/- %1 duff(s) per input.</source>
-        <translation>Kan +/- %1 duff(s) per invoer variëren.</translation>
+        <source>Can vary +/- %1 muff(s) per input.</source>
+        <translation>Kan +/- %1 muff(s) per invoer variëren.</translation>
     </message>
     <message>
         <source>Some coins were unselected because they were spent.</source>
@@ -2873,8 +2873,8 @@ Nota: Het bericht zal niet verzonden worden met de betaling over het Osmium netw
         <translation>Bevestigingstijddoel:</translation>
     </message>
     <message>
-        <source>If the custom fee is set to 1000 duffs and the transaction is only 250 bytes, then "per kilobyte" only pays 250 duffs in fee,&lt;br /&gt;while "at least" pays 1000 duffs. For transactions bigger than a kilobyte both pay by kilobyte.</source>
-        <translation>Als de aangepaste vergoeding is ingesteld op 1000 duffs en de transactie is maar 250 bytes, dan wordt bij "per kilobyte" 250 duffs aan toeslag berekend, &lt;br /&gt;terwijl er bij "tenminste" 1000 duffs worden berekend. Voor transacties die groter zijn dan een kilobyte, wordt in beide gevallen per kilobyte de toeslag berekend.</translation>
+        <source>If the custom fee is set to 1000 muffs and the transaction is only 250 bytes, then "per kilobyte" only pays 250 muffs in fee,&lt;br /&gt;while "at least" pays 1000 muffs. For transactions bigger than a kilobyte both pay by kilobyte.</source>
+        <translation>Als de aangepaste vergoeding is ingesteld op 1000 muffs en de transactie is maar 250 bytes, dan wordt bij "per kilobyte" 250 muffs aan toeslag berekend, &lt;br /&gt;terwijl er bij "tenminste" 1000 muffs worden berekend. Voor transacties die groter zijn dan een kilobyte, wordt in beide gevallen per kilobyte de toeslag berekend.</translation>
     </message>
     <message>
         <source>per kilobyte</source>

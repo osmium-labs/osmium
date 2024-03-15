@@ -930,8 +930,8 @@
         <translation>受取額が現在のダスト閾値を下回る場合にはこのラベルは赤くなります。</translation>
     </message>
     <message>
-        <source>Can vary +/- %1 duff(s) per input.</source>
-        <translation>インプットごとに +/- %1 duff(s) が変更可能 </translation>
+        <source>Can vary +/- %1 muff(s) per input.</source>
+        <translation>インプットごとに +/- %1 muff(s) が変更可能 </translation>
     </message>
     <message>
         <source>Some coins were unselected because they were spent.</source>
@@ -2871,8 +2871,8 @@ https://www.transifex.com/projects/p/osmium/</translation>
         <translation>検証時間ターゲット:</translation>
     </message>
     <message>
-        <source>If the custom fee is set to 1000 duffs and the transaction is only 250 bytes, then "per kilobyte" only pays 250 duffs in fee,&lt;br /&gt;while "at least" pays 1000 duffs. For transactions bigger than a kilobyte both pay by kilobyte.</source>
-        <translation>カスタマイズされた手数料が1000duffsに設定され、トランザクションが250 bytesしかなかった場合、キロバイトあたりでは250 duffsしか手数料を支払いませんが&lt;br /&gt;最低でも1000 duffs支払います。1キロバイト以上のトランザクションに対しては、1キロバイトあたり1000duffs支払います。</translation>
+        <source>If the custom fee is set to 1000 muffs and the transaction is only 250 bytes, then "per kilobyte" only pays 250 muffs in fee,&lt;br /&gt;while "at least" pays 1000 muffs. For transactions bigger than a kilobyte both pay by kilobyte.</source>
+        <translation>カスタマイズされた手数料が1000muffsに設定され、トランザクションが250 bytesしかなかった場合、キロバイトあたりでは250 muffsしか手数料を支払いませんが&lt;br /&gt;最低でも1000 muffs支払います。1キロバイト以上のトランザクションに対しては、1キロバイトあたり1000muffs支払います。</translation>
     </message>
     <message>
         <source>per kilobyte</source>

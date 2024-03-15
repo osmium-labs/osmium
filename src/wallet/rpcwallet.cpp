@@ -51,7 +51,7 @@ using interfaces::FoundBlock;
 
 static const std::string WALLET_ENDPOINT_BASE = "/wallet/";
 
-static const uint32_t WALLET_OSMIUM_KB_TO_DUFF_B = COIN / 1000; // 1 duff / B = 0.00001 OSMIUM / kB
+static const uint32_t WALLET_OSMIUM_KB_TO_MUFF_B = COIN / 1000; // 1 muff / B = 0.00001 OSMIUM / kB
 
 static inline bool GetAvoidReuseFlag(const CWallet* const pwallet, const UniValue& param) {
     bool can_avoid_reuse = pwallet->IsWalletFlagSet(WALLET_FLAG_AVOID_REUSE);
@@ -218,14 +218,14 @@ static void SetFeeEstimateMode(const CWallet* pwallet, CCoinControl& cc, const U
         }
     }
 
-    if (cc.m_fee_mode == FeeEstimateMode::OSMIUM_KB || cc.m_fee_mode == FeeEstimateMode::DUFF_B) {
+    if (cc.m_fee_mode == FeeEstimateMode::OSMIUM_KB || cc.m_fee_mode == FeeEstimateMode::MUFF_B) {
         if (estimate_param.isNull()) {
             throw JSONRPCError(RPC_INVALID_PARAMETER, "Selected estimate_mode requires a fee rate");
         }
 
         CAmount fee_rate = AmountFromValue(estimate_param);
-        if (cc.m_fee_mode == FeeEstimateMode::DUFF_B) {
-            fee_rate /= WALLET_OSMIUM_KB_TO_DUFF_B;
+        if (cc.m_fee_mode == FeeEstimateMode::MUFF_B) {
+            fee_rate /= WALLET_OSMIUM_KB_TO_MUFF_B;
         }
 
         cc.m_feerate = CFeeRate(fee_rate);
