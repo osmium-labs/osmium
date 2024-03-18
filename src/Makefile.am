@@ -40,43 +40,43 @@ BITCOIN_INCLUDES=-I$(builddir) -I$(srcdir)/secp256k1/include -I$(srcdir)/$(UNIVA
 BITCOIN_INCLUDES+=-I$(srcdir)/dashbls/include -I$(srcdir)/dashbls/depends/relic/include -I$(srcdir)/dashbls/depends/minialloc/include
 BITCOIN_INCLUDES+=-I$(srcdir)/immer
 
-LIBBITCOIN_SERVER=libbitcoin_server.a
-LIBBITCOIN_COMMON=libbitcoin_common.a
-LIBBITCOIN_CONSENSUS=libbitcoin_consensus.a
-LIBBITCOIN_CLI=libbitcoin_cli.a
-LIBBITCOIN_UTIL=libbitcoin_util.a
-LIBBITCOIN_CRYPTO_BASE=crypto/libbitcoin_crypto_base.a
-LIBBITCOINQT=qt/libbitcoinqt.a
+LIBOSMIUM_SERVER=libosmium_server.a
+LIBOSMIUM_COMMON=libosmium_common.a
+LIBOSMIUM_CONSENSUS=libosmium_consensus.a
+LIBOSMIUM_CLI=libosmium_cli.a
+LIBOSMIUM_UTIL=libosmium_util.a
+LIBOSMIUM_CRYPTO_BASE=crypto/libosmium_crypto_base.a
+LIBOSMIUMQT=qt/libosmiumqt.a
 LIBDASHBLS=dashbls/libdashbls.la
 LIBSECP256K1=secp256k1/libsecp256k1.la
 
 if ENABLE_ZMQ
-LIBBITCOIN_ZMQ=libbitcoin_zmq.a
+LIBOSMIUM_ZMQ=libosmium_zmq.a
 endif
 if BUILD_BITCOIN_LIBS
-LIBBITCOINCONSENSUS=libosmiumconsensus.la
+LIBOSMIUMCONSENSUS=libosmiumconsensus.la
 endif
 if ENABLE_WALLET
-LIBBITCOIN_WALLET=libbitcoin_wallet.a
-LIBBITCOIN_WALLET_TOOL=libbitcoin_wallet_tool.a
+LIBOSMIUM_WALLET=libosmium_wallet.a
+LIBOSMIUM_WALLET_TOOL=libosmium_wallet_tool.a
 endif
 
-LIBBITCOIN_CRYPTO= $(LIBBITCOIN_CRYPTO_BASE)
+LIBOSMIUM_CRYPTO= $(LIBOSMIUM_CRYPTO_BASE)
 if ENABLE_SSE41
-LIBBITCOIN_CRYPTO_SSE41 = crypto/libbitcoin_crypto_sse41.a
-LIBBITCOIN_CRYPTO += $(LIBBITCOIN_CRYPTO_SSE41)
+LIBOSMIUM_CRYPTO_SSE41 = crypto/libosmium_crypto_sse41.a
+LIBOSMIUM_CRYPTO += $(LIBOSMIUM_CRYPTO_SSE41)
 endif
 if ENABLE_AVX2
-LIBBITCOIN_CRYPTO_AVX2 = crypto/libbitcoin_crypto_avx2.a
-LIBBITCOIN_CRYPTO += $(LIBBITCOIN_CRYPTO_AVX2)
+LIBOSMIUM_CRYPTO_AVX2 = crypto/libosmium_crypto_avx2.a
+LIBOSMIUM_CRYPTO += $(LIBOSMIUM_CRYPTO_AVX2)
 endif
 if ENABLE_X86_SHANI
-LIBBITCOIN_CRYPTO_X86_SHANI = crypto/libbitcoin_crypto_x86_shani.a
-LIBBITCOIN_CRYPTO += $(LIBBITCOIN_CRYPTO_X86_SHANI)
+LIBOSMIUM_CRYPTO_X86_SHANI = crypto/libosmium_crypto_x86_shani.a
+LIBOSMIUM_CRYPTO += $(LIBOSMIUM_CRYPTO_X86_SHANI)
 endif
 if ENABLE_ARM_SHANI
-LIBBITCOIN_CRYPTO_ARM_SHANI = crypto/libbitcoin_crypto_arm_shani.a
-LIBBITCOIN_CRYPTO += $(LIBBITCOIN_CRYPTO_ARM_SHANI)
+LIBOSMIUM_CRYPTO_ARM_SHANI = crypto/libosmium_crypto_arm_shani.a
+LIBOSMIUM_CRYPTO += $(LIBOSMIUM_CRYPTO_ARM_SHANI)
 endif
 
 $(LIBDASHBLS):
@@ -88,17 +88,17 @@ $(LIBSECP256K1): $(wildcard secp256k1/src/*.h) $(wildcard secp256k1/src/*.c) $(w
 # Make is not made aware of per-object dependencies to avoid limiting building parallelization
 # But to build the less dependent modules first, we manually select their order here:
 EXTRA_LIBRARIES += \
-  $(LIBBITCOIN_CRYPTO) \
-  $(LIBBITCOIN_UTIL) \
-  $(LIBBITCOIN_COMMON) \
-  $(LIBBITCOIN_CONSENSUS) \
-  $(LIBBITCOIN_SERVER) \
-  $(LIBBITCOIN_CLI) \
-  $(LIBBITCOIN_WALLET) \
-  $(LIBBITCOIN_WALLET_TOOL) \
-  $(LIBBITCOIN_ZMQ)
+  $(LIBOSMIUM_CRYPTO) \
+  $(LIBOSMIUM_UTIL) \
+  $(LIBOSMIUM_COMMON) \
+  $(LIBOSMIUM_CONSENSUS) \
+  $(LIBOSMIUM_SERVER) \
+  $(LIBOSMIUM_CLI) \
+  $(LIBOSMIUM_WALLET) \
+  $(LIBOSMIUM_WALLET_TOOL) \
+  $(LIBOSMIUM_ZMQ)
 
-lib_LTLIBRARIES = $(LIBBITCOINCONSENSUS)
+lib_LTLIBRARIES = $(LIBOSMIUMCONSENSUS)
 noinst_LTLIBRARIES =
 
 bin_PROGRAMS =
@@ -394,15 +394,15 @@ obj/build.h: FORCE
 	@$(MKDIR_P) $(builddir)/obj
 	@$(top_srcdir)/share/genbuild.sh "$(abs_top_builddir)/src/obj/build.h" \
 	  "$(abs_top_srcdir)"
-libbitcoin_util_a-clientversion.$(OBJEXT): obj/build.h
+libosmium_util_a-clientversion.$(OBJEXT): obj/build.h
 
 # server: shared between osmiumd and osmium-qt
 # Contains code accessing mempool and chain state that is meant to be separated
 # from wallet and gui code (see node/README.md). Shared code should go in
-# libbitcoin_common or libbitcoin_util libraries, instead.
-libbitcoin_server_a_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES) $(MINIUPNPC_CPPFLAGS) $(NATPMP_CPPFLAGS) $(EVENT_CFLAGS) $(EVENT_PTHREADS_CFLAGS)
-libbitcoin_server_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
-libbitcoin_server_a_SOURCES = \
+# libosmium_common or libosmium_util libraries, instead.
+libosmium_server_a_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES) $(MINIUPNPC_CPPFLAGS) $(NATPMP_CPPFLAGS) $(EVENT_CFLAGS) $(EVENT_PTHREADS_CFLAGS)
+libosmium_server_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
+libosmium_server_a_SOURCES = \
   addrdb.cpp \
   addressindex.cpp \
   addrman.cpp \
@@ -514,16 +514,16 @@ libbitcoin_server_a_SOURCES = \
   $(BITCOIN_CORE_H)
 
 if ENABLE_WALLET
-libbitcoin_server_a_SOURCES += wallet/init.cpp
+libosmium_server_a_SOURCES += wallet/init.cpp
 endif
 if !ENABLE_WALLET
-libbitcoin_server_a_SOURCES += dummywallet.cpp
+libosmium_server_a_SOURCES += dummywallet.cpp
 endif
 
 if ENABLE_ZMQ
-libbitcoin_zmq_a_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES) $(ZMQ_CFLAGS)
-libbitcoin_zmq_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
-libbitcoin_zmq_a_SOURCES = \
+libosmium_zmq_a_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES) $(ZMQ_CFLAGS)
+libosmium_zmq_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
+libosmium_zmq_a_SOURCES = \
   zmq/zmqabstractnotifier.cpp \
   zmq/zmqnotificationinterface.cpp \
   zmq/zmqpublishnotifier.cpp \
@@ -534,9 +534,9 @@ endif
 
 # wallet: shared between osmiumd and osmium-qt, but only linked
 # when wallet enabled
-libbitcoin_wallet_a_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES) $(SQLITE_CFLAGS)
-libbitcoin_wallet_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
-libbitcoin_wallet_a_SOURCES = \
+libosmium_wallet_a_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES) $(SQLITE_CFLAGS)
+libosmium_wallet_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
+libosmium_wallet_a_SOURCES = \
   coinjoin/client.cpp \
   coinjoin/interfaces.cpp \
   coinjoin/util.cpp \
@@ -558,22 +558,22 @@ libbitcoin_wallet_a_SOURCES = \
   $(BITCOIN_CORE_H)
 
 if USE_SQLITE
-libbitcoin_wallet_a_SOURCES += wallet/sqlite.cpp
+libosmium_wallet_a_SOURCES += wallet/sqlite.cpp
 endif
 if USE_BDB
-libbitcoin_wallet_a_SOURCES += wallet/bdb.cpp wallet/salvage.cpp
+libosmium_wallet_a_SOURCES += wallet/bdb.cpp wallet/salvage.cpp
 endif
 
-libbitcoin_wallet_tool_a_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES)
-libbitcoin_wallet_tool_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
-libbitcoin_wallet_tool_a_SOURCES = \
+libosmium_wallet_tool_a_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES)
+libosmium_wallet_tool_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
+libosmium_wallet_tool_a_SOURCES = \
   wallet/wallettool.cpp \
   $(BITCOIN_CORE_H)
 
 # crypto primitives library
-crypto_libbitcoin_crypto_base_a_CPPFLAGS = $(AM_CPPFLAGS) $(PIC_FLAGS)
-crypto_libbitcoin_crypto_base_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS) $(PIC_FLAGS)
-crypto_libbitcoin_crypto_base_a_SOURCES = \
+crypto_libosmium_crypto_base_a_CPPFLAGS = $(AM_CPPFLAGS) $(PIC_FLAGS)
+crypto_libosmium_crypto_base_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS) $(PIC_FLAGS)
+crypto_libosmium_crypto_base_a_SOURCES = \
   crypto/aes.cpp \
   crypto/aes.h \
   crypto/chacha_poly_aead.h \
@@ -608,23 +608,23 @@ crypto_libbitcoin_crypto_base_a_SOURCES = \
   crypto/siphash.h
 
 if USE_ASM
-crypto_libbitcoin_crypto_base_a_SOURCES += crypto/sha256_sse4.cpp
+crypto_libosmium_crypto_base_a_SOURCES += crypto/sha256_sse4.cpp
 endif
 
-crypto_libbitcoin_crypto_sse41_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
-crypto_libbitcoin_crypto_sse41_a_CPPFLAGS = $(AM_CPPFLAGS)
-crypto_libbitcoin_crypto_sse41_a_CXXFLAGS += $(SSE41_CXXFLAGS)
-crypto_libbitcoin_crypto_sse41_a_CPPFLAGS += -DENABLE_SSE41
-crypto_libbitcoin_crypto_sse41_a_SOURCES = crypto/sha256_sse41.cpp
+crypto_libosmium_crypto_sse41_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
+crypto_libosmium_crypto_sse41_a_CPPFLAGS = $(AM_CPPFLAGS)
+crypto_libosmium_crypto_sse41_a_CXXFLAGS += $(SSE41_CXXFLAGS)
+crypto_libosmium_crypto_sse41_a_CPPFLAGS += -DENABLE_SSE41
+crypto_libosmium_crypto_sse41_a_SOURCES = crypto/sha256_sse41.cpp
 
-crypto_libbitcoin_crypto_avx2_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
-crypto_libbitcoin_crypto_avx2_a_CPPFLAGS = $(AM_CPPFLAGS)
-crypto_libbitcoin_crypto_avx2_a_CXXFLAGS += $(AVX2_CXXFLAGS)
-crypto_libbitcoin_crypto_avx2_a_CPPFLAGS += -DENABLE_AVX2
-crypto_libbitcoin_crypto_avx2_a_SOURCES = crypto/sha256_avx2.cpp
+crypto_libosmium_crypto_avx2_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
+crypto_libosmium_crypto_avx2_a_CPPFLAGS = $(AM_CPPFLAGS)
+crypto_libosmium_crypto_avx2_a_CXXFLAGS += $(AVX2_CXXFLAGS)
+crypto_libosmium_crypto_avx2_a_CPPFLAGS += -DENABLE_AVX2
+crypto_libosmium_crypto_avx2_a_SOURCES = crypto/sha256_avx2.cpp
 
 # x11
-crypto_libbitcoin_crypto_base_a_SOURCES += \
+crypto_libosmium_crypto_base_a_SOURCES += \
   crypto/blake.c \
   crypto/bmw.c \
   crypto/cubehash.c \
@@ -649,22 +649,22 @@ crypto_libbitcoin_crypto_base_a_SOURCES += \
   crypto/sph_skein.h \
   crypto/sph_types.h
 
-crypto_libbitcoin_crypto_x86_shani_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
-crypto_libbitcoin_crypto_x86_shani_a_CPPFLAGS = $(AM_CPPFLAGS)
-crypto_libbitcoin_crypto_x86_shani_a_CXXFLAGS += $(X86_SHANI_CXXFLAGS)
-crypto_libbitcoin_crypto_x86_shani_a_CPPFLAGS += -DENABLE_X86_SHANI
-crypto_libbitcoin_crypto_x86_shani_a_SOURCES = crypto/sha256_x86_shani.cpp
+crypto_libosmium_crypto_x86_shani_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
+crypto_libosmium_crypto_x86_shani_a_CPPFLAGS = $(AM_CPPFLAGS)
+crypto_libosmium_crypto_x86_shani_a_CXXFLAGS += $(X86_SHANI_CXXFLAGS)
+crypto_libosmium_crypto_x86_shani_a_CPPFLAGS += -DENABLE_X86_SHANI
+crypto_libosmium_crypto_x86_shani_a_SOURCES = crypto/sha256_x86_shani.cpp
 
-crypto_libbitcoin_crypto_arm_shani_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
-crypto_libbitcoin_crypto_arm_shani_a_CPPFLAGS = $(AM_CPPFLAGS)
-crypto_libbitcoin_crypto_arm_shani_a_CXXFLAGS += $(ARM_SHANI_CXXFLAGS)
-crypto_libbitcoin_crypto_arm_shani_a_CPPFLAGS += -DENABLE_ARM_SHANI
-crypto_libbitcoin_crypto_arm_shani_a_SOURCES = crypto/sha256_arm_shani.cpp
+crypto_libosmium_crypto_arm_shani_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
+crypto_libosmium_crypto_arm_shani_a_CPPFLAGS = $(AM_CPPFLAGS)
+crypto_libosmium_crypto_arm_shani_a_CXXFLAGS += $(ARM_SHANI_CXXFLAGS)
+crypto_libosmium_crypto_arm_shani_a_CPPFLAGS += -DENABLE_ARM_SHANI
+crypto_libosmium_crypto_arm_shani_a_SOURCES = crypto/sha256_arm_shani.cpp
 
 # consensus: shared between all executables that validate any consensus rules.
-libbitcoin_consensus_a_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES)
-libbitcoin_consensus_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
-libbitcoin_consensus_a_SOURCES = \
+libosmium_consensus_a_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES)
+libosmium_consensus_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
+libosmium_consensus_a_SOURCES = \
   amount.h \
   arith_uint256.cpp \
   arith_uint256.h \
@@ -704,9 +704,9 @@ libbitcoin_consensus_a_SOURCES = \
   version.h
 
 # common: shared between osmiumd, and osmium-qt and non-server tools
-libbitcoin_common_a_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES)
-libbitcoin_common_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
-libbitcoin_common_a_SOURCES = \
+libosmium_common_a_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES)
+libosmium_common_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
+libosmium_common_a_SOURCES = \
   base58.cpp \
   bech32.cpp \
   bip39.cpp \
@@ -742,9 +742,9 @@ libbitcoin_common_a_SOURCES = \
   $(BITCOIN_CORE_H)
 
 # util: shared between all executables.
-libbitcoin_util_a_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES)
-libbitcoin_util_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
-libbitcoin_util_a_SOURCES = \
+libosmium_util_a_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES)
+libosmium_util_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
+libosmium_util_a_SOURCES = \
   bls/bls_batchverifier.h \
   bls/bls_ies.cpp \
   bls/bls_ies.h \
@@ -791,19 +791,19 @@ libbitcoin_util_a_SOURCES = \
   $(BITCOIN_CORE_H)
 
 if USE_LIBEVENT
-libbitcoin_util_a_SOURCES += util/url.cpp
+libosmium_util_a_SOURCES += util/url.cpp
 endif
 
 # cli: shared between osmium-cli and osmium-qt
-libbitcoin_cli_a_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES)
-libbitcoin_cli_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
-libbitcoin_cli_a_SOURCES = \
+libosmium_cli_a_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES)
+libosmium_cli_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
+libosmium_cli_a_SOURCES = \
   compat/stdin.h \
   compat/stdin.cpp \
   rpc/client.cpp \
   $(BITCOIN_CORE_H)
 
-nodist_libbitcoin_util_a_SOURCES = $(srcdir)/obj/build.h
+nodist_libosmium_util_a_SOURCES = $(srcdir)/obj/build.h
 #
 
 # osmiumd & osmium-node binaries #
@@ -817,13 +817,13 @@ bitcoin_daemon_sources += osmiumd-res.rc
 endif
 
 bitcoin_bin_ldadd = \
-  $(LIBBITCOIN_WALLET) \
-  $(LIBBITCOIN_COMMON) \
-  $(LIBBITCOIN_UTIL) \
+  $(LIBOSMIUM_WALLET) \
+  $(LIBOSMIUM_COMMON) \
+  $(LIBOSMIUM_UTIL) \
   $(LIBUNIVALUE) \
-  $(LIBBITCOIN_ZMQ) \
-  $(LIBBITCOIN_CONSENSUS) \
-  $(LIBBITCOIN_CRYPTO) \
+  $(LIBOSMIUM_ZMQ) \
+  $(LIBOSMIUM_CONSENSUS) \
+  $(LIBOSMIUM_CRYPTO) \
   $(LIBDASHBLS) \
   $(LIBLEVELDB) \
   $(LIBLEVELDB_SSE42) \
@@ -836,13 +836,13 @@ osmiumd_SOURCES = $(bitcoin_daemon_sources)
 osmiumd_CPPFLAGS = $(bitcoin_bin_cppflags)
 osmiumd_CXXFLAGS = $(bitcoin_bin_cxxflags)
 osmiumd_LDFLAGS = $(bitcoin_bin_ldflags)
-osmiumd_LDADD = $(LIBBITCOIN_SERVER) $(bitcoin_bin_ldadd)
+osmiumd_LDADD = $(LIBOSMIUM_SERVER) $(bitcoin_bin_ldadd)
 
 osmium_node_SOURCES = $(bitcoin_daemon_sources)
 osmium_node_CPPFLAGS = $(bitcoin_bin_cppflags)
 osmium_node_CXXFLAGS = $(bitcoin_bin_cxxflags)
 osmium_node_LDFLAGS = $(bitcoin_bin_ldflags)
-osmium_node_LDADD = $(LIBBITCOIN_SERVER) $(bitcoin_bin_ldadd)
+osmium_node_LDADD = $(LIBOSMIUM_SERVER) $(bitcoin_bin_ldadd)
 
 # osmium-cli binary #
 osmium_cli_SOURCES = bitcoin-cli.cpp
@@ -855,10 +855,10 @@ osmium_cli_SOURCES += osmium-cli-res.rc
 endif
 
 osmium_cli_LDADD = \
-  $(LIBBITCOIN_CLI) \
+  $(LIBOSMIUM_CLI) \
   $(LIBUNIVALUE) \
-  $(LIBBITCOIN_UTIL) \
-  $(LIBBITCOIN_CRYPTO)
+  $(LIBOSMIUM_UTIL) \
+  $(LIBOSMIUM_CRYPTO)
 osmium_cli_LDADD += $(BACKTRACE_LIB) $(BOOST_LIBS) $(EVENT_LIBS) $(GMP_LIBS)
 #
 
@@ -874,10 +874,10 @@ endif
 
 osmium_tx_LDADD = \
   $(LIBUNIVALUE) \
-  $(LIBBITCOIN_COMMON) \
-  $(LIBBITCOIN_UTIL) \
-  $(LIBBITCOIN_CONSENSUS) \
-  $(LIBBITCOIN_CRYPTO) \
+  $(LIBOSMIUM_COMMON) \
+  $(LIBOSMIUM_UTIL) \
+  $(LIBOSMIUM_CONSENSUS) \
+  $(LIBOSMIUM_CRYPTO) \
   $(LIBDASHBLS) \
   $(LIBSECP256K1)
 
@@ -889,7 +889,7 @@ osmium_wallet_SOURCES = bitcoin-wallet.cpp
 osmium_wallet_CPPFLAGS = $(bitcoin_bin_cppflags)
 osmium_wallet_CXXFLAGS = $(bitcoin_bin_cxxflags)
 osmium_wallet_LDFLAGS = $(bitcoin_bin_ldflags)
-osmium_wallet_LDADD = $(LIBBITCOIN_WALLET_TOOL) $(bitcoin_bin_ldadd)
+osmium_wallet_LDADD = $(LIBOSMIUM_WALLET_TOOL) $(bitcoin_bin_ldadd)
 
 if TARGET_WINDOWS
 osmium_wallet_SOURCES += osmium-wallet-res.rc
@@ -899,7 +899,7 @@ endif
 # osmiumconsensus library #
 if BUILD_BITCOIN_LIBS
 include_HEADERS = script/bitcoinconsensus.h
-libosmiumconsensus_la_SOURCES = support/cleanse.cpp $(crypto_libbitcoin_crypto_base_a_SOURCES) $(libbitcoin_consensus_a_SOURCES)
+libosmiumconsensus_la_SOURCES = support/cleanse.cpp $(crypto_libosmium_crypto_base_a_SOURCES) $(libosmium_consensus_a_SOURCES)
 
 libosmiumconsensus_la_LDFLAGS = $(AM_LDFLAGS) -no-undefined $(RELDFLAGS)
 libosmiumconsensus_la_LIBADD = $(LIBDASHBLS) $(LIBSECP256K1) $(GMP_LIBS)
