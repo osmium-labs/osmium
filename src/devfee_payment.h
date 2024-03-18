@@ -1,13 +1,9 @@
-/*
- * Copyright (c) 2020 The Raptoreum developer
- * Distributed under the MIT software license, see the accompanying
- * file COPYING or http://www.opensource.org/licenses/mit-license.php.
- * 
- * DevfeePayment.h
- *
- *  Created on: Jun 24, 2018
- *      Author: Tri Nguyen
- */
+// Created on: Jun 24, 2018
+//       Author: Tri Nguyen
+// Copyright (c) 2020-2024 The Raptoreum developers
+// Copyright (c) 2024 The Osmium developers
+// Distributed under the MIT software license, see the accompanying
+// file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #ifndef SRC_DEVFEE_PAYMENT_H_
 #define SRC_DEVFEE_PAYMENT_H_
@@ -15,9 +11,8 @@
 #include <amount.h>
 #include <primitives/transaction.h>
 #include <vector>
-using namespace std;
 
-static const string DEFAULT_DEVFEE_ADDRESS = "Xgtyuk76vhuFW2iT7UAiHgNdWXCf3J34wh";
+static const std::string DEFAULT_DEVFEE_ADDRESS = "Xgtyuk76vhuFW2iT7UAiHgNdWXCf3J34wh";
 struct DevfeeRewardStructure {
 	  int blockHeight;
 	  int rewardDivisor;
@@ -25,7 +20,7 @@ struct DevfeeRewardStructure {
 
 class DevfeePayment {
 public:
-	  DevfeePayment(vector<DevfeeRewardStructure> rewardStructures = {}, int startBlock = 0, const string &address = DEFAULT_DEVFEE_ADDRESS) {
+	  DevfeePayment(std::vector<DevfeeRewardStructure> rewardStructures = {}, int startBlock = 0, const std::string &address = DEFAULT_DEVFEE_ADDRESS) {
         this->devfeeAddress = address;
         this->startBlock = startBlock;
         this->rewardStructures = rewardStructures;
@@ -36,9 +31,9 @@ public:
     bool IsBlockPayeeValid(const CTransaction& txNew, const int height, const CAmount blockSubsidy);
     int getStartBlock() {return this->startBlock;}
 private:
-    string devfeeAddress;
+    std::string devfeeAddress;
     int startBlock;
-    vector<DevfeeRewardStructure> rewardStructures;
+    std::vector<DevfeeRewardStructure> rewardStructures;
 };
 
 #endif /* SRC_DEVFEE_PAYMENT_H_ */

@@ -399,6 +399,15 @@ static bool ContextualCheckTransaction(const CTransaction& tx, TxValidationState
     if (fDIP0001Active_context && ::GetSerializeSize(tx, PROTOCOL_VERSION) > MAX_STANDARD_TX_SIZE)
         return state.Invalid(TxValidationResult::TX_CONSENSUS, "bad-txns-oversize");
 
+    if (tx.IsCoinBase()) {
+        CAmount blockSubsidy = GetBlockSubsidyInner(1, nHeight - 1, consensusParams, false);
+        DevfeePayment devfeePayment = consensusParams.nDevfeePayment;
+        CAmount devfeeReward = devfeePayment.getDevfeePaymentAmount(nHeight, blockSubsidy);
+        int devfeeStartHeight = devfeePayment.getStartBlock();
+        if(nHeight > devfeeStartHeight && devfeeReward && !devfeePayment.IsBlockPayeeValid(tx, nHeight, blockSubsidy))
+            return state.Invalid(TxValidationResult::TX_CONSENSUS, "bad-cb-devfee-payment-not-found");
+    }
+
     return true;
 }
 
@@ -648,7 +657,7 @@ bool MemPoolAccept::PreChecks(ATMPArgs& args, Workspace& ws)
     std::unique_ptr<CTxMemPoolEntry>& entry = ws.m_entry;
     CAmount& nModifiedFees = ws.m_modified_fees;
 
-    if (!CheckTransaction(tx, state, 0, 0)) {
+    if (!CheckTransaction(tx, state)) {
         return false; // state filled in by CheckTransaction
     }
 
@@ -2089,7 +2098,7 @@ bool CChainState::ConnectBlock(const CBlock& block, BlockValidationState& state,
     // is enforced in ContextualCheckBlockHeader(); we wouldn't want to
     // re-enforce that rule here (at least until we make it impossible for
     // GetAdjustedTime() to go backward).
-    if (!CheckBlock(block, state, m_params.GetConsensus(), pindex->nHeight, !fJustCheck, !fJustCheck)) {
+    if (!CheckBlock(block, state, m_params.GetConsensus(), !fJustCheck, !fJustCheck)) {
         if (state.GetResult() == BlockValidationResult::BLOCK_MUTATED) {
             // We don't write down blocks to disk if they may have been
             // corrupted, so this should be impossible unless we're having hardware
@@ -3814,7 +3823,8 @@ static bool CheckBlockHeader(const CBlockHeader& block, const uint256& hash, Blo
     return true;
 }
 
-bool CheckBlock(const CBlock& block, BlockValidationState& state, const Consensus::Params& consensusParams, int nHeight, bool fCheckPOW, bool fCheckMerkleRoot)
+// bool CheckBlock(const CBlock& block, BlockValidationState& state, const Consensus::Params& consensusParams, int nHeight, bool fCheckPOW, bool fCheckMerkleRoot)
+bool CheckBlock(const CBlock& block, BlockValidationState& state, const Consensus::Params& consensusParams, bool fCheckPOW, bool fCheckMerkleRoot)
 {
     // These are checks that are independent of context.
 
@@ -3859,10 +3869,9 @@ bool CheckBlock(const CBlock& block, BlockValidationState& state, const Consensu
 
     // Check transactions
     // Must check for duplicate inputs (see CVE-2018-17144)
-    CAmount blockSubsidy = GetBlockSubsidyInner(1, nHeight - 1, Params().GetConsensus(), false);
     for (const auto& tx : block.vtx) {
         TxValidationState tx_state;
-        if (!CheckTransaction(*tx, tx_state, nHeight - 1, blockSubsidy)) {
+        if (!CheckTransaction(*tx, tx_state)) {
             // CheckBlock() does context-free validation checks. The only
             // possible failures are consensus failures.
             assert(tx_state.GetResult() == TxValidationResult::TX_CONSENSUS);
@@ -4238,7 +4247,7 @@ bool CChainState::AcceptBlock(const std::shared_ptr<const CBlock>& pblock, Block
         if (pindex->nChainWork < nMinimumChainWork) return true;
     }
 
-    if (!CheckBlock(block, state, m_params.GetConsensus(), pindex->nHeight) ||
+    if (!CheckBlock(block, state, m_params.GetConsensus()) ||
         !ContextualCheckBlock(block, state, m_params.GetConsensus(), pindex->pprev)) {
         if (state.IsInvalid() && state.GetResult() != BlockValidationResult::BLOCK_MUTATED) {
             pindex->nStatus |= BLOCK_FAILED_VALID;
@@ -4298,8 +4307,7 @@ bool ChainstateManager::ProcessNewBlock(const CChainParams& chainparams, const s
         // malleability that cause CheckBlock() to fail; see e.g. CVE-2012-2459 and
         // https://lists.linuxfoundation.org/pipermail/bitcoin-dev/2019-February/016697.html.  Because CheckBlock() is
         // not very expensive, the anti-DoS benefits of caching failure (of a definitely-invalid block) are not substantial.
-        int nHeight = ChainActive().Height() + 1;
-        bool ret = CheckBlock(*pblock, state, chainparams.GetConsensus(), nHeight);
+        bool ret = CheckBlock(*pblock, state, chainparams.GetConsensus());
         if (ret) {
             // Store to disk
             ret = ActiveChainstate().AcceptBlock(pblock, state, &pindex, fForceProcessing, nullptr, fNewBlock);
@@ -4356,7 +4364,7 @@ bool TestBlockValidity(BlockValidationState& state,
     assert(std::addressof(g_chainman.m_blockman) == std::addressof(chainstate.m_blockman));
     if (!ContextualCheckBlockHeader(block, state, chainstate.m_blockman, chainparams, pindexPrev, GetAdjustedTime()))
         return error("%s: Consensus::ContextualCheckBlockHeader: %s", __func__, state.ToString());
-    if (!CheckBlock(block, state, chainparams.GetConsensus(), indexDummy.nHeight, fCheckPOW, fCheckMerkleRoot))
+    if (!CheckBlock(block, state, chainparams.GetConsensus(), fCheckPOW, fCheckMerkleRoot))
         return error("%s: Consensus::CheckBlock: %s", __func__, state.ToString());
     if (!ContextualCheckBlock(block, state, chainparams.GetConsensus(), pindexPrev))
         return error("%s: Consensus::ContextualCheckBlock: %s", __func__, state.ToString());
@@ -4811,7 +4819,7 @@ bool CVerifyDB::VerifyDB(
         if (!ReadBlockFromDisk(block, pindex, chainparams.GetConsensus()))
             return error("VerifyDB(): *** ReadBlockFromDisk failed at %d, hash=%s", pindex->nHeight, pindex->GetBlockHash().ToString());
         // check level 1: verify block validity
-        if (nCheckLevel >= 1 && !CheckBlock(block, state, chainparams.GetConsensus(), pindex->nHeight))
+        if (nCheckLevel >= 1 && !CheckBlock(block, state, chainparams.GetConsensus()))
             return error("%s: *** found bad block at %d, hash=%s (%s)\n", __func__,
                          pindex->nHeight, pindex->GetBlockHash().ToString(), state.ToString());
         // check level 2: verify undo validity
@@ -5144,15 +5152,15 @@ bool CChainState::LoadGenesisBlock()
         if (!AddGenesisBlock(m_params.GenesisBlock(), state))
             return false;
 
-        // if (m_params.NetworkIDString() == CBaseChainParams::DEVNET) {
-        //     // We can't continue if devnet genesis block is invalid
-        //     std::shared_ptr<const CBlock> shared_pblock = std::make_shared<const CBlock>(
-        //             m_params.DevNetGenesisBlock());
-        //     bool fCheckBlock = CheckBlock(*shared_pblock, state, m_params.GetConsensus());
-        //     assert(fCheckBlock);
-        //     if (!AcceptBlock(shared_pblock, state, nullptr, true, nullptr, nullptr))
-        //         return false;
-        // }
+        if (m_params.NetworkIDString() == CBaseChainParams::DEVNET) {
+            // We can't continue if devnet genesis block is invalid
+            std::shared_ptr<const CBlock> shared_pblock = std::make_shared<const CBlock>(
+                    m_params.DevNetGenesisBlock());
+            bool fCheckBlock = CheckBlock(*shared_pblock, state, m_params.GetConsensus());
+            assert(fCheckBlock);
+            if (!AcceptBlock(shared_pblock, state, nullptr, true, nullptr, nullptr))
+                return false;
+        }
     } catch (const std::runtime_error &e) {
         return error("%s: failed to initialize block database: %s", __func__, e.what());
     }

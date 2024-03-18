@@ -140,7 +140,7 @@ BOOST_FIXTURE_TEST_CASE(evo_assetlock, TestChain100Setup)
 
     TxValidationState tx_state;
     std::string strTest;
-    BOOST_CHECK_MESSAGE(CheckTransaction(CTransaction(tx), tx_state, 0, 0), strTest);
+    BOOST_CHECK_MESSAGE(CheckTransaction(CTransaction(tx), tx_state), strTest);
     BOOST_CHECK(tx_state.IsValid());
 
     BOOST_CHECK(CheckAssetLockTx(CTransaction(tx), tx_state));
@@ -309,7 +309,7 @@ BOOST_FIXTURE_TEST_CASE(evo_assetunlock, TestChain100Setup)
 
     TxValidationState tx_state;
     std::string strTest;
-    BOOST_CHECK_MESSAGE(CheckTransaction(CTransaction(tx), tx_state, 0, 0), strTest);
+    BOOST_CHECK_MESSAGE(CheckTransaction(CTransaction(tx), tx_state), strTest);
     BOOST_CHECK(tx_state.IsValid());
 
     const CBlockIndex *block_index = ::ChainActive().Tip();

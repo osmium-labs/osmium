@@ -1,13 +1,10 @@
-/*
- * Copyright (c) 2018 The Pigeon Core developers
- * Distributed under the MIT software license, see the accompanying
- * file COPYING or http://www.opensource.org/licenses/mit-license.php.
- * 
- * DevfeePayment.cpp
- *
- *  Created on: Jun 24, 2018
- *      Author: Tri Nguyen
- */
+// Created on: Jun 24, 2018
+//       Author: Tri Nguyen
+// Copyright (c) 2018 The Pigeon Core developers
+// Copyright (c) 2020-2024 The Raptoreum developers
+// Copyright (c) 2024 The Osmium developers
+// Distributed under the MIT software license, see the accompanying
+// file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #include <devfee_payment.h>
 #include <rpc/server.h>

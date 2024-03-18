@@ -957,7 +957,8 @@ static UniValue getblocktemplate(const JSONRPCRequest& request)
     result.pushKV("superblocks_enabled", AreSuperblocksEnabled(*node.sporkman));
 
     UniValue devfeeObj(UniValue::VOBJ);
-    DevfeePayment devfeePayment = Params().GetConsensus().nDevfeePayment;
+    DevfeePayment devfeePayment = consensusParams.nDevfeePayment;
+    // DevfeePayment devfeePayment = Params().GetConsensus().nDevfeePayment;
     if(pblock->txoutDevfee != CTxOut()) {
         CTxDestination devfee_addr;
         ExtractDestination(pblock->txoutDevfee.scriptPubKey, devfee_addr);
