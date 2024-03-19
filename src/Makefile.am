@@ -675,7 +675,7 @@ libosmium_consensus_a_SOURCES = \
   consensus/params.h \
   consensus/tx_check.cpp \
   consensus/validation.h \
-  devfee_payment.cpp \
+  devfee_payment.h \
   hash.cpp \
   hash.h \
   prevector.h \
@@ -718,6 +718,7 @@ libosmium_common_a_SOURCES = \
   core_write.cpp \
   deploymentinfo.cpp \
   devfee_payment.cpp \
+  devfee_payment.h \
   governance/common.cpp \
   key.cpp \
   key_io.cpp \
