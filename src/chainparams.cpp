@@ -23,7 +23,7 @@
 #include <assert.h>
 
 static size_t lastCheckMnCount = 0;
-static int lastCheckHeight = 0;
+static int lastCheckHeight = -1;
 
 static CBlock CreateGenesisBlock(const char* pszTimestamp, const CScript& genesisOutputScript, uint32_t nTime, uint32_t nNonce, uint32_t nBits, int32_t nVersion, const CAmount& genesisReward)
 {
@@ -191,8 +191,7 @@ public:
         consensus.nPowTargetSpacing = 2.5 * 60; // Osmium: 2.5 minutes
         consensus.fPowAllowMinDifficultyBlocks = false;
         consensus.fPowNoRetargeting = false;
-        consensus.nPowKGWHeight = 15200;
-        consensus.nPowDGWHeight = 34140;
+        consensus.nPowDGWHeight = 60;
         consensus.nRuleChangeActivationThreshold = 1916; // 95% of 2016
         consensus.nMinerConfirmationWindow = 2016; // nPowTargetTimespan / nPowTargetSpacing
         consensus.vDeployments[Consensus::DEPLOYMENT_TESTDUMMY].bit = 28;
@@ -218,11 +217,14 @@ public:
         consensus.vDeployments[Consensus::DEPLOYMENT_MN_RR].useEHF = true;
 
         // The best chain should have at least this much work.
-        consensus.nMinimumChainWork = uint256S("0x000000000000000000000000000000000000000000009134566d753c5e08ab88"); // 2029000
+        consensus.nMinimumChainWork = uint256S("0x000000000000000000000000000000000000000000000000000000000000000");
 
         // By default assume that the signatures in ancestors of this block are valid.
         consensus.defaultAssumeValid = uint256S("0x0000000000000020d5e38b6aef5bc8e430029444d7977b46f710c7d281ef1281"); // 2029000
 
+        // AuxPoW parameters
+        consensus.nAuxpowChainId = 0x0062; // 98 - Josh Wise!
+        consensus.fStrictChainId = true;
         /**
          * The message start string is designed to be unlikely to occur in normal data.
          * The characters are rarely used upper ASCII, not valid as UTF-8, and produce
@@ -394,8 +396,7 @@ public:
         consensus.nPowTargetSpacing = 2.5 * 60; // Osmium: 2.5 minutes
         consensus.fPowAllowMinDifficultyBlocks = true;
         consensus.fPowNoRetargeting = false;
-        consensus.nPowKGWHeight = 4002; // nPowKGWHeight >= nPowDGWHeight means "no KGW"
-        consensus.nPowDGWHeight = 4002; // TODO: make sure to drop all spork6 related code on next testnet reset
+        consensus.nPowDGWHeight = 60; // TODO: make sure to drop all spork6 related code on next testnet reset
         consensus.nRuleChangeActivationThreshold = 1512; // 75% for testchains
         consensus.nMinerConfirmationWindow = 2016; // nPowTargetTimespan / nPowTargetSpacing
         consensus.vDeployments[Consensus::DEPLOYMENT_TESTDUMMY].bit = 28;
@@ -425,6 +426,10 @@ public:
         // By default assume that the signatures in ancestors of this block are valid.
         consensus.defaultAssumeValid = uint256S("0x0000000386cf5061ea16404c66deb83eb67892fa4f79b9e58e5eaab097ec2bd6"); // 960000
 
+        // AuxPoW parameters
+        consensus.nAuxpowChainId = 0x0062; // 98 - Josh Wise!
+        consensus.fStrictChainId = true;
+        
         pchMessageStart[0] = 0xce;
         pchMessageStart[1] = 0xe2;
         pchMessageStart[2] = 0xca;
@@ -569,8 +574,7 @@ public:
         consensus.nPowTargetSpacing = 2.5 * 60; // Osmium: 2.5 minutes
         consensus.fPowAllowMinDifficultyBlocks = true;
         consensus.fPowNoRetargeting = false;
-        consensus.nPowKGWHeight = 4001; // nPowKGWHeight >= nPowDGWHeight means "no KGW"
-        consensus.nPowDGWHeight = 4001;
+        consensus.nPowDGWHeight = 60;
         consensus.nRuleChangeActivationThreshold = 1512; // 75% for testchains
         consensus.nMinerConfirmationWindow = 2016; // nPowTargetTimespan / nPowTargetSpacing
         consensus.vDeployments[Consensus::DEPLOYMENT_TESTDUMMY].bit = 28;
@@ -599,6 +603,10 @@ public:
 
         // By default assume that the signatures in ancestors of this block are valid.
         consensus.defaultAssumeValid = uint256S("0x000000000000000000000000000000000000000000000000000000000000000");
+
+        // AuxPoW parameters
+        consensus.nAuxpowChainId = 0x0062; // 98 - Josh Wise!
+        consensus.fStrictChainId = false;
 
         pchMessageStart[0] = 0xe2;
         pchMessageStart[1] = 0xca;
@@ -811,8 +819,7 @@ public:
         consensus.nPowTargetSpacing = 2.5 * 60; // Osmium: 2.5 minutes
         consensus.fPowAllowMinDifficultyBlocks = true;
         consensus.fPowNoRetargeting = true;
-        consensus.nPowKGWHeight = 15200; // same as mainnet
-        consensus.nPowDGWHeight = 34140; // same as mainnet
+        consensus.nPowDGWHeight = 60; // same as mainnet
         consensus.nRuleChangeActivationThreshold = 108; // 75% for testchains
         consensus.nMinerConfirmationWindow = 144; // Faster than normal for regtest (144 instead of 2016)
         consensus.vDeployments[Consensus::DEPLOYMENT_TESTDUMMY].bit = 28;
@@ -841,6 +848,10 @@ public:
 
         // By default assume that the signatures in ancestors of this block are valid.
         consensus.defaultAssumeValid = uint256S("0x00");
+
+        // AuxPoW parameters
+        consensus.nAuxpowChainId = 0x0062; // 98 - Josh Wise!
+        consensus.fStrictChainId = true;
 
         pchMessageStart[0] = 0xfc;
         pchMessageStart[1] = 0xc1;
@@ -1381,7 +1392,7 @@ void CChainParams::UpdateLLMQParams(size_t totalMnCount, int height) {
 
     bool isNotLLMQsMiningPhase;
     if ((lastCheckHeight < height && (lastCheckMnCount != totalMnCount) &&
-        (isNotLLMQsMiningPhase = !IsLLMQsMiningPhase(height))) || lastCheckHeight == 0) {
+        (isNotLLMQsMiningPhase = !IsLLMQsMiningPhase(height))) || lastCheckHeight == -1) {
         LogPrintf("---UpdateLLMQParams %d-%d-%ld-%ld-%d\n", lastCheckHeight, height, lastCheckMnCount, totalMnCount,
                   isNotLLMQsMiningPhase);
         lastCheckMnCount = totalMnCount;
