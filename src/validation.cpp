@@ -648,7 +648,7 @@ bool MemPoolAccept::PreChecks(ATMPArgs& args, Workspace& ws)
     std::unique_ptr<CTxMemPoolEntry>& entry = ws.m_entry;
     CAmount& nModifiedFees = ws.m_modified_fees;
 
-    if (!CheckTransaction(tx, state, 0, 0)) {
+    if (!CheckTransaction(tx, state)) {
         return false; // state filled in by CheckTransaction
     }
 
@@ -3772,14 +3772,24 @@ bool CheckBlock(const CBlock& block, BlockValidationState& state, const Consensu
     CAmount blockSubsidy = GetBlockSubsidyInner(1, nHeight - 1, Params().GetConsensus(), false);
     for (const auto& tx : block.vtx) {
         TxValidationState tx_state;
-        if (!CheckTransaction(*tx, tx_state, nHeight - 1, blockSubsidy)) {
+        if (!CheckTransaction(*tx, tx_state)) {
             // CheckBlock() does context-free validation checks. The only
             // possible failures are consensus failures.
             assert(tx_state.GetResult() == TxValidationResult::TX_CONSENSUS);
             return state.Invalid(BlockValidationResult::BLOCK_CONSENSUS, tx_state.GetRejectReason(),
                                  strprintf("Transaction check failed (tx hash %s) %s", tx->GetHash().ToString(), tx_state.GetDebugMessage()));
         }
+
+        // Check devfee in coinbase transaction
+        if (tx->IsCoinBase()) {
+            DevfeePayment devfeePayment = Params().GetConsensus().nDevfeePayment;
+            CAmount devfeeReward = devfeePayment.getDevfeePaymentAmount(nHeight - 1, blockSubsidy);
+            int devfeeStartHeight = devfeePayment.getStartBlock();
+            if(nHeight > devfeeStartHeight && devfeeReward && !devfeePayment.IsBlockPayeeValid(*tx, nHeight - 1, blockSubsidy))
+                return state.Invalid(BlockValidationResult::BLOCK_CONSENSUS, "bad-cb-devfee-payment-not-found", "oops");
+        }
     }
+
     unsigned int nSigOps = 0;
     for (const auto& tx : block.vtx)
     {

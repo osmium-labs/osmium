@@ -232,7 +232,7 @@ FUZZ_TARGET_INIT(coins_view, initialize_coins_view)
                     return;
                 }
                 TxValidationState dummy;
-                if (!CheckTransaction(transaction, dummy, 0, 0)) {
+                if (!CheckTransaction(transaction, dummy)) {
                     // It is not allowed to call CheckTxInputs if CheckTransaction failed
                     return;
                 }
