@@ -6,7 +6,6 @@
 
 #include <consensus/consensus.h>
 #include <consensus/tx_check.h>
-#include <chainparams.h>
 
 #include <primitives/transaction.h>
 #include <consensus/validation.h>
