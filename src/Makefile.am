@@ -134,6 +134,7 @@ BITCOIN_CORE_H = \
   spentindex.h \
   addrman.h \
   attributes.h \
+  auxpow.h \
   banman.h \
   base58.h \
   batchedlogger.h \
@@ -284,6 +285,7 @@ BITCOIN_CORE_H = \
   random.h \
   randomenv.h \
   reverse_iterator.h \
+  rpc/auxpow_miner.h \
   rpc/blockchain.h \
   rpc/client.h \
   rpc/mining.h \
@@ -489,6 +491,7 @@ libosmium_server_a_SOURCES = \
   policy/settings.cpp \
   pow.cpp \
   rest.cpp \
+  rpc/auxpow_miner.cpp \
   rpc/blockchain.cpp \
   rpc/coinjoin.cpp \
   rpc/evo.cpp \
@@ -681,6 +684,8 @@ libosmium_consensus_a_SOURCES = \
   prevector.h \
   primitives/block.cpp \
   primitives/block.h \
+  primitives/pureheader.h \
+  primitives/pureheader.cpp \
   primitives/transaction.cpp \
   primitives/transaction.h \
   pubkey.cpp \
@@ -707,6 +712,7 @@ libosmium_consensus_a_SOURCES = \
 libosmium_common_a_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES)
 libosmium_common_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
 libosmium_common_a_SOURCES = \
+  auxpow.cpp \
   base58.cpp \
   bech32.cpp \
   bip39.cpp \

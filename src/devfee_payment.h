@@ -13,6 +13,7 @@
 #include <vector>
 
 static const std::string DEFAULT_DEVFEE_ADDRESS = "SgBT7JK8sPcCjK6AaJyLyEdfH1Mshs8Bzt";
+
 struct DevfeeRewardStructure {
 	  int blockHeight;
 	  int rewardDivisor;

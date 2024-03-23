@@ -3560,7 +3560,7 @@ void PeerManagerImpl::ProcessMessage(
         const auto send_headers = [this /* for m_connman */, &hashStop, &pindex, &nodestate, &pfrom, &msgMaker](auto msg_type, auto& v_headers, auto callback) {
             int nLimit = MAX_HEADERS_RESULTS;
             for (; pindex; pindex = m_chainman.ActiveChain().Next(pindex)) {
-                v_headers.push_back(callback(pindex));
+                v_headers.push_back(callback(pindex, m_chainparams));
 
                 if (--nLimit <= 0 || pindex->GetBlockHash() == hashStop)
                     break;
@@ -3585,14 +3585,14 @@ void PeerManagerImpl::ProcessMessage(
         if (msg_type == NetMsgType::GETHEADERS) {
             // we must use CBlocks, as CBlockHeaders won't include the 0x00 nTx count at the end
             std::vector<CBlock> v_headers;
-            send_headers(NetMsgType::HEADERS, v_headers, [](const auto block_pindex) { return block_pindex->GetBlockHeader(); });
+            send_headers(NetMsgType::HEADERS, v_headers, [](const auto block_pindex, const auto m_chainparams) { return block_pindex->GetBlockHeader(m_chainparams.GetConsensus()); });
         } else if (msg_type == NetMsgType::GETHEADERS2) {
             // Keeps track of the last 7 unique version blocks
             std::list<int32_t> last_unique_versions;
             std::vector<CompressibleBlockHeader> v_headers;
 
-            send_headers(NetMsgType::HEADERS2, v_headers, [&v_headers, &last_unique_versions](const auto block_pindex) {
-                CompressibleBlockHeader compressible_header{block_pindex->GetBlockHeader()};
+            send_headers(NetMsgType::HEADERS2, v_headers, [&v_headers, &last_unique_versions](const auto block_pindex, const auto m_chainparams) {
+                CompressibleBlockHeader compressible_header{block_pindex->GetBlockHeader(m_chainparams.GetConsensus())};
                 if (!v_headers.empty()) compressible_header.Compress(v_headers, last_unique_versions); // first block is always uncompressed
                 return compressible_header;
             });
@@ -4946,14 +4946,14 @@ bool PeerManagerImpl::SendMessages(CNode* pto)
                     }
                     if (fFoundStartingHeader) {
                         // add this to the headers message
-                        vHeaders.push_back(pindex->GetBlockHeader());
+                        vHeaders.push_back(pindex->GetBlockHeader(consensusParams));
                     } else if (PeerHasHeader(&state, pindex)) {
                         continue; // keep looking for the first new block
                     } else if (pindex->pprev == nullptr || PeerHasHeader(&state, pindex->pprev) || isPrevDevnetGenesisBlock) {
                         // Peer doesn't have this header but they do have the prior one.
                         // Start sending headers.
                         fFoundStartingHeader = true;
-                        vHeaders.push_back(pindex->GetBlockHeader());
+                        vHeaders.push_back(pindex->GetBlockHeader(consensusParams));
                     } else {
                         // Peer doesn't have this header or the prior one -- nothing will
                         // connect, so bail out.
