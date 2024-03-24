@@ -144,8 +144,12 @@ void OptionsModel::Init(bool resetSettings)
 
 #ifdef ENABLE_WALLET
     if (!settings.contains("fCoinControlFeatures"))
-        settings.setValue("fCoinControlFeatures", false);
-    fCoinControlFeatures = settings.value("fCoinControlFeatures", false).toBool();
+        settings.setValue("fCoinControlFeatures", true);
+    fCoinControlFeatures = settings.value("fCoinControlFeatures", true).toBool();
+
+    // Governance
+    if (!settings.contains("fShowGovernanceTab"))
+        settings.setValue("fShowGovernanceTab", false);
 
     if (!settings.contains("fKeepChangeAddress"))
         settings.setValue("fKeepChangeAddress", false);
@@ -167,7 +171,7 @@ void OptionsModel::Init(bool resetSettings)
     fShowAdvancedCJUI = settings.value("fShowAdvancedCJUI", false).toBool();
 
     if (!settings.contains("fShowCoinJoinPopups"))
-        settings.setValue("fShowCoinJoinPopups", true);
+        settings.setValue("fShowCoinJoinPopups", false);
 
     if (!settings.contains("fLowKeysWarning"))
         settings.setValue("fLowKeysWarning", true);
