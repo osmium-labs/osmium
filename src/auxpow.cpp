@@ -2,6 +2,7 @@
 // Copyright (c) 2011 Vince Durham
 // Copyright (c) 2009-2014 The Bitcoin developers
 // Copyright (c) 2014-2021 Daniel Kraft
+// Copyright (c) 2024 The Osmium developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file license.txt or http://www.opensource.org/licenses/mit-license.php.
 
@@ -61,8 +62,7 @@ bool CAuxPow::check (const uint256& hashAuxBlock, int nChainId, const Consensus:
 
     const CScript script = coinbaseTx->vin[0].scriptSig;
 
-    // Check that the same work is not submitted twice to our chain.
-    //
+    // Check that the same work is not submitted twice to our chain.    
 
     const unsigned char* const mmHeaderBegin = pchMergedMiningHeader;
     const unsigned char* const mmHeaderEnd = mmHeaderBegin + sizeof (pchMergedMiningHeader);

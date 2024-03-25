@@ -1,11 +1,12 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2014 The Bitcoin developers
 // Copyright (c) 2014-2021 Daniel Kraft
+// Copyright (c) 2024 The Osmium developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file license.txt or http://www.opensource.org/licenses/mit-license.php.
 
-#ifndef BLINKHASH_AUXPOW_H
-#define BLINKHASH_AUXPOW_H
+#ifndef OSMIUM_AUXPOW_H
+#define OSMIUM_AUXPOW_H
 
 #include <consensus/params.h>
 #include <primitives/pureheader.h>
@@ -32,15 +33,15 @@ class CAuxPowForTest;
 
 /** Header for merge-mining data in the coinbase.  */
 static const unsigned char pchMergedMiningHeader[] = {
-    0x42, // B
-    0x4c, // L
-    0x4b, // K
-    0x48  // H
+    0x4f, // O
+    0x53, // S
+    0x4d, // M
+    0x41  // A
 };
 
 /**
  * Data for the merge-mining auxpow.  This uses a merkle tx (the parent block's
- * coinbase tx) and a second merkle branch to link the actual Blinkhash block
+ * coinbase tx) and a second merkle branch to link the actual osmium block
  * header to the parent block header, which is mined to satisfy the PoW.
  */
 class CAuxPow
@@ -169,4 +170,4 @@ public:
     static CPureBlockHeader& initAuxPow (CBlockHeader& header);
 };
 
-#endif // BLINKHASH_AUXPOW_H
+#endif // OSMIUM_AUXPOW_H
