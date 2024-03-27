@@ -1248,6 +1248,11 @@ UniValue getauxblock(const JSONRPCRequest& request)
         throw JSONRPCError(RPC_WALLET_ERROR, "Error: Private keys are disabled for this wallet");
     }
 
+    /* Return if incorrect parameter count */
+    if (request.params.size() != 0 && request.params.size() != 2) {
+        throw JSONRPCError(RPC_WALLET_ERROR, "Error: Incorrect number of arguments");
+    }
+
     /* Create a new block */
     if (request.params.size() == 0)
     {
@@ -1258,14 +1263,19 @@ UniValue getauxblock(const JSONRPCRequest& request)
     }
 
     /* Submit a block instead.  */
-    assert(request.params.size() == 2);
-    const std::string& hash = request.params[0].get_str();
+    if (request.params.size() == 2)
+    {
+        // assert(request.params.size() == 2);
+        const std::string& hash = request.params[0].get_str();
 
-    const bool fAccepted = AuxpowMiner::get().submitAuxBlock(request, hash, request.params[1].get_str());
-    if (fAccepted)
-        g_mining_keys.MarkBlockSubmitted(pwallet, hash);
+        const bool fAccepted = AuxpowMiner::get().submitAuxBlock(request, hash, request.params[1].get_str());
+        if (fAccepted)
+            g_mining_keys.MarkBlockSubmitted(pwallet, hash);
 
-    return fAccepted;
+        return fAccepted;
+    }
+
+    return NullUniValue;
 }
 
 static UniValue createauxblock(const JSONRPCRequest& request)
