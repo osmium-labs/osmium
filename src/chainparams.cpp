@@ -233,7 +233,7 @@ public:
         nDefaultPlatformP2PPort = 26656;
         nDefaultPlatformHTTPPort = 443;
         nPruneAfterHeight = 100000;
-        m_assumed_blockchain_size = 45;
+        m_assumed_blockchain_size = 1;
         m_assumed_chain_state_size = 1;
 
         genesis = CreateGenesisBlock(1390095618, 332465, 0x1e0ffff0, 1, 1 * COIN);
@@ -425,7 +425,7 @@ public:
         nDefaultPlatformP2PPort = 22000;
         nDefaultPlatformHTTPPort = 22001;
         nPruneAfterHeight = 1000;
-        m_assumed_blockchain_size = 4;
+        m_assumed_blockchain_size = 1;
         m_assumed_chain_state_size = 1;
 
         genesis = CreateGenesisBlock(1390666206, 78631, 0x1e0ffff0, 1, 50 * COIN);
