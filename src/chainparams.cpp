@@ -414,7 +414,7 @@ public:
         consensus.defaultAssumeValid = uint256S("0x00000c4028b61092d080a5d02bfc4200e38620e89282fe1225356e741bd1c31a"); // Genesis block
 
         // AuxPoW parameters
-        consensus.nAuxpowChainId = 0x0062;
+        consensus.nAuxpowChainId = 0x0063;
         consensus.fStrictChainId = true;
         
         pchMessageStart[0] = 0x74; // t
