@@ -3756,13 +3756,9 @@ bool CheckProofOfWork(const CBlockHeader& block, const Consensus::Params& params
 static bool CheckBlockHeader(const CBlockHeader& block, BlockValidationState& state, const Consensus::Params& consensusParams, bool fCheckPOW = true)
 {
     // Check proof of work matches claimed amount
-    if (!block.auxpow) {
-        if (fCheckPOW && !CheckProofOfWork(block.GetPoWHash(), block.nBits, consensusParams))
-            return state.Invalid(BlockValidationResult::BLOCK_INVALID_HEADER, "high-hash", "proof of work failed");
-    } else {
-        if (fCheckPOW && !CheckProofOfWork(block.auxpow->getParentBlockPoWHash(), block.nBits, consensusParams))
-            return state.Invalid(BlockValidationResult::BLOCK_INVALID_HEADER, "high-hash", "proof of work failed");
-    }
+    if (fCheckPOW && !CheckProofOfWork(block, consensusParams))
+        return state.Invalid(BlockValidationResult::BLOCK_INVALID_HEADER, "high-hash", "proof of work failed");
+
     
     // Check DevNet
     /*if (!consensusParams.hashDevnetGenesisBlock.IsNull() &&
@@ -3891,7 +3887,7 @@ static bool ContextualCheckBlockHeader(const CBlockHeader& block, BlockValidatio
     const int nHeight = pindexPrev->nHeight + 1;
     const Consensus::Params& consensusParams = params.GetConsensus();
 
-    if (nHeight < 1 && block.IsAuxpow())
+    if (nHeight > 1 && block.IsLegacy())
         return state.Invalid(BlockValidationResult::BLOCK_INVALID_HEADER,
                              "late-legacy-block",
                              "legacy block after auxpow start");
