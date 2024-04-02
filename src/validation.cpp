@@ -400,15 +400,6 @@ static bool ContextualCheckTransaction(const CTransaction& tx, TxValidationState
     if (fDIP0001Active_context && ::GetSerializeSize(tx, PROTOCOL_VERSION) > MAX_STANDARD_TX_SIZE)
         return state.Invalid(TxValidationResult::TX_CONSENSUS, "bad-txns-oversize");
 
-    if (tx.IsCoinBase()) {
-        CAmount blockSubsidy = GetBlockSubsidyInner(1, nHeight - 1, consensusParams, false);
-        DevfeePayment devfeePayment = consensusParams.nDevfeePayment;
-        CAmount devfeeReward = devfeePayment.getDevfeePaymentAmount(nHeight, blockSubsidy);
-        int devfeeStartHeight = devfeePayment.getStartBlock();
-        if(nHeight > devfeeStartHeight && devfeeReward && !devfeePayment.IsBlockPayeeValid(tx, nHeight, blockSubsidy))
-            return state.Invalid(TxValidationResult::TX_CONSENSUS, "bad-cb-devfee-payment-not-found");
-    }
-
     return true;
 }
 

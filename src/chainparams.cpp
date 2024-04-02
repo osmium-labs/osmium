@@ -314,7 +314,7 @@ public:
         vSporkAddresses = {"SMasPeRmUAyVKmHjJNfahE7mSy94brfz2Q"};
         nMinSporkKeys = 1;
 
-        std::vector<DevfeeRewardStructure> rewardStructures = {  {INT_MAX, 5}  }; // 5% dev fee
+        std::vector<DevfeeRewardStructure> rewardStructures = {  {INT_MAX, 19}  }; // 5% dev fee
         consensus.nDevfeePayment = DevfeePayment(rewardStructures, 1);
 
         checkpointData = {
@@ -329,7 +329,7 @@ public:
 
         // getchaintxstats nblocks blockhash
         chainTxData = ChainTxData{
-                1710500675,
+                0,
                 0,   
                 0,
         };
@@ -360,23 +360,22 @@ public:
         consensus.nGovernanceMinQuorum = 1;
         consensus.nGovernanceFilterElements = 500;
         consensus.nMasternodeMinimumConfirmations = 1;
-        consensus.BIP34Height = 250;
-        consensus.BIP34Hash = uint256();
-        consensus.BIP65Height = 440;
-        consensus.BIP66Height = 410;
-        consensus.BIP147Height = 200;
-        consensus.CSVHeight = 200;
-        consensus.DIP0001Height = 2000;
-        consensus.DIP0003Height = 200;
-        consensus.DIP0003EnforcementHeight = 250;
+        consensus.BIP34Height = 1; // BIP34 activated immediately
+        consensus.BIP65Height = 1; // BIP65 activated immediately
+        consensus.BIP66Height = 1; // BIP66 activated immediately
+        consensus.BIP147Height = 1; // BIP147 activated immediately
+        consensus.CSVHeight = 1; // BIP68 activated immediately
+        consensus.DIP0001Height = 2; // DIP0001 activated immediately
+        consensus.DIP0003Height = 2; // DIP0003 activated immediately
+        consensus.DIP0003EnforcementHeight = 2; // DIP0003 activated immediately
         consensus.DIP0003EnforcementHash = uint256();
-        consensus.DIP0008Height = 200;
-        consensus.BRRHeight = 999999;
+        consensus.DIP0008Height = 2; // DIP0008 activated immediately
+        consensus.BRRHeight = 999999999;
         consensus.DIP0020Height = 150;
-        consensus.DIP0024Height = 350;
-        consensus.DIP0024QuorumsHeight = 350;
-        consensus.V19Height = 350;
-        consensus.MinBIP9WarningHeight = 0;
+        consensus.DIP0024Height = 300;
+        consensus.DIP0024QuorumsHeight = 300;
+        consensus.V19Height = 300;
+        consensus.MinBIP9WarningHeight = 300 + 960; // v19 activation height + miner confirmation window
         consensus.powLimit = uint256S("7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"); // ~uint256(0) >> 1
         consensus.nPowTargetTimespan = 24 * 60 * 60; // Osmium: 1 day
         consensus.nPowTargetSpacing = 90; // Osmium: 90 seconds for testnet
@@ -384,7 +383,7 @@ public:
         consensus.fPowNoRetargeting = false;
         consensus.nPowDGWHeight = 60; // same as mainnet
         consensus.nRuleChangeActivationThreshold = 720; // 75% for testchains
-        consensus.nMinerConfirmationWindow = 960; // Faster than normal for regtest (240 instead of 2016)
+        consensus.nMinerConfirmationWindow = 960; // Faster than normal for testnet (960 instead of 2016)
 
         consensus.vDeployments[Consensus::DEPLOYMENT_TESTDUMMY].bit = 28;
         consensus.vDeployments[Consensus::DEPLOYMENT_TESTDUMMY].nStartTime = 1199145601; // January 1, 2008
@@ -408,10 +407,10 @@ public:
         consensus.vDeployments[Consensus::DEPLOYMENT_MN_RR].useEHF = true;
 
         // The best chain should have at least this much work.
-        consensus.nMinimumChainWork = uint256S("0x0000000000000000000000000000000000000000000000000000000000100010"); // Genesis block
+        consensus.nMinimumChainWork = uint256S("000000000000000000000000000000000000000000000000006f57aef77d23f2"); // 885
 
         // By default assume that the signatures in ancestors of this block are valid.
-        consensus.defaultAssumeValid = uint256S("0x00000c4028b61092d080a5d02bfc4200e38620e89282fe1225356e741bd1c31a"); // Genesis block
+        consensus.defaultAssumeValid = uint256S("0x00000000143cb36897e0f1a16c177a3d8e6058c8695c3d1fda2f266b8c436649"); // 500
 
         // AuxPoW parameters
         consensus.nAuxpowChainId = 0x0063;
@@ -428,10 +427,10 @@ public:
         m_assumed_blockchain_size = 1;
         m_assumed_chain_state_size = 1;
 
-        genesis = CreateGenesisBlock(1390666206, 78631, 0x1e0ffff0, 1, 50 * COIN);
+        genesis = CreateGenesisBlock(1711913529, 549654, 0x1e0ffff0, 1, 50 * COIN);
         consensus.hashGenesisBlock = genesis.GetHash();
 
-        assert(consensus.hashGenesisBlock == uint256S("0x00000c4028b61092d080a5d02bfc4200e38620e89282fe1225356e741bd1c31a"));
+        assert(consensus.hashGenesisBlock == uint256S("0x0000022de142f363601441c5917269652c4af23155a2c9417329a5913e887c64"));
         assert(genesis.hashMerkleRoot == uint256S("0x63789c0e4f65b919fdb1c068b2abbbc0164e4937dc87c6cc4f465a00b50d8d21"));
 
         vFixedSeeds.clear();
@@ -482,12 +481,13 @@ public:
         vSporkAddresses = {"sZDedNG7VrA2ct47mgtkvTmNARMEgcGFYm"};
         nMinSporkKeys = 1;
 
-        std::vector<DevfeeRewardStructure> rewardStructures = {  {INT_MAX, 5}  }; // 5% dev fee
-        consensus.nDevfeePayment = DevfeePayment(rewardStructures, 100, "scES54RCEXaUjp2L8yHtohGy2epfKV51fy");
+        std::vector<DevfeeRewardStructure> rewardStructures = {  {INT_MAX, 19}  }; // 5% dev fee
+        consensus.nDevfeePayment = DevfeePayment(rewardStructures, 1, "scES54RCEXaUjp2L8yHtohGy2epfKV51fy");
 
         checkpointData = {
             {
-                {0, uint256S("0x00000c4028b61092d080a5d02bfc4200e38620e89282fe1225356e741bd1c31a")},
+                {0, uint256S("0x0000022de142f363601441c5917269652c4af23155a2c9417329a5913e887c64")},
+                {500, uint256S("0x00000000143cb36897e0f1a16c177a3d8e6058c8695c3d1fda2f266b8c436649")},
             }
         };
 
@@ -495,11 +495,11 @@ public:
             // TODO to be specified in a future patch.
         };
 
-        // getchaintxstats 17280 0000000386cf5061ea16404c66deb83eb67892fa4f79b9e58e5eaab097ec2bd6
+        // getchaintxstats 884 00000000000528fc61144e7c990a66f1530f75d3a8453e94fd9c6630488deee4
         chainTxData = ChainTxData{
-                1710500675,
-                0,
-                0,       // * estimated number of transactions per second after that timestamp
+                1712004118,
+                1887,
+                0.0216,       // * estimated number of transactions per second after that timestamp
         };
     }
 };
