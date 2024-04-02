@@ -37,7 +37,7 @@ class WalletLabelsTest(BitcoinTestFramework):
         assert_equal(node.getbalance(), 1000)
 
         # there should be 2 address groups
-        # each with 1 address with a balance of 500 Dash
+        # each with 1 address with a balance of 500 Osmium
         address_groups = node.listaddressgroupings()
         assert_equal(len(address_groups), 2)
         # the addresses aren't linked now, but will be after we send to the
@@ -120,7 +120,7 @@ class WalletLabelsTest(BitcoinTestFramework):
         # Check that addmultisigaddress can assign labels.
         for label in labels:
             addresses = []
-            for x in range(10):
+            for _ in range(10):
                 addresses.append(node.getnewaddress())
             multisig_address = node.addmultisigaddress(5, addresses, label.name)['address']
             label.add_address(multisig_address)

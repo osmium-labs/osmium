@@ -19,7 +19,7 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this software; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-"""HTTP proxy for opening RPC connection to dashd.
+"""HTTP proxy for opening RPC connection to osmiumd.
 
 AuthServiceProxy has the following improvements over python-jsonrpc's
 ServiceProxy class:
@@ -115,6 +115,8 @@ class AuthServiceProxy():
         except OSError as e:
             retry = (
                 '[WinError 10053] An established connection was aborted by the software in your host machine' in str(e))
+            # Workaround for a bug on macOS. See https://bugs.python.org/issue33450
+            retry = retry or ('[Errno 41] Protocol wrong type for socket' in str(e))
             if retry:
                 self.__conn.close()
                 self.__conn.request(method, path, postdata, headers)

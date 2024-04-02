@@ -8,6 +8,7 @@
 
 #include <chainparams.h>
 #include <chainparamsbase.h>
+#include <compat.h>
 #include <logging.h>
 #include <util/strencodings.h>
 #include <util/system.h>
@@ -46,14 +47,14 @@ static bool WalletAppInit(int argc, char* argv[])
         return false;
     }
     if (argc < 2 || HelpRequested(gArgs) || gArgs.IsArgSet("-version")) {
-        std::string strUsage = strprintf("%s dash-wallet version", PACKAGE_NAME) + " " + FormatFullVersion() + "\n";
+        std::string strUsage = strprintf("%s osmium-wallet version", PACKAGE_NAME) + " " + FormatFullVersion() + "\n";
             if (!gArgs.IsArgSet("-version")) {
                 strUsage += "\n"
-                    "dash-wallet is an offline tool for creating and interacting with " PACKAGE_NAME " wallet files.\n"
-                    "By default dash-wallet will act on wallets in the default mainnet wallet directory in the datadir.\n"
+                    "osmium-wallet is an offline tool for creating and interacting with " PACKAGE_NAME " wallet files.\n"
+                    "By default osmium-wallet will act on wallets in the default mainnet wallet directory in the datadir.\n"
                     "To change the target wallet, use the -datadir, -wallet and -testnet/-regtest arguments.\n\n"
                     "Usage:\n"
-                    "  dash-wallet [options] <command>\n";
+                    "  osmium-wallet [options] <command>\n";
                 strUsage += "\n" + gArgs.GetHelpMessage();
             }
         tfm::format(std::cout, "%s", strUsage);
@@ -73,7 +74,7 @@ static bool WalletAppInit(int argc, char* argv[])
     return true;
 }
 
-int main(int argc, char* argv[])
+MAIN_FUNCTION
 {
 #ifdef WIN32
     util::WinCmdLineArgs winArgs;
@@ -100,7 +101,7 @@ int main(int argc, char* argv[])
     }
 
     if (method.empty()) {
-        tfm::format(std::cerr, "No method provided. Run `dash-wallet -help` for valid methods.\n");
+        tfm::format(std::cerr, "No method provided. Run `osmium-wallet -help` for valid methods.\n");
         return EXIT_FAILURE;
     }
 
@@ -112,7 +113,6 @@ int main(int argc, char* argv[])
 
     std::string name = gArgs.GetArg("-wallet", "");
 
-    ECCVerifyHandle globalVerifyHandle;
     ECC_Start();
     if (!WalletTool::ExecuteWalletToolFunc(method, name))
         return EXIT_FAILURE;

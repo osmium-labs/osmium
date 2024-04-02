@@ -1,5 +1,5 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
-// Copyright (c) 2009-2018 The Bitcoin Core developers
+// Copyright (c) 2009-2019 The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -40,8 +40,8 @@ const std::vector<std::pair<std::string, FeeEstimateMode>>& FeeModeMap()
         {"unset", FeeEstimateMode::UNSET},
         {"economical", FeeEstimateMode::ECONOMICAL},
         {"conservative", FeeEstimateMode::CONSERVATIVE},
-        {(CURRENCY_UNIT + "/kB"), FeeEstimateMode::DASH_KB},
-        {(CURRENCY_ATOM + "/B"), FeeEstimateMode::DUFF_B},
+        {(CURRENCY_UNIT + "/kB"), FeeEstimateMode::OSMIUM_KB},
+        {(CURRENCY_ATOM + "/B"), FeeEstimateMode::MUFF_B},
     };
     return FEE_MODES;
 }

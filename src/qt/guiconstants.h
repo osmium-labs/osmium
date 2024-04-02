@@ -1,5 +1,5 @@
 // Copyright (c) 2011-2020 The Bitcoin Core developers
-// Copyright (c) 2014-2022 The Dash Core developers
+// Copyright (c) 2014-2024 The Dash Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -14,10 +14,10 @@ static const int MODEL_UPDATE_DELAY = 250;
 /* AskPassphraseDialog -- Maximum passphrase length */
 static const int MAX_PASSPHRASE_SIZE = 1024;
 
-/* DashGUI -- Size of icons in status bar */
+/* OsmiumGUI -- Size of icons in status bar */
 static const int STATUSBAR_ICONSIZE = 18;
 
-/* DashGUI -- Size of button icons e.g. in SendCoinEntry or SignVerifyMessageDialog */
+/* OsmiumGUI -- Size of button icons e.g. in SendCoinEntry or SignVerifyMessageDialog */
 static const int BUTTON_ICONSIZE = 23;
 
 static const bool DEFAULT_SPLASHSCREEN = true;
@@ -26,8 +26,6 @@ static const bool DEFAULT_SPLASHSCREEN = true;
 #define RGB_HALF 0x7f7f7f
 /** Path to the icon resource folder */
 #define ICONS_PATH ":icons/"
-/** Path to the movies resource folder */
-#define MOVIES_PATH ":movies/"
 
 /* Tooltips longer than this (in characters) are converted into rich text,
    so that they can be word-wrapped.
@@ -37,12 +35,12 @@ static const int TOOLTIP_WRAP_THRESHOLD = 80;
 /* Number of frames in spinner animation */
 #define SPINNER_FRAMES 90
 
-#define QAPP_ORG_NAME "Dash"
-#define QAPP_ORG_DOMAIN "dash.org"
-#define QAPP_APP_NAME_DEFAULT "Dash-Qt"
-#define QAPP_APP_NAME_TESTNET "Dash-Qt-testnet"
-#define QAPP_APP_NAME_DEVNET "Dash-Qt-%s"
-#define QAPP_APP_NAME_REGTEST "Dash-Qt-regtest"
+#define QAPP_ORG_NAME "Osmium"
+#define QAPP_ORG_DOMAIN "osmium.space"
+#define QAPP_APP_NAME_DEFAULT "Osmium-Qt"
+#define QAPP_APP_NAME_TESTNET "Osmium-Qt-testnet"
+#define QAPP_APP_NAME_DEVNET "Osmium-Qt-%s"
+#define QAPP_APP_NAME_REGTEST "Osmium-Qt-regtest"
 
 /* One gigabyte (GB) in bytes */
 static constexpr uint64_t GB_BYTES{1000000000};

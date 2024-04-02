@@ -1,6 +1,6 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2020 The Bitcoin Core developers
-// Copyright (c) 2014-2022 The Dash Core developers
+// Copyright (c) 2014-2023 The Dash Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -10,21 +10,25 @@
 
 #include <chainparamsbase.h>
 #include <clientversion.h>
+#include <compat.h>
 #include <rpc/client.h>
 #include <rpc/mining.h>
 #include <rpc/protocol.h>
 #include <rpc/request.h>
 #include <stacktraces.h>
+#include <tinyformat.h>
 #include <util/strencodings.h>
 #include <util/system.h>
 #include <util/translation.h>
 #include <util/url.h>
 
+#include <algorithm>
 #include <cmath>
 #include <functional>
 #include <memory>
 #include <optional>
 #include <stdio.h>
+#include <string>
 #include <tuple>
 
 #include <event2/buffer.h>
@@ -56,7 +60,7 @@ static void SetupCliArgs(ArgsManager& argsman)
     argsman.AddArg("-version", "Print version and exit", ArgsManager::ALLOW_ANY, OptionsCategory::OPTIONS);
     argsman.AddArg("-conf=<file>", strprintf("Specify configuration file. Relative paths will be prefixed by datadir location. (default: %s)", BITCOIN_CONF_FILENAME), ArgsManager::ALLOW_ANY, OptionsCategory::OPTIONS);
     argsman.AddArg("-datadir=<dir>", "Specify data directory", ArgsManager::ALLOW_ANY, OptionsCategory::OPTIONS);
-    argsman.AddArg("-generate", strprintf("Generate blocks immediately, equivalent to RPC generatenewaddress followed by RPC generatetoaddress. Optional positional integer arguments are number of blocks to generate (default: %s) and maximum iterations to try (default: %s), equivalent to RPC generatetoaddress nblocks and maxtries arguments. Example: dash-cli -generate 4 1000", DEFAULT_NBLOCKS, DEFAULT_MAX_TRIES), ArgsManager::ALLOW_ANY, OptionsCategory::OPTIONS);
+    argsman.AddArg("-generate", strprintf("Generate blocks immediately, equivalent to RPC getnewaddress followed by RPC generatetoaddress. Optional positional integer arguments are number of blocks to generate (default: %s) and maximum iterations to try (default: %s), equivalent to RPC generatetoaddress nblocks and maxtries arguments. Example: osmium-cli -generate 4 1000", DEFAULT_NBLOCKS, DEFAULT_MAX_TRIES), ArgsManager::ALLOW_ANY, OptionsCategory::OPTIONS);
     argsman.AddArg("-getinfo", "Get general information from the remote server. Note that unlike server-side RPC calls, the results of -getinfo is the result of multiple non-atomic requests. Some entries in the result may represent results from different states (e.g. wallet balance may be as of a different block from the chain state reported)", ArgsManager::ALLOW_ANY, OptionsCategory::OPTIONS);
     argsman.AddArg("-netinfo", "Get network peer connection information from the remote server. An optional integer argument from 0 to 4 can be passed for different peers listings (default: 0). Pass \"help\" for detailed help documentation.", ArgsManager::ALLOW_ANY, OptionsCategory::OPTIONS);
     argsman.AddArg("-named", strprintf("Pass named instead of positional arguments (default: %s)", DEFAULT_NAMED), ArgsManager::ALLOW_ANY, OptionsCategory::OPTIONS);
@@ -67,7 +71,7 @@ static void SetupCliArgs(ArgsManager& argsman)
     argsman.AddArg("-rpcport=<port>", strprintf("Connect to JSON-RPC on <port> (default: %u, testnet: %u, regtest: %u)", defaultBaseParams->RPCPort(), testnetBaseParams->RPCPort(), regtestBaseParams->RPCPort()), ArgsManager::ALLOW_ANY | ArgsManager::NETWORK_ONLY, OptionsCategory::OPTIONS);
     argsman.AddArg("-rpcuser=<user>", "Username for JSON-RPC connections", ArgsManager::ALLOW_ANY, OptionsCategory::OPTIONS);
     argsman.AddArg("-rpcwait", "Wait for RPC server to start", ArgsManager::ALLOW_ANY, OptionsCategory::OPTIONS);
-    argsman.AddArg("-rpcwallet=<walletname>", "Send RPC for non-default wallet on RPC server (needs to exactly match corresponding -wallet option passed to dashd). This changes the RPC endpoint used, e.g. http://127.0.0.1:9998/wallet/<walletname>", ArgsManager::ALLOW_ANY, OptionsCategory::OPTIONS);
+    argsman.AddArg("-rpcwallet=<walletname>", "Send RPC for non-default wallet on RPC server (needs to exactly match corresponding -wallet option passed to osmiumd). This changes the RPC endpoint used, e.g. http://127.0.0.1:9968/wallet/<walletname>", ArgsManager::ALLOW_ANY, OptionsCategory::OPTIONS);
     argsman.AddArg("-stdin", "Read extra arguments from standard input, one per line until EOF/Ctrl-D (recommended for sensitive information such as passphrases). When combined with -stdinrpcpass, the first line from standard input is used for the RPC password.", ArgsManager::ALLOW_ANY, OptionsCategory::OPTIONS);
     argsman.AddArg("-stdinrpcpass", "Read RPC password from standard input as a single line. When combined with -stdin, the first line from standard input is used for the RPC password. When combined with -stdinwalletpassphrase, -stdinrpcpass consumes the first line, and -stdinwalletpassphrase consumes the second.", ArgsManager::ALLOW_ANY, OptionsCategory::OPTIONS);
     argsman.AddArg("-stdinwalletpassphrase", "Read wallet passphrase from standard input as a single line. When combined with -stdin, the first line from standard input is used for the wallet passphrase.", ArgsManager::ALLOW_ANY, OptionsCategory::OPTIONS);
@@ -128,10 +132,10 @@ static int AppInitRPC(int argc, char* argv[])
         std::string strUsage = PACKAGE_NAME " RPC client version " + FormatFullVersion() + "\n";
         if (!gArgs.IsArgSet("-version")) {
             strUsage += "\n"
-                "Usage:  dash-cli [options] <command> [params]  Send command to " PACKAGE_NAME "\n"
-                "or:     dash-cli [options] -named <command> [name=value]...  Send command to " PACKAGE_NAME " (with named arguments)\n"
-                "or:     dash-cli [options] help                List commands\n"
-                "or:     dash-cli [options] help <command>      Get help for a command\n";
+                "Usage:  osmium-cli [options] <command> [params]  Send command to " PACKAGE_NAME "\n"
+                "or:     osmium-cli [options] -named <command> [name=value]...  Send command to " PACKAGE_NAME " (with named arguments)\n"
+                "or:     osmium-cli [options] help                List commands\n"
+                "or:     osmium-cli [options] help <command>      Get help for a command\n";
             strUsage += "\n" + gArgs.GetHelpMessage();
         }
 
@@ -171,7 +175,7 @@ struct HTTPReply
     std::string body;
 };
 
-static const char *http_errorstring(int code)
+static std::string http_errorstring(int code)
 {
     switch(code) {
 #if LIBEVENT_VERSION_NUMBER >= 0x02010300
@@ -304,38 +308,39 @@ class NetinfoRequestHandler : public BaseRequestHandler
 {
 private:
     static constexpr int8_t UNKNOWN_NETWORK{-1};
-    static constexpr size_t m_networks_size{3};
+    static constexpr uint8_t m_networks_size{3};
     const std::array<std::string, m_networks_size> m_networks{{"ipv4", "ipv6", "onion"}};
     std::array<std::array<uint16_t, m_networks_size + 2>, 3> m_counts{{{}}}; //!< Peer counts by (in/out/total, networks/total/block-relay)
     int8_t NetworkStringToId(const std::string& str) const
     {
-        for (size_t i = 0; i < m_networks_size; ++i) {
+        for (uint8_t i = 0; i < m_networks_size; ++i) {
             if (str == m_networks.at(i)) return i;
         }
         return UNKNOWN_NETWORK;
     }
-    uint8_t m_details_level{0};      //!< Optional user-supplied arg to set dashboard details level
+    uint8_t m_details_level{0};      //!< Optional user-supplied arg to set osmiumboard details level
     bool m_is_help_requested{false}; //!< Optional user-supplied arg to print help documentation
     bool DetailsRequested() const { return m_details_level > 0 && m_details_level < 5; }
     bool IsAddressSelected() const { return m_details_level == 2 || m_details_level == 4; }
     bool IsVersionSelected() const { return m_details_level == 3 || m_details_level == 4; }
     bool m_is_asmap_on{false};
     size_t m_max_addr_length{0};
+    size_t m_max_age_length{4};
     size_t m_max_id_length{2};
     struct Peer {
-        int id;
-        int mapped_as;
-        int version;
-        int64_t conn_time;
+        std::string addr;
+        std::string sub_version;
+        std::string network;
+        std::string age;
+        double min_ping;
+        double ping;
         int64_t last_blck;
         int64_t last_recv;
         int64_t last_send;
         int64_t last_trxn;
-        double min_ping;
-        double ping;
-        std::string addr;
-        std::string network;
-        std::string sub_version;
+        int id;
+        int mapped_as;
+        int version;
         bool is_block_relay;
         bool is_outbound;
         bool operator<(const Peer& rhs) const { return std::tie(is_outbound, min_ping) < std::tie(rhs.is_outbound, rhs.min_ping); }
@@ -344,27 +349,34 @@ private:
     std::string ChainToString() const
     {
         if (gArgs.GetChainName() == CBaseChainParams::TESTNET) return " testnet";
+        if (gArgs.GetChainName() == CBaseChainParams::DEVNET) return " devnet";
         if (gArgs.GetChainName() == CBaseChainParams::REGTEST) return " regtest";
         return "";
+    }
+    std::string PingTimeToString(double seconds) const
+    {
+        if (seconds < 0) return "";
+        const double milliseconds{round(1000 * seconds)};
+        return milliseconds > 999999 ? "-" : ToString(milliseconds);
     }
     const UniValue NetinfoHelp()
     {
         return std::string{
             "-netinfo level|\"help\" \n\n"
-            "Returns a network peer connections dashboard with information from the remote server.\n"
+            "Returns a network peer connections osmiumboard with information from the remote server.\n"
             "Under the hood, -netinfo fetches the data by calling getpeerinfo and getnetworkinfo.\n"
             "An optional integer argument from 0 to 4 can be passed for different peers listings.\n"
             "Pass \"help\" to see this detailed help documentation.\n"
             "If more than one argument is passed, only the first one is read and parsed.\n"
-            "Suggestion: use with the Linux watch(1) command for a live dashboard; see example below.\n\n"
+            "Suggestion: use with the Linux watch(1) command for a live osmiumboard; see example below.\n\n"
             "Arguments:\n"
-            "1. level (integer 0-4, optional)  Specify the info level of the peers dashboard (default 0):\n"
+            "1. level (integer 0-4, optional)  Specify the info level of the peers osmiumboard (default 0):\n"
             "                                  0 - Connection counts and local addresses\n"
             "                                  1 - Like 0 but with a peers listing (without address or version columns)\n"
             "                                  2 - Like 1 but with an address column\n"
             "                                  3 - Like 1 but with a version column\n"
             "                                  4 - Like 1 but with both address and version columns\n"
-            "2. help (string \"help\", optional) Print this help documentation instead of the dashboard.\n\n"
+            "2. help (string \"help\", optional) Print this help documentation instead of the osmiumboard.\n\n"
             "Result:\n\n"
             "* The peers listing in levels 1-4 displays all of the peers sorted by direction and minimum ping time:\n\n"
             "  Column   Description\n"
@@ -393,15 +405,15 @@ private:
             "* The local addresses table lists each local address broadcast by the node, the port, and the score.\n\n"
             "Examples:\n\n"
             "Connection counts and local addresses only\n"
-            "> dash-cli -netinfo\n\n"
+            "> osmium-cli -netinfo\n\n"
             "Compact peers listing\n"
-            "> dash-cli -netinfo 1\n\n"
-            "Full dashboard\n"
-            "> dash-cli -netinfo 4\n\n"
-            "Full live dashboard, adjust --interval or --no-title as needed (Linux)\n"
-            "> watch --interval 1 --no-title dash-cli -netinfo 4\n\n"
+            "> osmium-cli -netinfo 1\n\n"
+            "Full osmiumboard\n"
+            "> osmium-cli -netinfo 4\n\n"
+            "Full live osmiumboard, adjust --interval or --no-title as needed (Linux)\n"
+            "> watch --interval 1 --no-title osmium-cli -netinfo 4\n\n"
             "See this help\n"
-            "> dash-cli -netinfo help\n"};
+            "> osmium-cli -netinfo help\n"};
     }
     const int64_t m_time_now{GetSystemTimeInSeconds()};
 
@@ -438,7 +450,7 @@ public:
 
         const UniValue& networkinfo{batch[ID_NETWORKINFO]["result"]};
         if (networkinfo["version"].get_int() < 200000) {
-            throw std::runtime_error("-netinfo requires dashd server to be running v20.0 and up");
+            throw std::runtime_error("-netinfo requires osmiumd server to be running v20.0 and up");
         }
 
         // Count peer connection totals, and if DetailsRequested(), store peer data in a vector of structs.
@@ -469,10 +481,12 @@ public:
                 const double min_ping{peer["minping"].isNull() ? -1 : peer["minping"].get_real()};
                 const double ping{peer["pingtime"].isNull() ? -1 : peer["pingtime"].get_real()};
                 const std::string addr{peer["addr"].get_str()};
+                const std::string age{conn_time == 0 ? "" : ToString((m_time_now - conn_time) / 60)};
                 const std::string sub_version{peer["subver"].get_str()};
-                m_peers.push_back({peer_id, mapped_as, version, conn_time, last_blck, last_recv, last_send, last_trxn, min_ping, ping, addr, network, sub_version, is_block_relay, is_outbound});
-                m_max_id_length = std::max(ToString(peer_id).length(), m_max_id_length);
+                m_peers.push_back({addr, sub_version, network, age, min_ping, ping, last_blck, last_recv, last_send, last_trxn, peer_id, mapped_as, version, is_block_relay, is_outbound});
                 m_max_addr_length = std::max(addr.length() + 1, m_max_addr_length);
+                m_max_age_length = std::max(age.length(), m_max_age_length);
+                m_max_id_length = std::max(ToString(peer_id).length(), m_max_id_length);
                 m_is_asmap_on |= (mapped_as != 0);
             }
         }
@@ -483,23 +497,24 @@ public:
         // Report detailed peer connections list sorted by direction and minimum ping time.
         if (DetailsRequested() && !m_peers.empty()) {
             std::sort(m_peers.begin(), m_peers.end());
-            result += "<-> relay   net mping   ping send recv  txn  blk uptime ";
+            result += strprintf("<-> relay   net mping   ping send recv  txn  blk %*s ", m_max_age_length, "age");
             if (m_is_asmap_on) result += " asmap ";
             result += strprintf("%*s %-*s%s\n", m_max_id_length, "id", IsAddressSelected() ? m_max_addr_length : 0, IsAddressSelected() ? "address" : "", IsVersionSelected() ? "version" : "");
             for (const Peer& peer : m_peers) {
                 std::string version{ToString(peer.version) + peer.sub_version};
                 result += strprintf(
-                    "%3s %5s %5s%6s%7s%5s%5s%5s%5s%7s%*i %*s %-*s%s\n",
+                    "%3s %5s %5s%7s%7s%5s%5s%5s%5s %*s%*i %*s %-*s%s\n",
                     peer.is_outbound ? "out" : "in",
                     peer.is_block_relay ? "block" : "full",
                     peer.network,
-                    peer.min_ping == -1 ? "" : ToString(round(1000 * peer.min_ping)),
-                    peer.ping == -1 ? "" : ToString(round(1000 * peer.ping)),
+                    PingTimeToString(peer.min_ping),
+                    PingTimeToString(peer.ping),
                     peer.last_send == 0 ? "" : ToString(m_time_now - peer.last_send),
                     peer.last_recv == 0 ? "" : ToString(m_time_now - peer.last_recv),
                     peer.last_trxn == 0 ? "" : ToString((m_time_now - peer.last_trxn) / 60),
                     peer.last_blck == 0 ? "" : ToString((m_time_now - peer.last_blck) / 60),
-                    peer.conn_time == 0 ? "" : ToString((m_time_now - peer.conn_time) / 60),
+                    m_max_age_length, // variable spacing
+                    peer.age,
                     m_is_asmap_on ? 7 : 0, // variable spacing
                     m_is_asmap_on && peer.mapped_as != 0 ? ToString(peer.mapped_as) : "",
                     m_max_id_length, // variable spacing
@@ -508,24 +523,28 @@ public:
                     IsAddressSelected() ? peer.addr : "",
                     IsVersionSelected() && version != "0" ? version : "");
             }
-            result += "                   ms     ms  sec  sec  min  min    min\n\n";
+            result += strprintf("                    ms     ms  sec  sec  min  min %*s\n\n", m_max_age_length, "min");
         }
 
         // Report peer connection totals by type.
         result += "        ipv4    ipv6   onion   total  block-relay\n";
         const std::array<std::string, 3> rows{{"in", "out", "total"}};
-        for (size_t i = 0; i < m_networks_size; ++i) {
+        for (uint8_t i = 0; i < m_networks_size; ++i) {
             result += strprintf("%-5s  %5i   %5i   %5i   %5i   %5i\n", rows.at(i), m_counts.at(i).at(0), m_counts.at(i).at(1), m_counts.at(i).at(2), m_counts.at(i).at(m_networks_size), m_counts.at(i).at(m_networks_size + 1));
         }
 
         // Report local addresses, ports, and scores.
         result += "\nLocal addresses";
-        const UniValue& local_addrs{networkinfo["localaddresses"]};
+        const std::vector<UniValue>& local_addrs{networkinfo["localaddresses"].getValues()};
         if (local_addrs.empty()) {
             result += ": n/a\n";
         } else {
-            for (const UniValue& addr : local_addrs.getValues()) {
-                result += strprintf("\n%-40i  port %5i     score %6i", addr["address"].get_str(), addr["port"].get_int(), addr["score"].get_int());
+            size_t max_addr_size{0};
+            for (const UniValue& addr : local_addrs) {
+                max_addr_size = std::max(addr["address"].get_str().length() + 1, max_addr_size);
+            }
+            for (const UniValue& addr : local_addrs) {
+                result += strprintf("\n%-*s    port %6i    score %6i", max_addr_size, addr["address"].get_str(), addr["port"].get_int(), addr["score"].get_int());
             }
         }
 
@@ -663,7 +682,7 @@ static UniValue CallRPC(BaseRequestHandler* rh, const std::string& strMethod, co
         if (response.error != -1) {
             responseErrorMessage = strprintf(" (error code %d - \"%s\")", response.error, http_errorstring(response.error));
         }
-        throw CConnectionFailed(strprintf("Could not connect to the server %s:%d%s\n\nMake sure the dashd server is running and that you are connecting to the correct RPC port.", host, port, responseErrorMessage));
+        throw CConnectionFailed(strprintf("Could not connect to the server %s:%d%s\n\nMake sure the osmiumd server is running and that you are connecting to the correct RPC port.", host, port, responseErrorMessage));
     } else if (response.status == HTTP_UNAUTHORIZED) {
         if (failedToGetAuthCookie) {
             throw std::runtime_error(strprintf(
@@ -745,7 +764,7 @@ static void ParseError(const UniValue& error, std::string& strPrint, int& nRet)
             strPrint += ("error message:\n" + err_msg.get_str());
         }
         if (err_code.isNum() && err_code.get_int() == RPC_WALLET_NOT_SPECIFIED) {
-            strPrint += "\nTry adding \"-rpcwallet=<filename>\" option to dash-cli command line.";
+            strPrint += "\nTry adding \"-rpcwallet=<filename>\" option to osmium-cli command line.";
         }
     } else {
         strPrint = "error: " + error.write();
@@ -761,8 +780,8 @@ static void ParseError(const UniValue& error, std::string& strPrint, int& nRet)
  */
 static void GetWalletBalances(UniValue& result)
 {
-    std::unique_ptr<BaseRequestHandler> rh{std::make_unique<DefaultRequestHandler>()};
-    const UniValue listwallets = ConnectAndCallRPC(rh.get(), "listwallets", /* args=*/{});
+    DefaultRequestHandler rh;
+    const UniValue listwallets = ConnectAndCallRPC(&rh, "listwallets", /* args=*/{});
     if (!find_value(listwallets, "error").isNull()) return;
     const UniValue& wallets = find_value(listwallets, "result");
     if (wallets.size() <= 1) return;
@@ -770,7 +789,7 @@ static void GetWalletBalances(UniValue& result)
     UniValue balances(UniValue::VOBJ);
     for (const UniValue& wallet : wallets.getValues()) {
         const std::string wallet_name = wallet.get_str();
-        const UniValue getbalances = ConnectAndCallRPC(rh.get(), "getbalances", /* args=*/{}, wallet_name);
+        const UniValue getbalances = ConnectAndCallRPC(&rh, "getbalances", /* args=*/{}, wallet_name);
         const UniValue& balance = find_value(getbalances, "result")["mine"]["trusted"];
         balances.pushKV(wallet_name, balance);
     }
@@ -785,8 +804,8 @@ static UniValue GetNewAddress()
 {
     std::optional<std::string> wallet_name{};
     if (gArgs.IsArgSet("-rpcwallet")) wallet_name = gArgs.GetArg("-rpcwallet", "");
-    std::unique_ptr<BaseRequestHandler> rh{std::make_unique<DefaultRequestHandler>()};
-    return ConnectAndCallRPC(rh.get(), "getnewaddress", /* args=*/{}, wallet_name);
+    DefaultRequestHandler rh;
+    return ConnectAndCallRPC(&rh, "getnewaddress", /* args=*/{}, wallet_name);
 }
 
 /**
@@ -914,16 +933,7 @@ static int CommandLineRPC(int argc, char *argv[])
     return nRet;
 }
 
-#ifdef WIN32
-// Export main() and ensure working ASLR on Windows.
-// Exporting a symbol will prevent the linker from stripping
-// the .reloc section from the binary, which is a requirement
-// for ASLR. This is a temporary workaround until a fixed
-// version of binutils is used for releases.
-__declspec(dllexport) int main(int argc, char* argv[])
-#else
-int main(int argc, char* argv[])
-#endif
+MAIN_FUNCTION
 {
     RegisterPrettyTerminateHander();
     RegisterPrettySignalHandlers();

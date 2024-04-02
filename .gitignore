@@ -6,17 +6,18 @@ reset-files.bash
 *.tar.gz
 
 *.exe
-src/dash
-src/dashd
-src/dash-cli
-src/dash-tx
-src/dash-wallet
-src/test/fuzz/*
-!src/test/fuzz/*.*
-src/test/test_dash
-src/qt/test/test_dash-qt
+src/osmium
+src/osmiumd
+src/osmium-cli
+src/osmium-gui
+src/osmium-node
+src/osmium-tx
+src/osmium-wallet
+src/test/fuzz/fuzz
+src/test/test_osmium
+src/qt/test/test_osmium-qt
 src/qt/res/css/colors/*
-src/bench/bench_dash
+src/bench/bench_osmium
 
 # autoreconf
 Makefile.in
@@ -93,15 +94,15 @@ libconftest.dylib*
 *.qm
 Makefile
 !depends/Makefile
-dash-qt
-Dash-Qt.app
+osmium-qt
+Osmium-Qt.app
 
 # Qt Creator
 Makefile.am.user
 
 # Unit-tests
 Makefile.test
-dash-qt_test
+osmium-qt_test
 
 # Resources cpp
 qrc_*.cpp
@@ -118,9 +119,12 @@ releases
 *.gcno
 *.gcda
 /*.info
-test_dash.coverage/
+test_osmium.coverage/
 total.coverage/
+fuzz.coverage/
 coverage_percent.txt
+/cov_tool_wrapper.sh
+qa-assets/
 
 #build tests
 linux-coverage-build
@@ -128,6 +132,7 @@ linux-build
 win32-build
 test/config.ini
 test/cache/*
+test/.mypy_cache/
 
 !src/leveldb*/Makefile
 
@@ -136,15 +141,15 @@ test/cache/*
 .autotools
 /doc/doxygen/
 
-libdashconsensus.pc
+libosmiumconsensus.pc
 contrib/devtools/split-debug.sh
-src/qt/dash-qt.bash
+src/qt/osmium-qt.bash
 qa/pull-tester/tests-config.sh
 
 #development symlinks
-dash-cli
-dashd
-dash-qt
+osmium-cli
+osmiumd
+osmium-qt
 make
 
 /docker/bin

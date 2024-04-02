@@ -2,8 +2,8 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#ifndef DASH_CRYPTO_BLS_IES_H
-#define DASH_CRYPTO_BLS_IES_H
+#ifndef OSMIUM_CRYPTO_BLS_IES_H
+#define OSMIUM_CRYPTO_BLS_IES_H
 
 #include <bls/bls.h>
 #include <streams.h>
@@ -109,7 +109,7 @@ public:
                 ds.clear();
 
                 ds << _objects[i];
-                blobs[i].assign(ds.begin(), ds.end());
+                blobs[i].assign(UCharCast(ds.data()), UCharCast(ds.data() + ds.size()));
             }
         } catch (const std::exception&) {
             return false;
@@ -122,7 +122,7 @@ public:
     {
         CDataStream ds(SER_NETWORK, nVersion);
         ds << obj;
-        Blob blob(ds.begin(), ds.end());
+        Blob blob(UCharCast(ds.data()), UCharCast(ds.data() + ds.size()));
         return CBLSIESMultiRecipientBlobs::Encrypt(idx, recipient, blob);
     }
 
@@ -148,4 +148,4 @@ public:
     }
 };
 
-#endif // DASH_CRYPTO_BLS_IES_H
+#endif // OSMIUM_CRYPTO_BLS_IES_H

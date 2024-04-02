@@ -6,9 +6,8 @@
 #define BITCOIN_EVO_DMN_TYPES_H
 
 #include <amount.h>
-#include <serialize.h>
 
-#include <cassert>
+#include <limits>
 #include <string_view>
 
 enum class MnType : uint16_t {
@@ -18,6 +17,7 @@ enum class MnType : uint16_t {
     Invalid = std::numeric_limits<uint16_t>::max(),
 };
 
+template<typename T> struct is_serializable_enum;
 template<> struct is_serializable_enum<MnType> : std::true_type {};
 
 namespace dmn_types {
@@ -31,12 +31,12 @@ struct mntype_struct
 
 constexpr auto Regular = mntype_struct{
     .voting_weight = 1,
-    .collat_amount = 1000 * COIN,
+    .collat_amount = 500 * COIN,
     .description = "Regular",
 };
 constexpr auto Evo = mntype_struct{
-    .voting_weight = 4,
-    .collat_amount = 4000 * COIN,
+    .voting_weight = 1,    
+    .collat_amount = MAX_MONEY,
     .description = "Evo",
 };
 constexpr auto Invalid = mntype_struct{

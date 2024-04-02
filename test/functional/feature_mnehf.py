@@ -16,17 +16,17 @@ from test_framework.messages import (
     ser_string,
 )
 
-from test_framework.test_framework import DashTestFramework
+from test_framework.test_framework import OsmiumTestFramework
 from test_framework.util import (
     assert_equal,
     assert_greater_than,
     get_bip9_details,
 )
 
-class MnehfTest(DashTestFramework):
+class MnehfTest(OsmiumTestFramework):
     def set_test_params(self):
         extra_args = [["-vbparams=testdummy:0:999999999999:12:12:12:5:1", "-persistmempool=0"] for _ in range(4)]
-        self.set_dash_test_params(4, 3, fast_dip3_enforcement=True, extra_args=extra_args)
+        self.set_osmium_test_params(4, 3, fast_dip3_enforcement=True, extra_args=extra_args)
 
     def skip_test_if_missing_module(self):
         self.skip_if_no_wallet()
@@ -189,7 +189,7 @@ class MnehfTest(DashTestFramework):
 
         self.restart_all_nodes()
 
-        for i in range(12):
+        for _ in range(12):
             self.check_fork('started')
             node.generate(1)
             self.sync_all()
@@ -210,7 +210,7 @@ class MnehfTest(DashTestFramework):
             inode.invalidateblock(ehf_blockhash)
 
         self.log.info("Expecting for fork to be defined in next blocks because no MnEHF tx here")
-        for i in range(12):
+        for _ in range(12):
             self.check_fork('defined')
             node.generate(1)
             self.sync_all()
@@ -225,7 +225,7 @@ class MnehfTest(DashTestFramework):
         assert tx_sent_2 in node.getblock(ehf_blockhash_2)['tx']
 
         self.log.info(f"Generate some more block to jump to `started` status")
-        for i in range(12):
+        for _ in range(12):
             node.generate(1)
         self.check_fork('started')
         self.restart_all_nodes()

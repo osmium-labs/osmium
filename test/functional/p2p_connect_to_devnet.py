@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-# Copyright (c) 2021-2022 The Dash Core developers
+# Copyright (c) 2021-2024 The Dash Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 """Test being able to connect to the same devnet"""
 
-from test_framework.mininode import P2PInterface
+from test_framework.p2p import P2PInterface
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import assert_equal
 
@@ -24,7 +24,7 @@ class ConnectDevnetNodes(BitcoinTestFramework):
 
     def run_test(self):
         self.nodes[0].add_p2p_connection(P2PInterface())
-        assert_equal(self.nodes[0].getconnectioncount(), 2)  # 1 out dashd + 1 p2p
+        assert_equal(self.nodes[0].getconnectioncount(), 2)  # 1 out osmiumd + 1 p2p
 
 
 if __name__ == '__main__':

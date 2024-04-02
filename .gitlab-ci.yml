@@ -87,7 +87,7 @@ builder-image:
   before_script:
     - export CACHE_DIR=$CI_PROJECT_DIR/cache
     - echo BUILD_TARGET=$BUILD_TARGET
-    - source ./ci/dash/matrix.sh
+    - source ./ci/osmium/matrix.sh
 
     # Setup some environment variables
     - |
@@ -118,8 +118,8 @@ builder-image:
   variables:
     CCACHE_SIZE: "400M"
   script:
-    - ./ci/dash/build_src.sh
-    - ./ci/dash/test_unittests.sh # Run unit tests in build stage to avoid creating too many parallel jobs
+    - ./ci/osmium/build_src.sh
+    - ./ci/osmium/test_unittests.sh # Run unit tests in build stage to avoid creating too many parallel jobs
   cache:
     # Let all branches share the same cache, which is ok because ccache is able to handle it
     key:
@@ -135,13 +135,13 @@ builder-image:
       - build-ci
     # Exclude some less important binaries to reduce the size of the artifacts
     exclude:
-      - build-ci/dashcore-$BUILD_TARGET/src/bench/bench_dash
-      - build-ci/dashcore-$BUILD_TARGET/src/bench/bench_dash.exe
-      - build-ci/dashcore-$BUILD_TARGET/src/qt/test/test_dash-qt
-      - build-ci/dashcore-$BUILD_TARGET/src/qt/test/test_dash-qt.exe
-      - build-ci/dashcore-$BUILD_TARGET/src/test/test_dash
-      - build-ci/dashcore-$BUILD_TARGET/src/test/test_dash.exe
-      - build-ci/dashcore-$BUILD_TARGET/src/test/fuzz/*
+      - build-ci/osmiumcore-$BUILD_TARGET/src/bench/bench_osmium
+      - build-ci/osmiumcore-$BUILD_TARGET/src/bench/bench_osmium.exe
+      - build-ci/osmiumcore-$BUILD_TARGET/src/qt/test/test_osmium-qt
+      - build-ci/osmiumcore-$BUILD_TARGET/src/qt/test/test_osmium-qt.exe
+      - build-ci/osmiumcore-$BUILD_TARGET/src/test/test_osmium
+      - build-ci/osmiumcore-$BUILD_TARGET/src/test/test_osmium.exe
+      - build-ci/osmiumcore-$BUILD_TARGET/src/test/fuzz/*
     expire_in: 3 days
 
 .test-template:
@@ -151,7 +151,7 @@ builder-image:
     INTEGRATION_TESTS_ARGS: "--extended --exclude feature_pruning,feature_dbcrash"
   script:
     - echo "INTEGRATION_TESTS_ARGS=${INTEGRATION_TESTS_ARGS}"
-    - ./ci/dash/test_integrationtests.sh $INTEGRATION_TESTS_ARGS
+    - ./ci/osmium/test_integrationtests.sh $INTEGRATION_TESTS_ARGS
   cache:
     # Let all branches share the same cache, which is ok because get_previous_releases.py extracts release binaries in separate folders
     key:
@@ -203,6 +203,17 @@ x86_64-pc-linux-gnu-nowallet:
   variables:
     HOST: x86_64-pc-linux-gnu
     DEP_OPTS: "NO_WALLET=1"
+
+## TODO: # Skip on non-depends, non-multiprocess PRs
+## if: type != pull_request OR commit_message =~ /depends:|multiprocess:/
+#x86_64-pc-linux-gnu-multiprocess:
+#  extends:
+#    - .build-depends-template
+#    - .skip-in-fast-mode-template
+#  variables:
+#    HOST: x86_64-pc-linux-gnu
+#    DEP_OPTS: "MULTIPROCESS=1"
+#
 
 x86_64-apple-darwin:
   extends:
@@ -299,6 +310,15 @@ linux64_nowallet-build:
   variables:
     BUILD_TARGET: linux64_nowallet
 
+#linux64_multiprocess-build:
+#  extends:
+#    - .build-template
+#    - .skip-in-fast-mode-template
+#  needs:
+#    - x86_64-pc-linux-gnu-multiprocess
+#  variables:
+#    BUILD_TARGET: linux64_multiprocess
+
 #linux64_valgrind-build:
 #  extends:
 #    - .build-template
@@ -361,6 +381,17 @@ linux64_ubsan-test:
     - linux64_ubsan-build
   variables:
     BUILD_TARGET: linux64_ubsan
+
+# TODO: enable multiprocess back in CI once it has any value
+# or in case if any new backports to test
+#linux64_multiprocess-test:
+#  extends:
+#    - .test-template
+#    - .skip-in-fast-mode-template
+#  needs:
+#    - linux64_multiprocess-build
+#  variables:
+#    BUILD_TARGET: linux64_multiprocess
 
 #linux64_valgrind-test:
 #  extends:

@@ -21,7 +21,7 @@
   #elif defined(HAVE_FUNC_ATTRIBUTE_VISIBILITY)
     #define EXPORT_SYMBOL __attribute__ ((visibility ("default")))
   #endif
-#elif defined(MSC_VER) && !defined(STATIC_LIBBITCOINCONSENSUS)
+#elif defined(MSC_VER) && !defined(STATIC_LIBOSMIUMCONSENSUS)
   #define EXPORT_SYMBOL __declspec(dllimport)
 #endif
 
@@ -35,38 +35,38 @@ extern "C" {
 
 #define BITCOINCONSENSUS_API_VER 0
 
-typedef enum dashconsensus_error_t
+typedef enum osmiumconsensus_error_t
 {
-    dashconsensus_ERR_OK = 0,
-    dashconsensus_ERR_TX_INDEX,
-    dashconsensus_ERR_TX_SIZE_MISMATCH,
-    dashconsensus_ERR_TX_DESERIALIZE,
-    dashconsensus_ERR_INVALID_FLAGS,
-} dashconsensus_error;
+    osmiumconsensus_ERR_OK = 0,
+    osmiumconsensus_ERR_TX_INDEX,
+    osmiumconsensus_ERR_TX_SIZE_MISMATCH,
+    osmiumconsensus_ERR_TX_DESERIALIZE,
+    osmiumconsensus_ERR_INVALID_FLAGS,
+} osmiumconsensus_error;
 
 /** Script verification flags */
 enum
 {
-    dashconsensus_SCRIPT_FLAGS_VERIFY_NONE                = 0,
-    dashconsensus_SCRIPT_FLAGS_VERIFY_P2SH                = (1U << 0), // evaluate P2SH (BIP16) subscripts
-    dashconsensus_SCRIPT_FLAGS_VERIFY_DERSIG              = (1U << 2), // enforce strict DER (BIP66) compliance
-    dashconsensus_SCRIPT_FLAGS_VERIFY_NULLDUMMY           = (1U << 4), // enforce NULLDUMMY (BIP147)
-    dashconsensus_SCRIPT_FLAGS_VERIFY_CHECKLOCKTIMEVERIFY = (1U << 9), // enable CHECKLOCKTIMEVERIFY (BIP65)
-    dashconsensus_SCRIPT_FLAGS_VERIFY_CHECKSEQUENCEVERIFY = (1U << 10), // enable CHECKSEQUENCEVERIFY (BIP112)
-    dashconsensus_SCRIPT_FLAGS_VERIFY_ALL                 = dashconsensus_SCRIPT_FLAGS_VERIFY_P2SH | dashconsensus_SCRIPT_FLAGS_VERIFY_DERSIG |
-                                                            dashconsensus_SCRIPT_FLAGS_VERIFY_NULLDUMMY | dashconsensus_SCRIPT_FLAGS_VERIFY_CHECKLOCKTIMEVERIFY |
-                                                            dashconsensus_SCRIPT_FLAGS_VERIFY_CHECKSEQUENCEVERIFY
+    osmiumconsensus_SCRIPT_FLAGS_VERIFY_NONE                = 0,
+    osmiumconsensus_SCRIPT_FLAGS_VERIFY_P2SH                = (1U << 0), // evaluate P2SH (BIP16) subscripts
+    osmiumconsensus_SCRIPT_FLAGS_VERIFY_DERSIG              = (1U << 2), // enforce strict DER (BIP66) compliance
+    osmiumconsensus_SCRIPT_FLAGS_VERIFY_NULLDUMMY           = (1U << 4), // enforce NULLDUMMY (BIP147)
+    osmiumconsensus_SCRIPT_FLAGS_VERIFY_CHECKLOCKTIMEVERIFY = (1U << 9), // enable CHECKLOCKTIMEVERIFY (BIP65)
+    osmiumconsensus_SCRIPT_FLAGS_VERIFY_CHECKSEQUENCEVERIFY = (1U << 10), // enable CHECKSEQUENCEVERIFY (BIP112)
+    osmiumconsensus_SCRIPT_FLAGS_VERIFY_ALL                 = osmiumconsensus_SCRIPT_FLAGS_VERIFY_P2SH | osmiumconsensus_SCRIPT_FLAGS_VERIFY_DERSIG |
+                                                            osmiumconsensus_SCRIPT_FLAGS_VERIFY_NULLDUMMY | osmiumconsensus_SCRIPT_FLAGS_VERIFY_CHECKLOCKTIMEVERIFY |
+                                                            osmiumconsensus_SCRIPT_FLAGS_VERIFY_CHECKSEQUENCEVERIFY
 };
 
 /// Returns 1 if the input nIn of the serialized transaction pointed to by
 /// txTo correctly spends the scriptPubKey pointed to by scriptPubKey under
 /// the additional constraints specified by flags.
 /// If not nullptr, err will contain an error/success code for the operation
-EXPORT_SYMBOL int dashconsensus_verify_script(const unsigned char *scriptPubKey, unsigned int scriptPubKeyLen,
+EXPORT_SYMBOL int osmiumconsensus_verify_script(const unsigned char *scriptPubKey, unsigned int scriptPubKeyLen,
                                     const unsigned char *txTo        , unsigned int txToLen,
-                                    unsigned int nIn, unsigned int flags, dashconsensus_error* err);
+                                    unsigned int nIn, unsigned int flags, osmiumconsensus_error* err);
 
-EXPORT_SYMBOL unsigned int dashconsensus_version();
+EXPORT_SYMBOL unsigned int osmiumconsensus_version();
 
 #ifdef __cplusplus
 } // extern "C"

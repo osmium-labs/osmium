@@ -1,5 +1,5 @@
 #!/bin/sh
-# Copyright (c) 2017-2019 The Bitcoin Core developers
+# Copyright (c) 2017-2021 The Bitcoin Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -12,7 +12,7 @@ if [ -z "${1}" ]; then
   echo "Usage: $0 <base-dir> [<extra-bdb-configure-flag> ...]"
   echo
   echo "Must specify a single argument: the directory in which db4 will be built."
-  echo "This is probably \`pwd\` if you're at the root of the dash repository."
+  echo "This is probably \`pwd\` if you're at the root of the osmium repository."
   exit 1
 fi
 
@@ -55,12 +55,21 @@ http_get() {
     echo "File ${2} already exists; not downloading again"
   elif check_exists curl; then
     curl --insecure --retry 5 "${1}" -o "${2}"
-  else
+  elif check_exists wget; then
     wget --no-check-certificate "${1}" -O "${2}"
+  else
+    echo "Simple transfer utilities 'curl' and 'wget' not found. Please install one of them and try again."
+    exit 1
   fi
 
   sha256_check "${3}" "${2}"
 }
+
+# Ensure the commands we use exist on the system
+if ! check_exists patch; then
+    echo "Command-line tool 'patch' not found. Install patch and try again."
+    exit 1
+fi
 
 mkdir -p "${BDB_PREFIX}"
 http_get "${BDB_URL}" "${BDB_VERSION}.tar.gz" "${BDB_HASH}"
@@ -244,7 +253,7 @@ echo
 echo "db4 build complete."
 echo
 # shellcheck disable=SC2016
-echo 'When compiling dashd, run `./configure` in the following way:'
+echo 'When compiling osmiumd, run `./configure` in the following way:'
 echo
 echo "  export BDB_PREFIX='${BDB_PREFIX}'"
 # shellcheck disable=SC2016

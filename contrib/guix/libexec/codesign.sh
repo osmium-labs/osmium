@@ -38,12 +38,8 @@ ACTUAL_OUTDIR="${OUTDIR}"
 OUTDIR="${DISTSRC}/output"
 
 git_head_version() {
-    local recent_tag
-    if recent_tag="$(git -C "$1" describe --exact-match HEAD 2> /dev/null)"; then
-        echo "${recent_tag#v}"
-    else
-        git -C "$1" rev-parse --short=12 HEAD
-    fi
+    recent_tag="$(git -C "$1" describe --abbrev=12 --dirty --always 2> /dev/null)"
+    echo "${recent_tag#v}"
 }
 
 CODESIGNATURE_GIT_ARCHIVE="${DIST_ARCHIVE_BASE}/${DISTNAME}-codesignatures-$(git_head_version "$DETACHED_SIGS_REPO").tar.gz"
@@ -79,7 +75,7 @@ mkdir -p "$DISTSRC"
             ;;
         *darwin*)
             # Apply detached codesignatures to dist/ (in-place)
-            signapple apply dist/Dash-Qt.app codesignatures/osx/dist
+            signapple apply dist/Osmium-Qt.app codesignatures/osx/dist
 
             # Make an uncompressed DMG from dist/
             xorrisofs -D -l -V "$(< osx_volname)" -no-pad -r -dir-mode 0755 \

@@ -1,9 +1,9 @@
-// Copyright (c) 2018-2022 The Dash Core developers
+// Copyright (c) 2018-2023 The Dash Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#ifndef DASH_CRYPTO_BLS_H
-#define DASH_CRYPTO_BLS_H
+#ifndef OSMIUM_CRYPTO_BLS_H
+#define OSMIUM_CRYPTO_BLS_H
 
 #include <hash.h>
 #include <serialize.h>
@@ -11,7 +11,7 @@
 #include <util/strencodings.h>
 #include <util/ranges.h>
 
-// bls-dash uses relic, which may define DEBUG and ERROR, which leads to many warnings in some build setups
+// bls-osmium uses relic, which may define DEBUG and ERROR, which leads to many warnings in some build setups
 #undef ERROR
 #undef DEBUG
 #include <dashbls/bls.hpp>
@@ -167,7 +167,7 @@ public:
     template <typename Stream>
     inline void Serialize(Stream& s, const bool specificLegacyScheme) const
     {
-        s.write(reinterpret_cast<const char*>(ToByteVector(specificLegacyScheme).data()), SerSize);
+        s.write(AsBytes(Span{ToByteVector(specificLegacyScheme).data(), SerSize}));
     }
 
     template <typename Stream>
@@ -180,7 +180,7 @@ public:
     inline void Unserialize(Stream& s, const bool specificLegacyScheme)
     {
         std::array<uint8_t, SerSize> vecBytes{};
-        s.read(reinterpret_cast<char*>(vecBytes.data()), SerSize);
+        s.read(AsWritableBytes(Span{vecBytes.data(), SerSize}));
         SetByteVector(vecBytes, specificLegacyScheme);
 
         if (!CheckMalleable(vecBytes, specificLegacyScheme)) {
@@ -456,7 +456,7 @@ public:
             bufLegacyScheme = specificLegacyScheme;
             hash.SetNull();
         }
-        s.write(reinterpret_cast<const char*>(vecBytes.data()), vecBytes.size());
+        s.write(MakeByteSpan(vecBytes));
     }
 
     template<typename Stream>
@@ -469,7 +469,7 @@ public:
     inline void Unserialize(Stream& s, const bool specificLegacyScheme) const
     {
         std::unique_lock<std::mutex> l(mutex);
-        s.read(reinterpret_cast<char*>(vecBytes.data()), BLSObject::SerSize);
+        s.read(AsWritableBytes(Span{vecBytes.data(), BLSObject::SerSize}));
         bufValid = true;
         bufLegacyScheme = specificLegacyScheme;
         objInitialized = false;
@@ -543,7 +543,7 @@ public:
         }
         if (hash.IsNull()) {
             CHashWriter ss(SER_GETHASH, PROTOCOL_VERSION);
-            ss.write(reinterpret_cast<const char*>(vecBytes.data()), vecBytes.size());
+            ss.write(MakeByteSpan(vecBytes));
             hash = ss.GetHash();
         }
         return hash;
@@ -591,4 +591,4 @@ using BLSVerificationVectorPtr = std::shared_ptr<std::vector<CBLSPublicKey>>;
 
 bool BLSInit();
 
-#endif // DASH_CRYPTO_BLS_H
+#endif // OSMIUM_CRYPTO_BLS_H

@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2021 The Dash Core developers
+// Copyright (c) 2016-2023 The Dash Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -42,7 +42,8 @@ public:
 
     enum {
         COLUMN_SERVICE,
-        COLUMN_TYPE,
+        // Disable EvoNodes
+        // COLUMN_TYPE,
         COLUMN_STATUS,
         COLUMN_POSE,
         COLUMN_REGISTERED,

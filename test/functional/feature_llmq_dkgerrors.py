@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-# Copyright (c) 2015-2022 The Dash Core developers
+# Copyright (c) 2015-2023 The Dash Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-from test_framework.test_framework import DashTestFramework
+from test_framework.test_framework import OsmiumTestFramework
 
 '''
 feature_llmq_dkgerrors.py
@@ -12,9 +12,9 @@ Simulate and check DKG errors
 
 '''
 
-class LLMQDKGErrors(DashTestFramework):
+class LLMQDKGErrors(OsmiumTestFramework):
     def set_test_params(self):
-        self.set_dash_test_params(4, 3, [["-whitelist=127.0.0.1"]] * 4, fast_dip3_enforcement=True)
+        self.set_osmium_test_params(4, 3, [["-whitelist=127.0.0.1"]] * 4, fast_dip3_enforcement=True)
 
     def run_test(self):
         self.activate_dip8()
@@ -85,7 +85,7 @@ class LLMQDKGErrors(DashTestFramework):
         # We're not testing PoSe here, so lets heal the MNs :)
         self.nodes[0].sporkupdate("SPORK_17_QUORUM_DKG_ENABLED", 4070908800)
         self.wait_for_sporks_same()
-        for i in range(blockCount):
+        for _ in range(blockCount):
             self.bump_mocktime(1)
             self.nodes[0].generate(1)
         self.sync_all()
