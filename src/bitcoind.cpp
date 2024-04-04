@@ -1,6 +1,6 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2020 The Bitcoin Core developers
-// Copyright (c) 2014-2022 The Dash Core developers
+// Copyright (c) 2014-2023 The Dash Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -14,9 +14,9 @@
 #include <init.h>
 #include <interfaces/chain.h>
 #include <node/context.h>
+#include <node/ui_interface.h>
 #include <noui.h>
 #include <shutdown.h>
-#include <ui_interface.h>
 #include <util/check.h>
 #include <util/system.h>
 #include <util/strencodings.h>
@@ -43,7 +43,7 @@ static bool AppInit(int argc, char* argv[])
 
     util::ThreadSetInternalName("init");
 
-    // If Qt is used, parameters/dash.conf are parsed in qt/bitcoin.cpp's main()
+    // If Qt is used, parameters/osmium.conf are parsed in qt/bitcoin.cpp's main()
     SetupServerArgs(node);
     ArgsManager& args = *Assert(node.args);
     std::string error;
@@ -62,7 +62,7 @@ static bool AppInit(int argc, char* argv[])
 
         if (!args.IsArgSet("-version")) {
             strUsage += FormatParagraph(LicenseInfo()) + "\n"
-                "\nUsage:  dashd [options]                     Start " PACKAGE_NAME "\n"
+                "\nUsage:  osmiumd [options]                     Start " PACKAGE_NAME "\n"
                 "\n";
             strUsage += args.GetHelpMessage();
         }
@@ -90,7 +90,7 @@ static bool AppInit(int argc, char* argv[])
         // Error out when loose non-argument tokens are encountered on command line
         for (int i = 1; i < argc; i++) {
             if (!IsSwitchChar(argv[i][0])) {
-                return InitError(Untranslated(strprintf("Command line contains unexpected token '%s', see dashd -h for a list of options.\n", argv[i])));
+                return InitError(Untranslated(strprintf("Command line contains unexpected token '%s', see osmiumd -h for a list of options.\n", argv[i])));
             }
         }
 
@@ -99,7 +99,7 @@ static bool AppInit(int argc, char* argv[])
             return false;
         }
 
-        // -server defaults to true for dashd but not for the GUI so do this here
+        // -server defaults to true for osmiumd but not for the GUI so do this here
         args.SoftSetBoolArg("-server", true);
         // Set this early so that parameter interactions go to console
         InitLogging(args);
@@ -156,7 +156,7 @@ static bool AppInit(int argc, char* argv[])
     return fRet;
 }
 
-int main(int argc, char* argv[])
+MAIN_FUNCTION
 {
     RegisterPrettyTerminateHander();
     RegisterPrettySignalHandlers();
@@ -167,7 +167,7 @@ int main(int argc, char* argv[])
 #endif
     SetupEnvironment();
 
-    // Connect dashd signal handlers
+    // Connect osmiumd signal handlers
     noui_connect();
 
     return (AppInit(argc, argv) ? EXIT_SUCCESS : EXIT_FAILURE);

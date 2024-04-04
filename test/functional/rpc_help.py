@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright (c) 2018 The Bitcoin Core developers
+# Copyright (c) 2018-2019 The Bitcoin Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 """Test RPC help output."""
@@ -24,7 +24,7 @@ class HelpRpcTest(BitcoinTestFramework):
     def test_categories(self):
         node = self.nodes[0]
 
-        # wrong argument count, note: Dash's help allows for two options since we utilize subcommands
+        # wrong argument count, note: Osmium's help allows for two options since we utilize subcommands
         assert_raises_rpc_error(-1, 'help', node.help, 'foo', 'bar', 'foobar')
 
         # invalid argument
@@ -36,7 +36,7 @@ class HelpRpcTest(BitcoinTestFramework):
         # command titles
         titles = [line[3:-3] for line in node.help().splitlines() if line.startswith('==')]
 
-        components = ['Addressindex', 'Blockchain', 'Control', 'Dash', 'Evo', 'Generating', 'Mining', 'Network', 'Rawtransactions', 'Util']
+        components = ['Addressindex', 'Blockchain', 'Control', 'Osmium', 'Evo', 'Generating', 'Mining', 'Network', 'Rawtransactions', 'Util']
 
         if self.is_wallet_compiled():
             components.append('Wallet')

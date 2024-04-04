@@ -1,12 +1,12 @@
 UNIX BUILD NOTES
 ====================
-Some notes on how to build Dash Core in Unix.
+Some notes on how to build Osmium Core in Unix.
 
 (For BSD specific instructions, see `build-*bsd.md` in this directory.)
 
 Note
 ---------------------
-Always use absolute paths to configure and compile Dash Core and the dependencies.
+Always use absolute paths to configure and compile Osmium Core and the dependencies.
 For example, when specifying the path of the dependency:
 
 	../dist/configure --enable-cxx --disable-shared --with-pic --prefix=$BDB_PREFIX
@@ -24,7 +24,7 @@ make
 make install # optional
 ```
 
-This will build dash-qt as well, if the dependencies are met.
+This will build osmium-qt as well, if the dependencies are met.
 
 Dependencies
 ---------------------
@@ -55,7 +55,7 @@ Memory Requirements
 --------------------
 
 C++ compilers are memory-hungry. It is recommended to have at least 1.5 GB of
-memory available when compiling Dash Core. On systems with less, gcc can be
+memory available when compiling Osmium Core. On systems with less, gcc can be
 tuned to conserve memory with additional CXXFLAGS:
 
 
@@ -74,7 +74,7 @@ Build requirements:
 
 Now, you can either build from self-compiled [depends](/depends/README.md) or install the required dependencies:
 
-    sudo apt-get libevent-dev libboost-system-dev libboost-filesystem-dev libboost-test-dev libboost-thread-dev
+    sudo apt-get libevent-dev libboost-system-dev libboost-filesystem-dev libboost-test-dev
 
 Berkeley DB is required for the wallet.
 
@@ -89,9 +89,9 @@ SQLite is required for the wallet:
 
     sudo apt install libsqlite3-dev
 
-To build Dash Core without wallet, see [*Disable-wallet mode*](#disable-wallet-mode)
+To build Osmium Core without wallet, see [*Disable-wallet mode*](#disable-wallet-mode)
 
-Optional port mapping libraries (see: `--with-miniupnpc`, `--enable-upnp-default`, and `--with-natpmp`, `--enable-natpmp-default`):
+Optional port mapping libraries (see: `--with-miniupnpc` and `--with-natpmp`):
 
     sudo apt install libminiupnpc-dev libnatpmp-dev
 
@@ -105,7 +105,7 @@ GMP dependencies (provides platform-optimized routines):
 
 GUI dependencies:
 
-If you want to build dash-qt, make sure that the required packages for Qt development
+If you want to build osmium-qt, make sure that the required packages for Qt development
 are installed. Qt 5 is necessary to build the GUI.
 To build without GUI pass `--without-gui`.
 
@@ -121,7 +121,7 @@ libqrencode (optional) can be installed with:
 
     sudo apt-get install libqrencode-dev
 
-Once these are installed, they will be found by configure and a dash-qt executable will be
+Once these are installed, they will be found by configure and a osmium-qt executable will be
 built by default.
 
 
@@ -152,9 +152,9 @@ SQLite is required for the wallet:
 
     sudo dnf install sqlite-devel
 
-To build Dash Core without wallet, see [*Disable-wallet mode*](#disable-wallet-mode)
+To build Osmium Core without wallet, see [*Disable-wallet mode*](#disable-wallet-mode)
 
-Optional port mapping libraries (see: `--with-miniupnpc`, `--enable-upnp-default`, and `--with-natpmp`, `--enable-natpmp-default`):
+Optional port mapping libraries (see: `--with-miniupnpc` and `--with-natpmp`):
 
     sudo dnf install miniupnpc-devel libnatpmp-devel
 
@@ -168,7 +168,7 @@ GMP dependencies (provides platform-optimized routines):
 
 GUI dependencies:
 
-If you want to build dash-qt, make sure that the required packages for Qt development
+If you want to build osmium-qt, make sure that the required packages for Qt development
 are installed. Qt 5 is necessary to build the GUI.
 To build without GUI pass `--without-gui`.
 
@@ -184,12 +184,12 @@ libqrencode (optional) can be installed with:
 
     sudo dnf install qrencode-devel
 
-Once these are installed, they will be found by configure and a dash-qt executable will be
+Once these are installed, they will be found by configure and a osmium-qt executable will be
 built by default.
 
 Notes
 -----
-The release is built with GCC and then "strip dashd" to strip the debug
+The release is built with GCC and then "strip osmiumd" to strip the debug
 symbols, which reduces the executable size by about 90%.
 
 
@@ -198,22 +198,14 @@ miniupnpc
 
 [miniupnpc](https://miniupnp.tuxfamily.org) may be used for UPnP port mapping.  It can be downloaded from [here](
 https://miniupnp.tuxfamily.org/files/).  UPnP support is compiled in and
-turned off by default.  See the configure options for upnp behavior desired:
-
-	--without-miniupnpc      No UPnP support miniupnp not required
-	--disable-upnp-default   (the default) UPnP support turned off by default at runtime
-	--enable-upnp-default    UPnP support turned on by default at runtime
+turned off by default.
 
 libnatpmp
 ---------
 
 [libnatpmp](https://miniupnp.tuxfamily.org/libnatpmp.html) may be used for NAT-PMP port mapping. It can be downloaded
 from [here](https://miniupnp.tuxfamily.org/files/). NAT-PMP support is compiled in and
-turned off by default. See the configure options for NAT-PMP behavior desired:
-
-	--without-natpmp          No NAT-PMP support, libnatpmp not required
-	--disable-natpmp-default  (the default) NAT-PMP support turned off by default at runtime
-	--enable-natpmp-default   NAT-PMP support turned on by default at runtime
+turned off by default.
 
 Berkeley DB
 -----------
@@ -227,7 +219,7 @@ like so:
 
 from the root of the repository.
 
-Otherwise, you can build Dash Core from self-compiled [depends](/depends/README.md).
+Otherwise, you can build Osmium Core from self-compiled [depends](/depends/README.md).
 
 **Note**: You only need Berkeley DB if the wallet is enabled (see [*Disable-wallet mode*](#disable-wallet-mode)).
 
@@ -242,7 +234,7 @@ If you need to build Boost yourself:
 
 Security
 --------
-To help make your Dash Core installation more secure by making certain attacks impossible to
+To help make your Osmium Core installation more secure by making certain attacks impossible to
 exploit even if a vulnerability is found, binaries are hardened by default.
 This can be disabled with:
 
@@ -264,7 +256,7 @@ Hardening enables the following features:
 
     To test that you have built PIE executable, install scanelf, part of paxutils, and use:
 
-    	scanelf -e ./dashd
+    	scanelf -e ./osmiumd
 
     The output should contain:
 
@@ -272,13 +264,13 @@ Hardening enables the following features:
     ET_DYN
 
 * _Non-executable Stack_: If the stack is executable then trivial stack-based buffer overflow exploits are possible if
-    vulnerable buffers are found. By default, Dash Core should be built with a non-executable stack,
+    vulnerable buffers are found. By default, Osmium Core should be built with a non-executable stack,
     but if one of the libraries it uses asks for an executable stack or someone makes a mistake
     and uses a compiler extension which requires an executable stack, it will silently build an
     executable without the non-executable stack protection.
 
     To verify that the stack is non-executable after compiling use:
-    `scanelf -e ./dashd`
+    `scanelf -e ./osmiumd`
 
     The output should contain:
 	STK/REL/PTL
@@ -288,7 +280,7 @@ Hardening enables the following features:
 
 Disable-wallet mode
 --------------------
-When the intention is to run only a P2P node without a wallet, Dash Core may be compiled in
+When the intention is to run only a P2P node without a wallet, Osmium Core may be compiled in
 disable-wallet mode with:
 
     ./configure --disable-wallet
@@ -309,8 +301,8 @@ Setup and Build Example: Arch Linux
 This example lists the steps necessary to setup and build a command line only, non-wallet distribution of the latest changes on Arch Linux:
 
     pacman -S git base-devel boost libevent python
-    git clone https://github.com/dashpay/dash.git
-    cd dash/
+    git clone https://github.com/osmium-labs/osmium.git
+    cd osmium/
     ./autogen.sh
     ./configure --disable-wallet --without-gui --without-miniupnpc
     make check
@@ -319,7 +311,7 @@ Note:
 Enabling wallet support requires either compiling against a Berkeley DB newer than 4.8 (package `db`) using `--with-incompatible-bdb`,
 or building and depending on a local version of Berkeley DB 4.8. The readily available Arch Linux packages are currently built using
 `--with-incompatible-bdb` according to the [PKGBUILD](https://projects.archlinux.org/svntogit/community.git/tree/bitcoin/trunk/PKGBUILD).
-As mentioned above, when maintaining portability of the wallet between the standard Dash Core distributions and independently built
+As mentioned above, when maintaining portability of the wallet between the standard Osmium Core distributions and independently built
 node software is desired, Berkeley DB 4.8 must be used.
 
 
@@ -339,7 +331,8 @@ To build executables for ARM:
     cd depends
     make HOST=arm-linux-gnueabihf NO_QT=1
     cd ..
-    ./configure --prefix=$PWD/depends/arm-linux-gnueabihf --enable-reduce-exports LDFLAGS=-static-libstdc++
+    ./autogen.sh
+    CONFIG_SITE=$PWD/depends/arm-linux-gnueabihf/share/config.site ./configure --enable-reduce-exports LDFLAGS=-static-libstdc++
     make
 
 

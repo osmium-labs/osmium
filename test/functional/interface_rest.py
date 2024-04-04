@@ -81,7 +81,7 @@ class RESTTest (BitcoinTestFramework):
 
     def run_test(self):
         self.url = urllib.parse.urlparse(self.nodes[0].url)
-        self.log.info("Mine blocks and send Dash to node 1")
+        self.log.info("Mine blocks and send Osmium to node 1")
 
         # Random address so node1's balance doesn't increase
         not_related_address = "yj949n1UH6fDhw6HtVE5VMj2iSTaSWBMcW"
@@ -306,8 +306,15 @@ class RESTTest (BitcoinTestFramework):
         # the size of the memory pool should be greater than 3x ~100 bytes
         assert_greater_than(json_obj['bytes'], 300)
 
+        mempool_info = self.nodes[0].getmempoolinfo()
+        assert_equal(json_obj, mempool_info)
+
         # Check that there are our submitted transactions in the TX memory pool
         json_obj = self.test_rest_request("/mempool/contents")
+        raw_mempool_verbose = self.nodes[0].getrawmempool(verbose=True)
+
+        assert_equal(json_obj, raw_mempool_verbose)
+
         for i, tx in enumerate(txs):
             assert tx in json_obj
             assert_equal(json_obj[tx]['spentby'], txs[i + 1:i + 2])

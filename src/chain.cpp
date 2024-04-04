@@ -1,9 +1,57 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
-// Copyright (c) 2009-2014 The Bitcoin Core developers
+// Copyright (c) 2009-2019 The Bitcoin Core developers
+// Copyright (c) 2014-2021 The Osmium developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #include <chain.h>
+#include <node/blockstorage.h>
+
+/* Moved here from the header, because we need auxpow and the logic
+   becomes more involved.  */
+CBlockHeader CBlockIndex::GetBlockHeader(const Consensus::Params& consensusParams) const
+{
+    CBlockHeader block;
+    block.nVersion       = nVersion;
+
+    /* The CBlockIndex object's block header is missing the auxpow.
+       So if this is an auxpow block, read it from disk instead.  We only
+       have to read the actual *header*, not the full block.  */
+    if (block.IsAuxpow())
+    {
+        ReadBlockHeaderFromDisk(block, this, consensusParams);
+        return block;
+    }
+
+    if (pprev)
+        block.hashPrevBlock = pprev->GetBlockHash();
+
+    block.hashMerkleRoot = hashMerkleRoot;
+    block.nTime          = nTime;
+    block.nBits          = nBits;
+    block.nNonce         = nNonce;
+    return block;
+}
+
+#include <tinyformat.h>
+
+std::string CDiskBlockIndex::ToString() const
+{
+    std::string str = "CDiskBlockIndex(";
+    str += CBlockIndex::ToString();
+    str += strprintf("\n                hashBlock=%s, hashPrev=%s)",
+        GetBlockHash().ToString(),
+        hashPrev.ToString());
+    return str;
+}
+
+std::string CBlockIndex::ToString() const
+{
+    return strprintf("CBlockIndex(pprev=%p, nHeight=%d, merkle=%s, hashBlock=%s)",
+        pprev, nHeight,
+        hashMerkleRoot.ToString(),
+        GetBlockHash().ToString());
+}
 
 /**
  * CChain implementation

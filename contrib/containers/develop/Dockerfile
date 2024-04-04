@@ -30,18 +30,15 @@ RUN apt-get update && \
 # To mitigate the build halting, you can add "|| true" so that it
 # unconditionally returns 0
 #
-# Also, we create the group `docker` and add our user to it to meet
-# Gitian's requirements
-#
 RUN groupadd docker && \
-    usermod -aG sudo,docker dash && \
+    usermod -aG sudo osmium && \
     echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
 
 # Disable noninteractive mode
 ENV DEBIAN_FRONTEND="dialog"
 
-# Expose Dash P2P and RPC ports for main network and test networks
-EXPOSE 9998 9999 19998 19999
+# Expose Osmium P2P and RPC ports for main network and test networks
+EXPOSE 9968 9969 19968 19969
 
 # We're done, switch back to non-privileged user
-USER dash
+USER osmium

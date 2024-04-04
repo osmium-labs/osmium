@@ -59,7 +59,7 @@ namespace BCLog {
         VALIDATION  = (1 << 21),
         I2P         = (1 << 22),
 
-        //Start Dash
+        //Start Osmium
         CHAINLOCKS  = ((uint64_t)1 << 32),
         GOBJECT     = ((uint64_t)1 << 33),
         INSTANTSEND = ((uint64_t)1 << 34),
@@ -74,12 +74,12 @@ namespace BCLog {
         EHF         = ((uint64_t)1 << 44),
         CREDITPOOL  = ((uint64_t)1 << 45),
 
-        DASH        = CHAINLOCKS | GOBJECT | INSTANTSEND | LLMQ | LLMQ_DKG
+        OSMIUM        = CHAINLOCKS | GOBJECT | INSTANTSEND | LLMQ | LLMQ_DKG
                     | LLMQ_SIGS | MNPAYMENTS | MNSYNC | COINJOIN | SPORK | NETCONN
                     | EHF | CREDITPOOL,
 
         NET_NETCONN = NET | NETCONN, // use this to have something logged in NET and NETCONN as well
-        //End Dash
+        //End Osmium
 
         ALL         = ~(uint64_t)0,
     };
@@ -160,9 +160,9 @@ namespace BCLog {
         bool DisableCategory(const std::string& str);
 
         bool WillLogCategory(LogFlags category) const;
-        /** Returns a vector of the log categories */
+        /** Returns a vector of the log categories in alphabetical order. */
         std::vector<LogCategory> LogCategoriesList(bool enabled_only = false) const;
-        /** Returns a string with the log categories */
+        /** Returns a string with the log categories in alphabetical order. */
         std::string LogCategoriesString(bool enabled_only = false) const
         {
             return Join(LogCategoriesList(enabled_only), ", ", [&](const LogCategory& i) { return i.category; });

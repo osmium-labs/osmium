@@ -207,9 +207,9 @@ make -C depends --jobs="$JOBS" HOST="$HOST" \
                                    ${SDK_PATH+SDK_PATH="$SDK_PATH"} \
                                    x86_64_linux_CC=x86_64-linux-gnu-gcc \
                                    x86_64_linux_CXX=x86_64-linux-gnu-g++ \
-                                   x86_64_linux_AR=x86_64-linux-gnu-ar \
-                                   x86_64_linux_RANLIB=x86_64-linux-gnu-ranlib \
-                                   x86_64_linux_NM=x86_64-linux-gnu-nm \
+                                   x86_64_linux_AR=x86_64-linux-gnu-gcc-ar \
+                                   x86_64_linux_RANLIB=x86_64-linux-gnu-gcc-ranlib \
+                                   x86_64_linux_NM=x86_64-linux-gnu-gcc-nm \
                                    x86_64_linux_STRIP=x86_64-linux-gnu-strip \
                                    qt_config_opts_x86_64_linux='-platform linux-g++ -xplatform bitcoin-linux-g++' \
                                    FORCE_USE_SYSTEM_CLANG=1
@@ -288,7 +288,7 @@ mkdir -p "$DISTSRC"
     sed -i.old 's/-lstdc++ //g' {./,src/dashbls/,src/secp256k1/}{config.status,libtool}
 
 
-    # Build Dash Core
+    # Build Osmium Core
     make --jobs="$JOBS" ${V:+V=1}
 
     # Make macos-specific debug symbols
@@ -314,12 +314,12 @@ mkdir -p "$DISTSRC"
             ;;
     esac
 
-    # Setup the directory where our Dash Core build for HOST will be
+    # Setup the directory where our Osmium Core build for HOST will be
     # installed. This directory will also later serve as the input for our
     # binary tarballs.
     INSTALLPATH="${PWD}/installed/${DISTNAME}"
     mkdir -p "${INSTALLPATH}"
-    # Install built Dash Core to $INSTALLPATH
+    # Install built Osmium Core to $INSTALLPATH
     make install DESTDIR="${INSTALLPATH}" ${V:+V=1}
 
     case "$HOST" in

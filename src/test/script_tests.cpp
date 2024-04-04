@@ -98,24 +98,20 @@ static ScriptErrorDesc script_errors[]={
     {SCRIPT_ERR_SIG_FINDANDDELETE, "SIG_FINDANDDELETE"},
 };
 
-static const char *FormatScriptError(ScriptError_t err)
+static std::string FormatScriptError(ScriptError_t err)
 {
-    for (const auto& script_error : script_errors) {
-        if (script_error.err == err) {
-            return script_error.name;
-        }
-    }
+    for (const auto& se : script_errors)
+        if (se.err == err)
+            return se.name;
     BOOST_ERROR("Unknown scripterror enumeration value, update script_errors in script_tests.cpp.");
     return "";
 }
 
 static ScriptError_t ParseScriptError(const std::string& name)
 {
-    for (const auto& script_error : script_errors) {
-        if (script_error.name == name) {
-            return script_error.err;
-        }
-    }
+    for (const auto& se : script_errors)
+        if (se.name == name)
+            return se.err;
     BOOST_ERROR("Unknown scripterror \"" << name << "\" in test description");
     return SCRIPT_ERR_UNKNOWN_ERROR;
 }
@@ -123,7 +119,7 @@ static ScriptError_t ParseScriptError(const std::string& name)
 BOOST_FIXTURE_TEST_SUITE(script_tests, BasicTestingSetup)
 
 
-void DoTest(const CScript& scriptPubKey, const CScript& scriptSig, int flags, const std::string& message, int scriptError)
+void DoTest(const CScript& scriptPubKey, const CScript& scriptSig, uint32_t flags, const std::string& message, int scriptError)
 {
     bool expect = (scriptError == SCRIPT_ERR_OK);
     bool fEnableDIP0020Opcodes = (SCRIPT_ENABLE_DIP0020_OPCODES & flags) != 0;
@@ -132,12 +128,12 @@ void DoTest(const CScript& scriptPubKey, const CScript& scriptSig, int flags, co
     CMutableTransaction tx = BuildSpendingTransaction(scriptSig, txCredit);
     CMutableTransaction tx2 = tx;
     BOOST_CHECK_MESSAGE(VerifyScript(scriptSig, scriptPubKey, flags, MutableTransactionSignatureChecker(&tx, 0, txCredit.vout[0].nValue), &err) == expect, message);
-    BOOST_CHECK_MESSAGE(err == scriptError, std::string(FormatScriptError(err)) + " where " + std::string(FormatScriptError((ScriptError_t)scriptError)) + " expected: " + message);
+    BOOST_CHECK_MESSAGE(err == scriptError, FormatScriptError(err) + " where " + FormatScriptError((ScriptError_t)scriptError) + " expected: " + message);
 
     // Verify that removing flags from a passing test or adding flags to a failing test does not change the result.
     for (int i = 0; i < 16; ++i) {
-        int extra_flags = InsecureRandBits(16);
-        int combined_flags = expect ? (flags & ~extra_flags) : (flags | extra_flags);
+        uint32_t extra_flags(InsecureRandBits(16));
+        uint32_t combined_flags{expect ? (flags & ~extra_flags) : (flags | extra_flags)};
         // Weed out some invalid flag combinations.
         if (combined_flags & SCRIPT_VERIFY_CLEANSTACK && ~combined_flags & SCRIPT_VERIFY_P2SH) continue;
         // Make sure DIP0020 opcodes flag stays unchanged.
@@ -148,10 +144,10 @@ void DoTest(const CScript& scriptPubKey, const CScript& scriptSig, int flags, co
 #if defined(HAVE_CONSENSUS_LIB)
     CDataStream stream(SER_NETWORK, PROTOCOL_VERSION);
     stream << tx2;
-    int libconsensus_flags = flags & dashconsensus_SCRIPT_FLAGS_VERIFY_ALL;
+    uint32_t libconsensus_flags{flags & osmiumconsensus_SCRIPT_FLAGS_VERIFY_ALL};
     if (libconsensus_flags == flags) {
         int expectedSuccessCode = expect ? 1 : 0;
-        BOOST_CHECK_MESSAGE(dashconsensus_verify_script(scriptPubKey.data(), scriptPubKey.size(), (const unsigned char*)&stream[0], stream.size(), 0, libconsensus_flags, nullptr) == expectedSuccessCode, message);
+        BOOST_CHECK_MESSAGE(osmiumconsensus_verify_script(scriptPubKey.data(), scriptPubKey.size(), UCharCast(stream.data()), stream.size(), 0, libconsensus_flags, nullptr) == expectedSuccessCode, message);
     }
 #endif
 }
@@ -216,7 +212,7 @@ struct KeyData
         pubkey0 = key0.GetPubKey();
         pubkey0H = key0.GetPubKey();
         pubkey0C = key0C.GetPubKey();
-        *const_cast<unsigned char*>(&pubkey0H[0]) = 0x06 | (pubkey0H[64] & 1);
+        *const_cast<unsigned char*>(pubkey0H.data()) = 0x06 | (pubkey0H[64] & 1);
 
         key1.Set(vchKey1, vchKey1 + 32, false);
         key1C.Set(vchKey1, vchKey1 + 32, true);
@@ -240,7 +236,7 @@ private:
     bool havePush;
     std::vector<unsigned char> push;
     std::string comment;
-    int flags;
+    uint32_t flags;
     int scriptError;
 
     void DoPush()
@@ -259,7 +255,7 @@ private:
     }
 
 public:
-    TestBuilder(const CScript& script_, const std::string& comment_, int flags_, bool P2SH = false) : scriptPubKey(script_), havePush(false), comment(comment_), flags(flags_), scriptError(SCRIPT_ERR_OK)
+    TestBuilder(const CScript& script_, const std::string& comment_, uint32_t flags_, bool P2SH = false) : scriptPubKey(script_), havePush(false), comment(comment_), flags(flags_), scriptError(SCRIPT_ERR_OK)
     {
         if (P2SH) {
             creditTx = MakeTransactionRef(BuildCreditingTransaction(CScript() << OP_HASH160 << ToByteVector(CScriptID(script_)) << OP_EQUAL));
@@ -1408,8 +1404,8 @@ BOOST_AUTO_TEST_CASE(script_FindAndDelete)
 
 #if defined(HAVE_CONSENSUS_LIB)
 
-/* Test simple (successful) usage of dashconsensus_verify_script */
-BOOST_AUTO_TEST_CASE(dashconsensus_verify_script_returns_true)
+/* Test simple (successful) usage of osmiumconsensus_verify_script */
+BOOST_AUTO_TEST_CASE(osmiumconsensus_verify_script_returns_true)
 {
     unsigned int libconsensus_flags = 0;
     int nIn = 0;
@@ -1424,14 +1420,14 @@ BOOST_AUTO_TEST_CASE(dashconsensus_verify_script_returns_true)
     CDataStream stream(SER_NETWORK, PROTOCOL_VERSION);
     stream << spendTx;
 
-    dashconsensus_error err;
-    int result = dashconsensus_verify_script(scriptPubKey.data(), scriptPubKey.size(), (const unsigned char*)&stream[0], stream.size(), nIn, libconsensus_flags, &err);
+    osmiumconsensus_error err;
+    int result = osmiumconsensus_verify_script(scriptPubKey.data(), scriptPubKey.size(), UCharCast(stream.data()), stream.size(), nIn, libconsensus_flags, &err);
     BOOST_CHECK_EQUAL(result, 1);
-    BOOST_CHECK_EQUAL(err, dashconsensus_ERR_OK);
+    BOOST_CHECK_EQUAL(err, osmiumconsensus_ERR_OK);
 }
 
-/* Test dashconsensus_verify_script returns invalid tx index err*/
-BOOST_AUTO_TEST_CASE(dashconsensus_verify_script_tx_index_err)
+/* Test osmiumconsensus_verify_script returns invalid tx index err*/
+BOOST_AUTO_TEST_CASE(osmiumconsensus_verify_script_tx_index_err)
 {
     unsigned int libconsensus_flags = 0;
     int nIn = 3;
@@ -1446,14 +1442,14 @@ BOOST_AUTO_TEST_CASE(dashconsensus_verify_script_tx_index_err)
     CDataStream stream(SER_NETWORK, PROTOCOL_VERSION);
     stream << spendTx;
 
-    dashconsensus_error err;
-    int result = dashconsensus_verify_script(scriptPubKey.data(), scriptPubKey.size(), (const unsigned char*)&stream[0], stream.size(), nIn, libconsensus_flags, &err);
+    osmiumconsensus_error err;
+    int result = osmiumconsensus_verify_script(scriptPubKey.data(), scriptPubKey.size(), UCharCast(stream.data()), stream.size(), nIn, libconsensus_flags, &err);
     BOOST_CHECK_EQUAL(result, 0);
-    BOOST_CHECK_EQUAL(err, dashconsensus_ERR_TX_INDEX);
+    BOOST_CHECK_EQUAL(err, osmiumconsensus_ERR_TX_INDEX);
 }
 
-/* Test dashconsensus_verify_script returns tx size mismatch err*/
-BOOST_AUTO_TEST_CASE(dashconsensus_verify_script_tx_size)
+/* Test osmiumconsensus_verify_script returns tx size mismatch err*/
+BOOST_AUTO_TEST_CASE(osmiumconsensus_verify_script_tx_size)
 {
     unsigned int libconsensus_flags = 0;
     int nIn = 0;
@@ -1468,14 +1464,14 @@ BOOST_AUTO_TEST_CASE(dashconsensus_verify_script_tx_size)
     CDataStream stream(SER_NETWORK, PROTOCOL_VERSION);
     stream << spendTx;
 
-    dashconsensus_error err;
-    int result = dashconsensus_verify_script(scriptPubKey.data(), scriptPubKey.size(), (const unsigned char*)&stream[0], stream.size() * 2, nIn, libconsensus_flags, &err);
+    osmiumconsensus_error err;
+    int result = osmiumconsensus_verify_script(scriptPubKey.data(), scriptPubKey.size(), UCharCast(stream.data()), stream.size() * 2, nIn, libconsensus_flags, &err);
     BOOST_CHECK_EQUAL(result, 0);
-    BOOST_CHECK_EQUAL(err, dashconsensus_ERR_TX_SIZE_MISMATCH);
+    BOOST_CHECK_EQUAL(err, osmiumconsensus_ERR_TX_SIZE_MISMATCH);
 }
 
-/* Test dashconsensus_verify_script returns invalid tx serialization error */
-BOOST_AUTO_TEST_CASE(dashconsensus_verify_script_tx_serialization)
+/* Test osmiumconsensus_verify_script returns invalid tx serialization error */
+BOOST_AUTO_TEST_CASE(osmiumconsensus_verify_script_tx_serialization)
 {
     unsigned int libconsensus_flags = 0;
     int nIn = 0;
@@ -1490,14 +1486,14 @@ BOOST_AUTO_TEST_CASE(dashconsensus_verify_script_tx_serialization)
     CDataStream stream(SER_NETWORK, PROTOCOL_VERSION);
     stream << 0xffffffff;
 
-    dashconsensus_error err;
-    int result = dashconsensus_verify_script(scriptPubKey.data(), scriptPubKey.size(), (const unsigned char*)&stream[0], stream.size(), nIn, libconsensus_flags, &err);
+    osmiumconsensus_error err;
+    int result = osmiumconsensus_verify_script(scriptPubKey.data(), scriptPubKey.size(), UCharCast(stream.data()), stream.size(), nIn, libconsensus_flags, &err);
     BOOST_CHECK_EQUAL(result, 0);
-    BOOST_CHECK_EQUAL(err, dashconsensus_ERR_TX_DESERIALIZE);
+    BOOST_CHECK_EQUAL(err, osmiumconsensus_ERR_TX_DESERIALIZE);
 }
 
-/* Test dashconsensus_verify_script returns invalid flags err */
-BOOST_AUTO_TEST_CASE(dashconsensus_verify_script_invalid_flags)
+/* Test osmiumconsensus_verify_script returns invalid flags err */
+BOOST_AUTO_TEST_CASE(osmiumconsensus_verify_script_invalid_flags)
 {
     unsigned int libconsensus_flags = 1 << 3;
     int nIn = 0;
@@ -1512,10 +1508,10 @@ BOOST_AUTO_TEST_CASE(dashconsensus_verify_script_invalid_flags)
     CDataStream stream(SER_NETWORK, PROTOCOL_VERSION);
     stream << spendTx;
 
-    dashconsensus_error err;
-    int result = dashconsensus_verify_script(scriptPubKey.data(), scriptPubKey.size(), (const unsigned char*)&stream[0], stream.size(), nIn, libconsensus_flags, &err);
+    osmiumconsensus_error err;
+    int result = osmiumconsensus_verify_script(scriptPubKey.data(), scriptPubKey.size(), UCharCast(stream.data()), stream.size(), nIn, libconsensus_flags, &err);
     BOOST_CHECK_EQUAL(result, 0);
-    BOOST_CHECK_EQUAL(err, dashconsensus_ERR_INVALID_FLAGS);
+    BOOST_CHECK_EQUAL(err, osmiumconsensus_ERR_INVALID_FLAGS);
 }
 
 #endif

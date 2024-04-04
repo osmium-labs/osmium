@@ -1,5 +1,5 @@
-// Copyright (c) 2009-2016 The Bitcoin Core developers
-// Copyright (c) 2014-2022 The Dash Core developers
+// Copyright (c) 2009-2019 The Bitcoin Core developers
+// Copyright (c) 2014-2024 The Dash Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -56,6 +56,13 @@ int main(int argc, char* argv[])
 
     NodeContext node_context;
     std::unique_ptr<interfaces::Node> node = interfaces::MakeNode(&node_context);
+    gArgs.ForceSetArg("-listen", "0");
+    gArgs.ForceSetArg("-listenonion", "0");
+    gArgs.ForceSetArg("-discover", "0");
+    gArgs.ForceSetArg("-dnsseed", "0");
+    gArgs.ForceSetArg("-fixedseeds", "0");
+    gArgs.ForceSetArg("-upnp", "0");
+    gArgs.ForceSetArg("-natpmp", "0");
 
     bool fInvalid = false;
 
@@ -70,11 +77,11 @@ int main(int argc, char* argv[])
 
     // Don't remove this, it's needed to access
     // QApplication:: and QCoreApplication:: in the tests
-    BitcoinApplication app(*node);
-    app.setApplicationName("Dash-Qt-test");
+    BitcoinApplication app;
+    app.setNode(*node);
+    app.setApplicationName("Osmium-Qt-test");
 
-    node->setupServerArgs();            // Make gArgs available in the NodeContext
-    node->context()->args->ClearArgs(); // Clear added args again
+    app.node().context()->args = &gArgs;     // Make gArgs available in the NodeContext
     AppTests app_tests(app);
     if (QTest::qExec(&app_tests) != 0) {
         fInvalid = true;
@@ -83,7 +90,7 @@ int main(int argc, char* argv[])
     if (QTest::qExec(&test1) != 0) {
         fInvalid = true;
     }
-    RPCNestedTests test3(*node);
+    RPCNestedTests test3(app.node());
     if (QTest::qExec(&test3) != 0) {
         fInvalid = true;
     }
@@ -92,11 +99,11 @@ int main(int argc, char* argv[])
         fInvalid = true;
     }
 #ifdef ENABLE_WALLET
-    WalletTests test5(*node);
+    WalletTests test5(app.node());
     if (QTest::qExec(&test5) != 0) {
         fInvalid = true;
     }
-    AddressBookTests test6(*node);
+    AddressBookTests test6(app.node());
     if (QTest::qExec(&test6) != 0) {
         fInvalid = true;
     }

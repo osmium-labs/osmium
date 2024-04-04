@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2022 The Dash Core developers
+// Copyright (c) 2018-2024 The Dash Core developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -36,7 +36,7 @@ public:
     static constexpr uint16_t BASIC_BLS_INDEXED_QUORUM_VERSION = 4;
 
     uint16_t nVersion{LEGACY_BLS_NON_INDEXED_QUORUM_VERSION};
-    Consensus::LLMQType llmqType{Consensus::LLMQType::LLMQ_NONE};
+    Consensus::LLMQType llmqType{Consensus::LLMQ_NONE};
     uint256 quorumHash;
     int16_t quorumIndex{0};
     std::vector<bool> signers;
@@ -172,6 +172,8 @@ public:
 };
 
 bool CheckLLMQCommitment(const CTransaction& tx, gsl::not_null<const CBlockIndex*> pindexPrev, TxValidationState& state);
+
+uint256 BuildCommitmentHash(Consensus::LLMQType llmqType, const uint256& blockHash, const std::vector<bool>& validMembers, const CBLSPublicKey& pubKey, const uint256& vvecHash);
 
 } // namespace llmq
 

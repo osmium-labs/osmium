@@ -46,13 +46,13 @@ static void masternode_list_help(const JSONRPCRequest& request)
         "  json           - Print info in JSON format (can be additionally filtered, partial match)\n"
         "  lastpaidblock  - Print the last block height a node was paid on the network\n"
         "  lastpaidtime   - Print the last time a node was paid on the network\n"
-        "  owneraddress   - Print the masternode owner Dash address\n"
-        "  payee          - Print the masternode payout Dash address (can be additionally filtered,\n"
+        "  owneraddress   - Print the masternode owner Osmium address\n"
+        "  payee          - Print the masternode payout Osmium address (can be additionally filtered,\n"
         "                   partial match)\n"
         "  pubKeyOperator - Print the masternode operator public key\n"
         "  status         - Print masternode status: ENABLED / POSE_BANNED\n"
         "                   (can be additionally filtered, partial match)\n"
-        "  votingaddress  - Print the masternode voting Dash address\n",
+        "  votingaddress  - Print the masternode voting Osmium address\n",
         {
             {"mode", RPCArg::Type::STR, /* default */ "json", "The mode to run list in"},
             {"filter", RPCArg::Type::STR, /* default */ "", "Filter results. Partial match by outpoint by default in all modes, additional matches in some modes are also available"},
@@ -106,7 +106,9 @@ static UniValue masternode_count(const JSONRPCRequest& request)
 {
     masternode_count_help(request);
 
-    auto mnList = deterministicMNManager->GetListAtChainTip();
+    const NodeContext& node = EnsureAnyNodeContext(request.context);
+
+    auto mnList = node.dmnman->GetListAtChainTip();
     int total = mnList.GetAllMNsCount();
     int enabled = mnList.GetValidMNsCount();
 
@@ -114,29 +116,30 @@ static UniValue masternode_count(const JSONRPCRequest& request)
     obj.pushKV("total", total);
     obj.pushKV("enabled", enabled);
 
-    int evo_total = mnList.GetAllEvoCount();
-    int evo_enabled = mnList.GetValidEvoCount();
+    // Disable Evonodes
+    // int evo_total = mnList.GetAllEvoCount();
+    // int evo_enabled = mnList.GetValidEvoCount();
 
-    UniValue evoObj(UniValue::VOBJ);
-    evoObj.pushKV("total", evo_total);
-    evoObj.pushKV("enabled", evo_enabled);
+    // UniValue evoObj(UniValue::VOBJ);
+    // evoObj.pushKV("total", evo_total);
+    // evoObj.pushKV("enabled", evo_enabled);
 
-    UniValue regularObj(UniValue::VOBJ);
-    regularObj.pushKV("total", total - evo_total);
-    regularObj.pushKV("enabled", enabled - evo_enabled);
+    // UniValue regularObj(UniValue::VOBJ);
+    // regularObj.pushKV("total", total - evo_total);
+    // regularObj.pushKV("enabled", enabled - evo_enabled);
 
-    UniValue detailedObj(UniValue::VOBJ);
-    detailedObj.pushKV("regular", regularObj);
-    detailedObj.pushKV("evo", evoObj);
-    obj.pushKV("detailed", detailedObj);
+    // UniValue detailedObj(UniValue::VOBJ);
+    // detailedObj.pushKV("regular", regularObj);
+    // detailedObj.pushKV("evo", evoObj);
+    // obj.pushKV("detailed", detailedObj);
 
     return obj;
 }
 
-static UniValue GetNextMasternodeForPayment(int heightShift)
+static UniValue GetNextMasternodeForPayment(CDeterministicMNManager& dmnman, int heightShift)
 {
     const CBlockIndex *tip = WITH_LOCK(::cs_main, return ::ChainActive().Tip());
-    auto mnList = deterministicMNManager->GetListForBlock(tip);
+    auto mnList = dmnman.GetListForBlock(tip);
     auto payees = mnList.GetProjectedMNPayees(tip, heightShift);
     if (payees.empty())
         return "unknown";
@@ -173,7 +176,9 @@ static void masternode_winner_help(const JSONRPCRequest& request)
 static UniValue masternode_winner(const JSONRPCRequest& request)
 {
     masternode_winner_help(request);
-    return GetNextMasternodeForPayment(10);
+
+    const NodeContext& node = EnsureAnyNodeContext(request.context);
+    return GetNextMasternodeForPayment(*node.dmnman, 10);
 }
 
 static void masternode_current_help(const JSONRPCRequest& request)
@@ -193,7 +198,9 @@ static void masternode_current_help(const JSONRPCRequest& request)
 static UniValue masternode_current(const JSONRPCRequest& request)
 {
     masternode_current_help(request);
-    return GetNextMasternodeForPayment(1);
+
+    const NodeContext& node = EnsureAnyNodeContext(request.context);
+    return GetNextMasternodeForPayment(*node.dmnman, 1);
 }
 
 #ifdef ENABLE_WALLET
@@ -253,8 +260,9 @@ static UniValue masternode_status(const JSONRPCRequest& request)
     if (!fMasternodeMode)
         throw JSONRPCError(RPC_INTERNAL_ERROR, "This is not a masternode");
 
-    UniValue mnObj(UniValue::VOBJ);
+    const NodeContext& node = EnsureAnyNodeContext(request.context);
 
+    UniValue mnObj(UniValue::VOBJ);
     CDeterministicMNCPtr dmn;
     {
         LOCK(activeMasternodeInfoCs);
@@ -262,11 +270,12 @@ static UniValue masternode_status(const JSONRPCRequest& request)
         // keep compatibility with legacy status for now (might get deprecated/removed later)
         mnObj.pushKV("outpoint", activeMasternodeInfo.outpoint.ToStringShort());
         mnObj.pushKV("service", activeMasternodeInfo.service.ToString());
-        dmn = deterministicMNManager->GetListAtChainTip().GetMN(activeMasternodeInfo.proTxHash);
+        dmn = node.dmnman->GetListAtChainTip().GetMN(activeMasternodeInfo.proTxHash);
     }
     if (dmn) {
         mnObj.pushKV("proTxHash", dmn->proTxHash.ToString());
-        mnObj.pushKV("type", std::string(GetMnType(dmn->nType).description));
+        // Disable Evonodes
+        // mnObj.pushKV("type", std::string(GetMnType(dmn->nType).description));
         mnObj.pushKV("collateralHash", dmn->collateralOutpoint.hash.ToString());
         mnObj.pushKV("collateralIndex", (int)dmn->collateralOutpoint.n);
         mnObj.pushKV("dmnState", dmn->pdmnState->ToJson(dmn->nType));
@@ -277,7 +286,7 @@ static UniValue masternode_status(const JSONRPCRequest& request)
     return mnObj;
 }
 
-static std::string GetRequiredPaymentsString(int nBlockHeight, const CDeterministicMNCPtr &payee)
+static std::string GetRequiredPaymentsString(CGovernanceManager& govman, int nBlockHeight, const CDeterministicMNCPtr &payee)
 {
     std::string strPayments = "Unknown";
     if (payee) {
@@ -293,9 +302,9 @@ static std::string GetRequiredPaymentsString(int nBlockHeight, const CDeterminis
             strPayments += ", " + EncodeDestination(dest);
         }
     }
-    if (CSuperblockManager::IsSuperblockTriggered(*governance, nBlockHeight)) {
+    if (CSuperblockManager::IsSuperblockTriggered(govman, nBlockHeight)) {
         std::vector<CTxOut> voutSuperblock;
-        if (!CSuperblockManager::GetSuperblockPayments(*governance, nBlockHeight, voutSuperblock)) {
+        if (!CSuperblockManager::GetSuperblockPayments(govman, nBlockHeight, voutSuperblock)) {
             return strPayments + ", error";
         }
         std::string strSBPayees = "Unknown";
@@ -353,24 +362,26 @@ static UniValue masternode_winners(const JSONRPCRequest& request, const Chainsta
     int nChainTipHeight = pindexTip->nHeight;
     int nStartHeight = std::max(nChainTipHeight - nCount, 1);
 
+    const NodeContext& node = EnsureAnyNodeContext(request.context);
     for (int h = nStartHeight; h <= nChainTipHeight; h++) {
         const CBlockIndex* pIndex = pindexTip->GetAncestor(h - 1);
-        auto payee = deterministicMNManager->GetListForBlock(pIndex).GetMNPayee(pIndex);
-        std::string strPayments = GetRequiredPaymentsString(h, payee);
+        auto payee = node.dmnman->GetListForBlock(pIndex).GetMNPayee(pIndex);
+        std::string strPayments = GetRequiredPaymentsString(*node.govman, h, payee);
         if (strFilter != "" && strPayments.find(strFilter) == std::string::npos) continue;
         obj.pushKV(strprintf("%d", h), strPayments);
     }
 
-    auto projection = deterministicMNManager->GetListForBlock(pindexTip).GetProjectedMNPayees(pindexTip, 20);
+    auto projection = node.dmnman->GetListForBlock(pindexTip).GetProjectedMNPayees(pindexTip, 20);
     for (size_t i = 0; i < projection.size(); i++) {
         int h = nChainTipHeight + 1 + i;
-        std::string strPayments = GetRequiredPaymentsString(h, projection[i]);
+        std::string strPayments = GetRequiredPaymentsString(*node.govman, h, projection[i]);
         if (strFilter != "" && strPayments.find(strFilter) == std::string::npos) continue;
         obj.pushKV(strprintf("%d", h), strPayments);
     }
 
     return obj;
 }
+
 static void masternode_payments_help(const JSONRPCRequest& request)
 {
     RPCHelpMan{"masternode payments",
@@ -432,8 +443,8 @@ static UniValue masternode_payments(const JSONRPCRequest& request, const Chainst
     // A temporary vector which is used to sort results properly (there is no "reverse" in/for UniValue)
     std::vector<UniValue> vecPayments;
 
+    const NodeContext& node = EnsureAnyNodeContext(request.context);
     while (vecPayments.size() < uint64_t(std::abs(nCount)) && pindex != nullptr) {
-
         CBlock block;
         if (!ReadBlockFromDisk(block, pindex, Params().GetConsensus())) {
             throw JSONRPCError(RPC_INTERNAL_ERROR, "Can't read block from disk");
@@ -459,7 +470,7 @@ static UniValue masternode_payments(const JSONRPCRequest& request, const Chainst
         std::vector<CTxOut> voutMasternodePayments, voutDummy;
         CMutableTransaction dummyTx;
         CAmount blockSubsidy = GetBlockSubsidy(pindex, Params().GetConsensus());
-        MasternodePayments::FillBlockPayments(*sporkManager, *governance, dummyTx, pindex->pprev, blockSubsidy, nBlockFees, voutMasternodePayments, voutDummy);
+        MasternodePayments::FillBlockPayments(*node.sporkman, *node.govman, dummyTx, pindex->pprev, blockSubsidy, nBlockFees, voutMasternodePayments, voutDummy);
 
         UniValue blockObj(UniValue::VOBJ);
         CAmount payedPerBlock{0};
@@ -481,7 +492,7 @@ static UniValue masternode_payments(const JSONRPCRequest& request, const Chainst
         }
 
         // NOTE: we use _previous_ block to find a payee for the current one
-        const auto dmnPayee = deterministicMNManager->GetListForBlock(pindex->pprev).GetMNPayee(pindex->pprev);
+        const auto dmnPayee = node.dmnman->GetListForBlock(pindex->pprev).GetMNPayee(pindex->pprev);
         protxObj.pushKV("proTxHash", dmnPayee == nullptr ? "" : dmnPayee->proTxHash.ToString());
         protxObj.pushKV("amount", payedPerMasternode);
         protxObj.pushKV("payees", payeesArr);
@@ -589,9 +600,11 @@ static UniValue masternodelist(const JSONRPCRequest& request, ChainstateManager&
         masternode_list_help(request);
     }
 
+    const NodeContext& node = EnsureAnyNodeContext(request.context);
+
     UniValue obj(UniValue::VOBJ);
 
-    auto mnList = deterministicMNManager->GetListAtChainTip();
+    auto mnList = node.dmnman->GetListAtChainTip();
     auto dmnToStatus = [&](auto& dmn) {
         if (mnList.IsMNValid(dmn)) {
             return "ENABLED";
@@ -691,12 +704,13 @@ static UniValue masternodelist(const JSONRPCRequest& request, ChainstateManager&
             objMN.pushKV("address", dmn.pdmnState->addr.ToString());
             objMN.pushKV("payee", payeeStr);
             objMN.pushKV("status", dmnToStatus(dmn));
-            objMN.pushKV("type", std::string(GetMnType(dmn.nType).description));
-            if (dmn.nType == MnType::Evo) {
-                objMN.pushKV("platformNodeID", dmn.pdmnState->platformNodeID.ToString());
-                objMN.pushKV("platformP2PPort", dmn.pdmnState->platformP2PPort);
-                objMN.pushKV("platformHTTPPort", dmn.pdmnState->platformHTTPPort);
-            }
+            // Disable Evonodes
+            // objMN.pushKV("type", std::string(GetMnType(dmn.nType).description));
+            // if (dmn.nType == MnType::Evo) {
+            //     objMN.pushKV("platformNodeID", dmn.pdmnState->platformNodeID.ToString());
+            //     objMN.pushKV("platformP2PPort", dmn.pdmnState->platformP2PPort);
+            //     objMN.pushKV("platformHTTPPort", dmn.pdmnState->platformHTTPPort);
+            // }
             objMN.pushKV("pospenaltyscore", dmn.pdmnState->nPoSePenalty);
             objMN.pushKV("consecutivePayments", dmn.pdmnState->nConsecutivePayments);
             objMN.pushKV("lastpaidtime", dmnToLastPaidTime(dmn));
@@ -742,8 +756,8 @@ void RegisterMasternodeRPCCommands(CRPCTable &t)
 static const CRPCCommand commands[] =
 { //  category              name                      actor (function)         argNames
   //  --------------------- ------------------------  -----------------------  ----------
-    { "dash",               "masternode",             &masternode,             {} },
-    { "dash",               "masternodelist",         &masternode,             {} },
+    { "osmium",               "masternode",             &masternode,             {} },
+    { "osmium",               "masternodelist",         &masternode,             {} },
 };
 // clang-format on
     for (const auto& command : commands) {

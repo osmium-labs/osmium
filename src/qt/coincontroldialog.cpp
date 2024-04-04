@@ -1,5 +1,5 @@
-// Copyright (c) 2011-2015 The Bitcoin Core developers
-// Copyright (c) 2014-2022 The Dash Core developers
+// Copyright (c) 2011-2019 The Bitcoin Core developers
+// Copyright (c) 2014-2024 The Dash Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -42,7 +42,7 @@ bool CCoinControlWidgetItem::operator<(const QTreeWidgetItem &other) const {
 }
 
 CoinControlDialog::CoinControlDialog(CCoinControl& coin_control, WalletModel* _model, QWidget* parent) :
-    QDialog(parent),
+    QDialog(parent, GUIUtil::dialog_flags),
     ui(new Ui::CoinControlDialog),
     m_coin_control(coin_control),
     model(_model)
@@ -160,6 +160,8 @@ CoinControlDialog::CoinControlDialog(CCoinControl& coin_control, WalletModel* _m
         updateLabelLocked();
         CoinControlDialog::updateLabels(m_coin_control, _model, this);
     }
+
+    GUIUtil::handleCloseWindowShortcut(this);
 }
 
 CoinControlDialog::~CoinControlDialog()
@@ -481,7 +483,6 @@ void CoinControlDialog::updateLabels(CCoinControl& m_coin_control, WalletModel *
     unsigned int nBytesInputs   = 0;
     unsigned int nQuantity      = 0;
     bool fUnselectedSpent{false};
-    bool fUnselectedNonMixed{false};
 
     std::vector<COutPoint> vCoinControl;
     m_coin_control.ListSelected(vCoinControl);
@@ -574,8 +575,8 @@ void CoinControlDialog::updateLabels(CCoinControl& m_coin_control, WalletModel *
     }
 
     // actually update labels
-    int nDisplayUnit = BitcoinUnits::DASH;
-    if (model && model->getOptionsModel())
+    int nDisplayUnit = BitcoinUnits::OSMIUM;
+    if (model->getOptionsModel())
         nDisplayUnit = model->getOptionsModel()->getDisplayUnit();
 
     QLabel *l1 = dialog->findChild<QLabel *>("labelCoinControlQuantity");
@@ -617,7 +618,7 @@ void CoinControlDialog::updateLabels(CCoinControl& m_coin_control, WalletModel *
     // how many satoshis the estimated fee can vary per byte we guess wrong
     double dFeeVary = (nBytes != 0) ? (double)nPayFee / nBytes : 0;
 
-    QString toolTip4 = tr("Can vary +/- %1 duff(s) per input.").arg(dFeeVary);
+    QString toolTip4 = tr("Can vary +/- %1 muff(s) per input.").arg(dFeeVary);
 
     l3->setToolTip(toolTip4);
     l4->setToolTip(toolTip4);
@@ -638,10 +639,6 @@ void CoinControlDialog::updateLabels(CCoinControl& m_coin_control, WalletModel *
     if (fUnselectedSpent) {
         QMessageBox::warning(dialog, "CoinControl",
             tr("Some coins were unselected because they were spent."),
-            QMessageBox::Ok, QMessageBox::Ok);
-    } else if (fUnselectedNonMixed) {
-        QMessageBox::warning(dialog, "CoinControl",
-            tr("Some coins were unselected because they do not have enough mixing rounds."),
             QMessageBox::Ok, QMessageBox::Ok);
     }
 }
@@ -752,7 +749,7 @@ void CoinControlDialog::updateView()
             if (ExtractDestination(out.txout.scriptPubKey, outputAddress)) {
                 sAddress = QString::fromStdString(EncodeDestination(outputAddress));
 
-                // if listMode or change => show dash address. In tree mode, address is not shown again for direct wallet address outputs
+                // if listMode or change => show osmium address. In tree mode, address is not shown again for direct wallet address outputs
                 if (!treeMode || (!(sAddress == sWalletAddress))) {
                     itemOutput->setText(COLUMN_ADDRESS, sAddress);
                 }

@@ -4,11 +4,12 @@
 
 #include <amount.h>
 #include <policy/feerate.h>
-#include <test/util/setup_common.h>
+
+#include <limits>
 
 #include <boost/test/unit_test.hpp>
 
-BOOST_FIXTURE_TEST_SUITE(amount_tests, BasicTestingSetup)
+BOOST_AUTO_TEST_SUITE(amount_tests)
 
 BOOST_AUTO_TEST_CASE(MoneyRangeTest)
 {
@@ -98,7 +99,7 @@ BOOST_AUTO_TEST_CASE(BinaryOperatorTest)
     BOOST_CHECK(a <= a);
     BOOST_CHECK(b >= a);
     BOOST_CHECK(b >= b);
-    // a should be 0.00000002 DASH/kB now
+    // a should be 0.00000002 OSMI/kB now
     a += a;
     BOOST_CHECK(a == b);
 }
@@ -107,7 +108,7 @@ BOOST_AUTO_TEST_CASE(ToStringTest)
 {
     CFeeRate feeRate;
     feeRate = CFeeRate(1);
-    BOOST_CHECK_EQUAL(feeRate.ToString(), "0.00000001 DASH/kB");
+    BOOST_CHECK_EQUAL(feeRate.ToString(), "0.00000001 OSMI/kB");
 }
 
 BOOST_AUTO_TEST_SUITE_END()

@@ -40,43 +40,43 @@ BITCOIN_INCLUDES=-I$(builddir) -I$(srcdir)/secp256k1/include -I$(srcdir)/$(UNIVA
 BITCOIN_INCLUDES+=-I$(srcdir)/dashbls/include -I$(srcdir)/dashbls/depends/relic/include -I$(srcdir)/dashbls/depends/minialloc/include
 BITCOIN_INCLUDES+=-I$(srcdir)/immer
 
-LIBBITCOIN_SERVER=libbitcoin_server.a
-LIBBITCOIN_COMMON=libbitcoin_common.a
-LIBBITCOIN_CONSENSUS=libbitcoin_consensus.a
-LIBBITCOIN_CLI=libbitcoin_cli.a
-LIBBITCOIN_UTIL=libbitcoin_util.a
-LIBBITCOIN_CRYPTO_BASE=crypto/libbitcoin_crypto_base.a
-LIBBITCOINQT=qt/libbitcoinqt.a
+LIBOSMIUM_SERVER=libosmium_server.a
+LIBOSMIUM_COMMON=libosmium_common.a
+LIBOSMIUM_CONSENSUS=libosmium_consensus.a
+LIBOSMIUM_CLI=libosmium_cli.a
+LIBOSMIUM_UTIL=libosmium_util.a
+LIBOSMIUM_CRYPTO_BASE=crypto/libosmium_crypto_base.a
+LIBOSMIUMQT=qt/libosmiumqt.a
 LIBDASHBLS=dashbls/libdashbls.la
 LIBSECP256K1=secp256k1/libsecp256k1.la
 
 if ENABLE_ZMQ
-LIBBITCOIN_ZMQ=libbitcoin_zmq.a
+LIBOSMIUM_ZMQ=libosmium_zmq.a
 endif
 if BUILD_BITCOIN_LIBS
-LIBBITCOINCONSENSUS=libdashconsensus.la
+LIBOSMIUMCONSENSUS=libosmiumconsensus.la
 endif
 if ENABLE_WALLET
-LIBBITCOIN_WALLET=libbitcoin_wallet.a
-LIBBITCOIN_WALLET_TOOL=libbitcoin_wallet_tool.a
+LIBOSMIUM_WALLET=libosmium_wallet.a
+LIBOSMIUM_WALLET_TOOL=libosmium_wallet_tool.a
 endif
 
-LIBBITCOIN_CRYPTO= $(LIBBITCOIN_CRYPTO_BASE)
+LIBOSMIUM_CRYPTO= $(LIBOSMIUM_CRYPTO_BASE)
 if ENABLE_SSE41
-LIBBITCOIN_CRYPTO_SSE41 = crypto/libbitcoin_crypto_sse41.a
-LIBBITCOIN_CRYPTO += $(LIBBITCOIN_CRYPTO_SSE41)
+LIBOSMIUM_CRYPTO_SSE41 = crypto/libosmium_crypto_sse41.a
+LIBOSMIUM_CRYPTO += $(LIBOSMIUM_CRYPTO_SSE41)
 endif
 if ENABLE_AVX2
-LIBBITCOIN_CRYPTO_AVX2 = crypto/libbitcoin_crypto_avx2.a
-LIBBITCOIN_CRYPTO += $(LIBBITCOIN_CRYPTO_AVX2)
+LIBOSMIUM_CRYPTO_AVX2 = crypto/libosmium_crypto_avx2.a
+LIBOSMIUM_CRYPTO += $(LIBOSMIUM_CRYPTO_AVX2)
 endif
 if ENABLE_X86_SHANI
-LIBBITCOIN_CRYPTO_X86_SHANI = crypto/libbitcoin_crypto_x86_shani.a
-LIBBITCOIN_CRYPTO += $(LIBBITCOIN_CRYPTO_X86_SHANI)
+LIBOSMIUM_CRYPTO_X86_SHANI = crypto/libosmium_crypto_x86_shani.a
+LIBOSMIUM_CRYPTO += $(LIBOSMIUM_CRYPTO_X86_SHANI)
 endif
 if ENABLE_ARM_SHANI
-LIBBITCOIN_CRYPTO_ARM_SHANI = crypto/libbitcoin_crypto_arm_shani.a
-LIBBITCOIN_CRYPTO += $(LIBBITCOIN_CRYPTO_ARM_SHANI)
+LIBOSMIUM_CRYPTO_ARM_SHANI = crypto/libosmium_crypto_arm_shani.a
+LIBOSMIUM_CRYPTO += $(LIBOSMIUM_CRYPTO_ARM_SHANI)
 endif
 
 $(LIBDASHBLS):
@@ -88,17 +88,17 @@ $(LIBSECP256K1): $(wildcard secp256k1/src/*.h) $(wildcard secp256k1/src/*.c) $(w
 # Make is not made aware of per-object dependencies to avoid limiting building parallelization
 # But to build the less dependent modules first, we manually select their order here:
 EXTRA_LIBRARIES += \
-  $(LIBBITCOIN_CRYPTO) \
-  $(LIBBITCOIN_UTIL) \
-  $(LIBBITCOIN_COMMON) \
-  $(LIBBITCOIN_CONSENSUS) \
-  $(LIBBITCOIN_SERVER) \
-  $(LIBBITCOIN_CLI) \
-  $(LIBBITCOIN_WALLET) \
-  $(LIBBITCOIN_WALLET_TOOL) \
-  $(LIBBITCOIN_ZMQ)
+  $(LIBOSMIUM_CRYPTO) \
+  $(LIBOSMIUM_UTIL) \
+  $(LIBOSMIUM_COMMON) \
+  $(LIBOSMIUM_CONSENSUS) \
+  $(LIBOSMIUM_SERVER) \
+  $(LIBOSMIUM_CLI) \
+  $(LIBOSMIUM_WALLET) \
+  $(LIBOSMIUM_WALLET_TOOL) \
+  $(LIBOSMIUM_ZMQ)
 
-lib_LTLIBRARIES = $(LIBBITCOINCONSENSUS)
+lib_LTLIBRARIES = $(LIBOSMIUMCONSENSUS)
 noinst_LTLIBRARIES =
 
 bin_PROGRAMS =
@@ -107,29 +107,34 @@ TESTS =
 BENCHMARKS =
 
 if BUILD_BITCOIND
-  bin_PROGRAMS += dashd
+  bin_PROGRAMS += osmiumd
+endif
+
+if BUILD_BITCOIN_NODE
+  bin_PROGRAMS += osmium-node
 endif
 
 if BUILD_BITCOIN_CLI
-  bin_PROGRAMS += dash-cli
+  bin_PROGRAMS += osmium-cli
 endif
 if BUILD_BITCOIN_TX
-  bin_PROGRAMS += dash-tx
+  bin_PROGRAMS += osmium-tx
 endif
 if ENABLE_WALLET
 if BUILD_BITCOIN_WALLET
-  bin_PROGRAMS += dash-wallet
+  bin_PROGRAMS += osmium-wallet
 endif
 endif
 
 .PHONY: FORCE check-symbols check-security
-# dash core #
+# osmium core #
 BITCOIN_CORE_H = \
   addrdb.h \
   addressindex.h \
   spentindex.h \
   addrman.h \
   attributes.h \
+  auxpow.h \
   banman.h \
   base58.h \
   batchedlogger.h \
@@ -141,6 +146,7 @@ BITCOIN_CORE_H = \
   cachemap.h \
   cachemultimap.h \
   blockfilter.h \
+  bloom.h \
   chain.h \
   chainparams.h \
   chainparamsbase.h \
@@ -149,6 +155,7 @@ BITCOIN_CORE_H = \
   clientversion.h \
   coinjoin/coinjoin.h \
   coinjoin/client.h \
+  coinjoin/common.h \
   coinjoin/context.h \
   coinjoin/options.h \
   coinjoin/server.h \
@@ -169,6 +176,7 @@ BITCOIN_CORE_H = \
   cuckoocache.h \
   ctpl_stl.h \
   cxxtimer.hpp \
+  dbwrapper.h \
   deploymentinfo.h \
   deploymentstatus.h \
   evo/assetlocktx.h \
@@ -187,6 +195,7 @@ BITCOIN_CORE_H = \
   dsnotificationinterface.h \
   governance/governance.h \
   governance/classes.h \
+  governance/common.h \
   governance/exceptions.h \
   governance/object.h \
   governance/validators.h \
@@ -209,12 +218,12 @@ BITCOIN_CORE_H = \
   indirectmap.h \
   init.h \
   interfaces/chain.h \
+  interfaces/coinjoin.h \
   interfaces/handler.h \
   interfaces/node.h \
   interfaces/wallet.h \
   key.h \
   key_io.h \
-  dbwrapper.h \
   limitedmap.h \
   llmq/blockprocessor.h \
   llmq/chainlocks.h \
@@ -228,6 +237,7 @@ BITCOIN_CORE_H = \
   llmq/ehf_signals.cpp \
   llmq/ehf_signals.h \
   llmq/instantsend.h \
+  llmq/options.h \
   llmq/params.h \
   llmq/quorums.h \
   llmq/signing.h \
@@ -258,12 +268,15 @@ BITCOIN_CORE_H = \
   node/coin.h \
   node/coinstats.h \
   node/context.h \
+  node/psbt.h \
   node/transaction.h \
+  node/ui_interface.h \
   node/utxo_snapshot.h \
   noui.h \
   outputtype.h \
   policy/feerate.h \
   policy/fees.h \
+  policy/packages.h \
   policy/policy.h \
   policy/settings.h \
   pow.h \
@@ -272,6 +285,7 @@ BITCOIN_CORE_H = \
   random.h \
   randomenv.h \
   reverse_iterator.h \
+  rpc/auxpow_miner.h \
   rpc/blockchain.h \
   rpc/client.h \
   rpc/mining.h \
@@ -304,28 +318,27 @@ BITCOIN_CORE_H = \
   support/lockedpool.h \
   sync.h \
   timestampindex.h \
-  threadsafety.h \
   threadinterrupt.h \
+  threadsafety.h \
   timedata.h \
   torcontrol.h \
   txdb.h \
   txmempool.h \
-  ui_interface.h \
   undo.h \
   unordered_lru_cache.h \
   util/bip32.h \
   util/bytevectorhash.h \
   util/check.h \
   util/enumerate.h \
+  util/epochguard.h \
   util/error.h \
+  util/expected.h \
   util/fastrange.h \
   util/fees.h \
   util/golombrice.h \
   util/hasher.h \
   util/hash_type.h \
   util/irange.h \
-  util/spanparsing.h \
-  util/system.h \
   util/asmap.h \
   util/getuniquepath.h \
   util/macros.h \
@@ -340,20 +353,22 @@ BITCOIN_CORE_H = \
   util/ranges_set.h \
   util/sock.h \
   util/string.h \
+  util/spanparsing.h \
+  util/system.h \
   util/time.h \
   util/thread.h \
   util/threadnames.h \
   util/trace.h \
   util/translation.h \
-  util/vector.h \
+  util/ui_change_type.h \
   util/url.h \
   util/vector.h \
   validation.h \
   validationinterface.h \
   versionbits.h \
-  walletinitinterface.h \
   wallet/bdb.h \
   wallet/coincontrol.h \
+  wallet/coinselection.h \
   wallet/context.h \
   wallet/crypter.h \
   wallet/db.h \
@@ -368,7 +383,7 @@ BITCOIN_CORE_H = \
   wallet/walletdb.h \
   wallet/wallettool.h \
   wallet/walletutil.h \
-  wallet/coinselection.h \
+  walletinitinterface.h \
   warnings.h \
   zmq/zmqabstractnotifier.h \
   zmq/zmqnotificationinterface.h \
@@ -381,15 +396,15 @@ obj/build.h: FORCE
 	@$(MKDIR_P) $(builddir)/obj
 	@$(top_srcdir)/share/genbuild.sh "$(abs_top_builddir)/src/obj/build.h" \
 	  "$(abs_top_srcdir)"
-libbitcoin_util_a-clientversion.$(OBJEXT): obj/build.h
+libosmium_util_a-clientversion.$(OBJEXT): obj/build.h
 
-# server: shared between dashd and dash-qt
+# server: shared between osmiumd and osmium-qt
 # Contains code accessing mempool and chain state that is meant to be separated
 # from wallet and gui code (see node/README.md). Shared code should go in
-# libbitcoin_common or libbitcoin_util libraries, instead.
-libbitcoin_server_a_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES) $(MINIUPNPC_CPPFLAGS) $(NATPMP_CPPFLAGS) $(EVENT_CFLAGS) $(EVENT_PTHREADS_CFLAGS)
-libbitcoin_server_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
-libbitcoin_server_a_SOURCES = \
+# libosmium_common or libosmium_util libraries, instead.
+libosmium_server_a_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES) $(MINIUPNPC_CPPFLAGS) $(NATPMP_CPPFLAGS) $(EVENT_CFLAGS) $(EVENT_PTHREADS_CFLAGS)
+libosmium_server_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
+libosmium_server_a_SOURCES = \
   addrdb.cpp \
   addressindex.cpp \
   addrman.cpp \
@@ -400,7 +415,6 @@ libbitcoin_server_a_SOURCES = \
   chain.cpp \
   coinjoin/coinjoin.cpp \
   coinjoin/context.cpp \
-  coinjoin/options.cpp \
   coinjoin/server.cpp \
   consensus/tx_verify.cpp \
   dbwrapper.cpp \
@@ -419,6 +433,14 @@ libbitcoin_server_a_SOURCES = \
   evo/specialtx.cpp \
   evo/specialtxman.cpp \
   flatfile.cpp \
+  governance/classes.cpp \
+  governance/exceptions.cpp \
+  governance/governance.cpp \
+  governance/object.cpp \
+  governance/validators.cpp \
+  governance/vote.cpp \
+  governance/votedb.cpp \
+  gsl/assert.cpp \
   httprpc.cpp \
   httpserver.cpp \
   i2p.cpp \
@@ -427,12 +449,6 @@ libbitcoin_server_a_SOURCES = \
   index/coinstatsindex.cpp \
   index/txindex.cpp \
   init.cpp \
-  governance/governance.cpp \
-  governance/classes.cpp \
-  governance/object.cpp \
-  governance/validators.cpp \
-  governance/vote.cpp \
-  governance/votedb.cpp \
   llmq/quorums.cpp \
   llmq/blockprocessor.cpp \
   llmq/commitment.cpp \
@@ -444,6 +460,7 @@ libbitcoin_server_a_SOURCES = \
   llmq/dkgsession.cpp \
   llmq/context.cpp \
   llmq/instantsend.cpp \
+  llmq/options.cpp \
   llmq/snapshot.cpp \
   llmq/signing.cpp \
   llmq/signing_shares.cpp \
@@ -464,13 +481,17 @@ libbitcoin_server_a_SOURCES = \
   node/coinstats.cpp \
   node/context.cpp \
   node/interfaces.cpp \
+  node/psbt.cpp \
   node/transaction.cpp \
+  node/ui_interface.cpp \
   noui.cpp \
   policy/fees.cpp \
+  policy/packages.cpp \
   policy/policy.cpp \
   policy/settings.cpp \
   pow.cpp \
   rest.cpp \
+  rpc/auxpow_miner.cpp \
   rpc/blockchain.cpp \
   rpc/coinjoin.cpp \
   rpc/evo.cpp \
@@ -490,23 +511,22 @@ libbitcoin_server_a_SOURCES = \
   torcontrol.cpp \
   txdb.cpp \
   txmempool.cpp \
-  ui_interface.cpp \
   validation.cpp \
   validationinterface.cpp \
   versionbits.cpp \
   $(BITCOIN_CORE_H)
 
 if ENABLE_WALLET
-libbitcoin_server_a_SOURCES += wallet/init.cpp
+libosmium_server_a_SOURCES += wallet/init.cpp
 endif
 if !ENABLE_WALLET
-libbitcoin_server_a_SOURCES += dummywallet.cpp
+libosmium_server_a_SOURCES += dummywallet.cpp
 endif
 
 if ENABLE_ZMQ
-libbitcoin_zmq_a_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES) $(ZMQ_CFLAGS)
-libbitcoin_zmq_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
-libbitcoin_zmq_a_SOURCES = \
+libosmium_zmq_a_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES) $(ZMQ_CFLAGS)
+libosmium_zmq_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
+libosmium_zmq_a_SOURCES = \
   zmq/zmqabstractnotifier.cpp \
   zmq/zmqnotificationinterface.cpp \
   zmq/zmqpublishnotifier.cpp \
@@ -515,13 +535,13 @@ libbitcoin_zmq_a_SOURCES = \
 endif
 
 
-# wallet: shared between dashd and dash-qt, but only linked
+# wallet: shared between osmiumd and osmium-qt, but only linked
 # when wallet enabled
-libbitcoin_wallet_a_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES) $(SQLITE_CFLAGS)
-libbitcoin_wallet_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
-libbitcoin_wallet_a_SOURCES = \
+libosmium_wallet_a_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES) $(SQLITE_CFLAGS)
+libosmium_wallet_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
+libosmium_wallet_a_SOURCES = \
   coinjoin/client.cpp \
-  coinjoin/options.cpp \
+  coinjoin/interfaces.cpp \
   coinjoin/util.cpp \
   hdchain.cpp \
   wallet/coincontrol.cpp \
@@ -541,22 +561,22 @@ libbitcoin_wallet_a_SOURCES = \
   $(BITCOIN_CORE_H)
 
 if USE_SQLITE
-libbitcoin_wallet_a_SOURCES += wallet/sqlite.cpp
+libosmium_wallet_a_SOURCES += wallet/sqlite.cpp
 endif
 if USE_BDB
-libbitcoin_wallet_a_SOURCES += wallet/bdb.cpp wallet/salvage.cpp
+libosmium_wallet_a_SOURCES += wallet/bdb.cpp wallet/salvage.cpp
 endif
 
-libbitcoin_wallet_tool_a_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES)
-libbitcoin_wallet_tool_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
-libbitcoin_wallet_tool_a_SOURCES = \
+libosmium_wallet_tool_a_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES)
+libosmium_wallet_tool_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
+libosmium_wallet_tool_a_SOURCES = \
   wallet/wallettool.cpp \
   $(BITCOIN_CORE_H)
 
 # crypto primitives library
-crypto_libbitcoin_crypto_base_a_CPPFLAGS = $(AM_CPPFLAGS) $(PIC_FLAGS)
-crypto_libbitcoin_crypto_base_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS) $(PIC_FLAGS)
-crypto_libbitcoin_crypto_base_a_SOURCES = \
+crypto_libosmium_crypto_base_a_CPPFLAGS = $(AM_CPPFLAGS) $(PIC_FLAGS)
+crypto_libosmium_crypto_base_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS) $(PIC_FLAGS)
+crypto_libosmium_crypto_base_a_SOURCES = \
   crypto/aes.cpp \
   crypto/aes.h \
   crypto/chacha_poly_aead.h \
@@ -591,23 +611,23 @@ crypto_libbitcoin_crypto_base_a_SOURCES = \
   crypto/siphash.h
 
 if USE_ASM
-crypto_libbitcoin_crypto_base_a_SOURCES += crypto/sha256_sse4.cpp
+crypto_libosmium_crypto_base_a_SOURCES += crypto/sha256_sse4.cpp
 endif
 
-crypto_libbitcoin_crypto_sse41_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
-crypto_libbitcoin_crypto_sse41_a_CPPFLAGS = $(AM_CPPFLAGS)
-crypto_libbitcoin_crypto_sse41_a_CXXFLAGS += $(SSE41_CXXFLAGS)
-crypto_libbitcoin_crypto_sse41_a_CPPFLAGS += -DENABLE_SSE41
-crypto_libbitcoin_crypto_sse41_a_SOURCES = crypto/sha256_sse41.cpp
+crypto_libosmium_crypto_sse41_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
+crypto_libosmium_crypto_sse41_a_CPPFLAGS = $(AM_CPPFLAGS)
+crypto_libosmium_crypto_sse41_a_CXXFLAGS += $(SSE41_CXXFLAGS)
+crypto_libosmium_crypto_sse41_a_CPPFLAGS += -DENABLE_SSE41
+crypto_libosmium_crypto_sse41_a_SOURCES = crypto/sha256_sse41.cpp
 
-crypto_libbitcoin_crypto_avx2_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
-crypto_libbitcoin_crypto_avx2_a_CPPFLAGS = $(AM_CPPFLAGS)
-crypto_libbitcoin_crypto_avx2_a_CXXFLAGS += $(AVX2_CXXFLAGS)
-crypto_libbitcoin_crypto_avx2_a_CPPFLAGS += -DENABLE_AVX2
-crypto_libbitcoin_crypto_avx2_a_SOURCES = crypto/sha256_avx2.cpp
+crypto_libosmium_crypto_avx2_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
+crypto_libosmium_crypto_avx2_a_CPPFLAGS = $(AM_CPPFLAGS)
+crypto_libosmium_crypto_avx2_a_CXXFLAGS += $(AVX2_CXXFLAGS)
+crypto_libosmium_crypto_avx2_a_CPPFLAGS += -DENABLE_AVX2
+crypto_libosmium_crypto_avx2_a_SOURCES = crypto/sha256_avx2.cpp
 
 # x11
-crypto_libbitcoin_crypto_base_a_SOURCES += \
+crypto_libosmium_crypto_base_a_SOURCES += \
   crypto/blake.c \
   crypto/bmw.c \
   crypto/cubehash.c \
@@ -632,22 +652,22 @@ crypto_libbitcoin_crypto_base_a_SOURCES += \
   crypto/sph_skein.h \
   crypto/sph_types.h
 
-crypto_libbitcoin_crypto_x86_shani_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
-crypto_libbitcoin_crypto_x86_shani_a_CPPFLAGS = $(AM_CPPFLAGS)
-crypto_libbitcoin_crypto_x86_shani_a_CXXFLAGS += $(X86_SHANI_CXXFLAGS)
-crypto_libbitcoin_crypto_x86_shani_a_CPPFLAGS += -DENABLE_X86_SHANI
-crypto_libbitcoin_crypto_x86_shani_a_SOURCES = crypto/sha256_x86_shani.cpp
+crypto_libosmium_crypto_x86_shani_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
+crypto_libosmium_crypto_x86_shani_a_CPPFLAGS = $(AM_CPPFLAGS)
+crypto_libosmium_crypto_x86_shani_a_CXXFLAGS += $(X86_SHANI_CXXFLAGS)
+crypto_libosmium_crypto_x86_shani_a_CPPFLAGS += -DENABLE_X86_SHANI
+crypto_libosmium_crypto_x86_shani_a_SOURCES = crypto/sha256_x86_shani.cpp
 
-crypto_libbitcoin_crypto_arm_shani_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
-crypto_libbitcoin_crypto_arm_shani_a_CPPFLAGS = $(AM_CPPFLAGS)
-crypto_libbitcoin_crypto_arm_shani_a_CXXFLAGS += $(ARM_SHANI_CXXFLAGS)
-crypto_libbitcoin_crypto_arm_shani_a_CPPFLAGS += -DENABLE_ARM_SHANI
-crypto_libbitcoin_crypto_arm_shani_a_SOURCES = crypto/sha256_arm_shani.cpp
+crypto_libosmium_crypto_arm_shani_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
+crypto_libosmium_crypto_arm_shani_a_CPPFLAGS = $(AM_CPPFLAGS)
+crypto_libosmium_crypto_arm_shani_a_CXXFLAGS += $(ARM_SHANI_CXXFLAGS)
+crypto_libosmium_crypto_arm_shani_a_CPPFLAGS += -DENABLE_ARM_SHANI
+crypto_libosmium_crypto_arm_shani_a_SOURCES = crypto/sha256_arm_shani.cpp
 
 # consensus: shared between all executables that validate any consensus rules.
-libbitcoin_consensus_a_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES)
-libbitcoin_consensus_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
-libbitcoin_consensus_a_SOURCES = \
+libosmium_consensus_a_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES)
+libosmium_consensus_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
+libosmium_consensus_a_SOURCES = \
   amount.h \
   arith_uint256.cpp \
   arith_uint256.h \
@@ -658,11 +678,14 @@ libbitcoin_consensus_a_SOURCES = \
   consensus/params.h \
   consensus/tx_check.cpp \
   consensus/validation.h \
+  devfee_payment.h \
   hash.cpp \
   hash.h \
   prevector.h \
   primitives/block.cpp \
   primitives/block.h \
+  primitives/pureheader.h \
+  primitives/pureheader.cpp \
   primitives/transaction.cpp \
   primitives/transaction.h \
   pubkey.cpp \
@@ -685,10 +708,11 @@ libbitcoin_consensus_a_SOURCES = \
   util/string.cpp \
   version.h
 
-# common: shared between dashd, and dash-qt and non-server tools
-libbitcoin_common_a_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES)
-libbitcoin_common_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
-libbitcoin_common_a_SOURCES = \
+# common: shared between osmiumd, and osmium-qt and non-server tools
+libosmium_common_a_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES)
+libosmium_common_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
+libosmium_common_a_SOURCES = \
+  auxpow.cpp \
   base58.cpp \
   bech32.cpp \
   bip39.cpp \
@@ -699,6 +723,9 @@ libbitcoin_common_a_SOURCES = \
   core_read.cpp \
   core_write.cpp \
   deploymentinfo.cpp \
+  devfee_payment.cpp \
+  devfee_payment.h \
+  governance/common.cpp \
   key.cpp \
   key_io.cpp \
   merkleblock.cpp \
@@ -722,14 +749,16 @@ libbitcoin_common_a_SOURCES = \
   $(BITCOIN_CORE_H)
 
 # util: shared between all executables.
-libbitcoin_util_a_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES)
-libbitcoin_util_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
-libbitcoin_util_a_SOURCES = \
+libosmium_util_a_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES)
+libosmium_util_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
+libosmium_util_a_SOURCES = \
   bls/bls_batchverifier.h \
   bls/bls_ies.cpp \
   bls/bls_ies.h \
   bls/bls_worker.cpp \
   bls/bls_worker.h \
+  coinjoin/common.cpp \
+  coinjoin/options.cpp \
   support/lockedpool.cpp \
   chainparamsbase.cpp \
   clientversion.cpp \
@@ -769,131 +798,122 @@ libbitcoin_util_a_SOURCES = \
   $(BITCOIN_CORE_H)
 
 if USE_LIBEVENT
-libbitcoin_util_a_SOURCES += util/url.cpp
+libosmium_util_a_SOURCES += util/url.cpp
 endif
 
-# cli: shared between dash-cli and dash-qt
-libbitcoin_cli_a_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES)
-libbitcoin_cli_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
-libbitcoin_cli_a_SOURCES = \
+# cli: shared between osmium-cli and osmium-qt
+libosmium_cli_a_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES)
+libosmium_cli_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
+libosmium_cli_a_SOURCES = \
   compat/stdin.h \
   compat/stdin.cpp \
   rpc/client.cpp \
   $(BITCOIN_CORE_H)
 
-nodist_libbitcoin_util_a_SOURCES = $(srcdir)/obj/build.h
+nodist_libosmium_util_a_SOURCES = $(srcdir)/obj/build.h
 #
 
-# dashd binary #
-dashd_SOURCES = bitcoind.cpp
-dashd_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES)
-dashd_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
-dashd_LDFLAGS = $(LDFLAGS_WRAP_EXCEPTIONS) $(RELDFLAGS) $(AM_LDFLAGS) $(LIBTOOL_APP_LDFLAGS) $(PTHREAD_FLAGS)
+# osmiumd & osmium-node binaries #
+bitcoin_daemon_sources = bitcoind.cpp
+bitcoin_bin_cppflags = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES)
+bitcoin_bin_cxxflags = $(AM_CXXFLAGS) $(PIE_FLAGS)
+bitcoin_bin_ldflags = $(LDFLAGS_WRAP_EXCEPTIONS) $(RELDFLAGS) $(AM_LDFLAGS) $(LIBTOOL_APP_LDFLAGS) $(PTHREAD_FLAGS)
 
 if TARGET_WINDOWS
-dashd_SOURCES += dashd-res.rc
+bitcoin_daemon_sources += osmiumd-res.rc
 endif
 
-dashd_LDADD = \
-  $(LIBBITCOIN_SERVER) \
-  $(LIBBITCOIN_WALLET) \
-  $(LIBBITCOIN_COMMON) \
+bitcoin_bin_ldadd = \
+  $(LIBOSMIUM_WALLET) \
+  $(LIBOSMIUM_COMMON) \
+  $(LIBOSMIUM_UTIL) \
   $(LIBUNIVALUE) \
-  $(LIBBITCOIN_UTIL) \
-  $(LIBBITCOIN_ZMQ) \
-  $(LIBBITCOIN_CONSENSUS) \
-  $(LIBBITCOIN_CRYPTO) \
+  $(LIBOSMIUM_ZMQ) \
+  $(LIBOSMIUM_CONSENSUS) \
+  $(LIBOSMIUM_CRYPTO) \
   $(LIBDASHBLS) \
   $(LIBLEVELDB) \
   $(LIBLEVELDB_SSE42) \
   $(LIBMEMENV) \
   $(LIBSECP256K1)
 
-dashd_LDADD += $(BACKTRACE_LIB) $(BOOST_LIBS) $(BDB_LIBS) $(MINIUPNPC_LIBS) $(NATPMP_LIBS) $(SQLITE_LIBS) $(EVENT_PTHREADS_LIBS) $(EVENT_LIBS) $(ZMQ_LIBS) $(GMP_LIBS)
+bitcoin_bin_ldadd += $(BACKTRACE_LIB) $(BOOST_LIBS) $(BDB_LIBS) $(MINIUPNPC_LIBS) $(NATPMP_LIBS) $(SQLITE_LIBS) $(EVENT_PTHREADS_LIBS) $(EVENT_LIBS) $(ZMQ_LIBS) $(GMP_LIBS)
 
-# dash-cli binary #
-dash_cli_SOURCES = bitcoin-cli.cpp
-dash_cli_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES) $(EVENT_CFLAGS)
-dash_cli_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
-dash_cli_LDFLAGS = $(LDFLAGS_WRAP_EXCEPTIONS) $(RELDFLAGS) $(AM_LDFLAGS) $(LIBTOOL_APP_LDFLAGS) $(PTHREAD_FLAGS)
+osmiumd_SOURCES = $(bitcoin_daemon_sources)
+osmiumd_CPPFLAGS = $(bitcoin_bin_cppflags)
+osmiumd_CXXFLAGS = $(bitcoin_bin_cxxflags)
+osmiumd_LDFLAGS = $(bitcoin_bin_ldflags)
+osmiumd_LDADD = $(LIBOSMIUM_SERVER) $(bitcoin_bin_ldadd)
+
+osmium_node_SOURCES = $(bitcoin_daemon_sources)
+osmium_node_CPPFLAGS = $(bitcoin_bin_cppflags)
+osmium_node_CXXFLAGS = $(bitcoin_bin_cxxflags)
+osmium_node_LDFLAGS = $(bitcoin_bin_ldflags)
+osmium_node_LDADD = $(LIBOSMIUM_SERVER) $(bitcoin_bin_ldadd)
+
+# osmium-cli binary #
+osmium_cli_SOURCES = bitcoin-cli.cpp
+osmium_cli_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES) $(EVENT_CFLAGS)
+osmium_cli_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
+osmium_cli_LDFLAGS = $(LDFLAGS_WRAP_EXCEPTIONS) $(RELDFLAGS) $(AM_LDFLAGS) $(LIBTOOL_APP_LDFLAGS) $(PTHREAD_FLAGS)
 
 if TARGET_WINDOWS
-dash_cli_SOURCES += dash-cli-res.rc
+osmium_cli_SOURCES += osmium-cli-res.rc
 endif
 
-dash_cli_LDADD = \
-  $(LIBBITCOIN_CLI) \
+osmium_cli_LDADD = \
+  $(LIBOSMIUM_CLI) \
   $(LIBUNIVALUE) \
-  $(LIBBITCOIN_UTIL) \
-  $(LIBBITCOIN_CRYPTO)
-dash_cli_LDADD += $(BACKTRACE_LIB) $(BOOST_LIBS) $(EVENT_LIBS) $(GMP_LIBS)
+  $(LIBOSMIUM_UTIL) \
+  $(LIBOSMIUM_CRYPTO)
+osmium_cli_LDADD += $(BACKTRACE_LIB) $(BOOST_LIBS) $(EVENT_LIBS) $(GMP_LIBS)
 #
 
-# dash-tx binary #
-dash_tx_SOURCES = bitcoin-tx.cpp
-dash_tx_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES)
-dash_tx_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
-dash_tx_LDFLAGS = $(LDFLAGS_WRAP_EXCEPTIONS) $(RELDFLAGS) $(AM_LDFLAGS) $(LIBTOOL_APP_LDFLAGS) $(PTHREAD_FLAGS)
+# osmium-tx binary #
+osmium_tx_SOURCES = bitcoin-tx.cpp
+osmium_tx_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES)
+osmium_tx_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
+osmium_tx_LDFLAGS = $(LDFLAGS_WRAP_EXCEPTIONS) $(RELDFLAGS) $(AM_LDFLAGS) $(LIBTOOL_APP_LDFLAGS) $(PTHREAD_FLAGS)
 
 if TARGET_WINDOWS
-dash_tx_SOURCES += dash-tx-res.rc
+osmium_tx_SOURCES += osmium-tx-res.rc
 endif
 
-dash_tx_LDADD = \
+osmium_tx_LDADD = \
   $(LIBUNIVALUE) \
-  $(LIBBITCOIN_COMMON) \
-  $(LIBBITCOIN_UTIL) \
-  $(LIBBITCOIN_CONSENSUS) \
-  $(LIBBITCOIN_CRYPTO) \
+  $(LIBOSMIUM_COMMON) \
+  $(LIBOSMIUM_UTIL) \
+  $(LIBOSMIUM_CONSENSUS) \
+  $(LIBOSMIUM_CRYPTO) \
   $(LIBDASHBLS) \
   $(LIBSECP256K1)
 
-dash_tx_LDADD += $(BACKTRACE_LIB) $(BOOST_LIBS) $(GMP_LIBS)
+osmium_tx_LDADD += $(BACKTRACE_LIB) $(BOOST_LIBS) $(GMP_LIBS)
 #
 
-# dash-wallet binary #
-dash_wallet_SOURCES = bitcoin-wallet.cpp
-dash_wallet_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES)
-dash_wallet_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
-dash_wallet_LDFLAGS = $(LDFLAGS_WRAP_EXCEPTIONS) $(RELDFLAGS) $(AM_LDFLAGS) $(LIBTOOL_APP_LDFLAGS) $(PTHREAD_FLAGS)
+# osmium-wallet binary #
+osmium_wallet_SOURCES = bitcoin-wallet.cpp
+osmium_wallet_CPPFLAGS = $(bitcoin_bin_cppflags)
+osmium_wallet_CXXFLAGS = $(bitcoin_bin_cxxflags)
+osmium_wallet_LDFLAGS = $(bitcoin_bin_ldflags)
+osmium_wallet_LDADD = $(LIBOSMIUM_WALLET_TOOL) $(bitcoin_bin_ldadd)
 
 if TARGET_WINDOWS
-dash_wallet_SOURCES += dash-wallet-res.rc
+osmium_wallet_SOURCES += osmium-wallet-res.rc
 endif
-
-# Libraries below may be listed more than once to resolve circular dependencies (see
-# https://eli.thegreenplace.net/2013/07/09/library-order-in-static-linking#circular-dependency)
-dash_wallet_LDADD = \
-  $(LIBBITCOIN_WALLET_TOOL) \
-  $(LIBBITCOIN_SERVER) \
-  $(LIBBITCOIN_WALLET) \
-  $(LIBBITCOIN_SERVER) \
-  $(LIBBITCOIN_COMMON) \
-  $(LIBBITCOIN_CONSENSUS) \
-  $(LIBBITCOIN_UTIL) \
-  $(LIBBITCOIN_CRYPTO) \
-  $(LIBBITCOIN_ZMQ) \
-  $(LIBDASHBLS) \
-  $(LIBLEVELDB) \
-  $(LIBLEVELDB_SSE42) \
-  $(LIBMEMENV) \
-  $(LIBSECP256K1) \
-  $(LIBUNIVALUE)
-
-dash_wallet_LDADD += $(BACKTRACE_LIB) $(BOOST_LIBS) $(BDB_LIBS) $(EVENT_PTHREADS_LIBS) $(EVENT_LIBS) $(MINIUPNPC_LIBS) $(NATPMP_LIBS) $(SQLITE_LIBS) $(ZMQ_LIBS) $(GMP_LIBS)
 #
 
-# dashconsensus library #
+# osmiumconsensus library #
 if BUILD_BITCOIN_LIBS
 include_HEADERS = script/bitcoinconsensus.h
-libdashconsensus_la_SOURCES = support/cleanse.cpp $(crypto_libbitcoin_crypto_base_a_SOURCES) $(libbitcoin_consensus_a_SOURCES)
+libosmiumconsensus_la_SOURCES = support/cleanse.cpp $(crypto_libosmium_crypto_base_a_SOURCES) $(libosmium_consensus_a_SOURCES)
 
-libdashconsensus_la_LDFLAGS = $(AM_LDFLAGS) -no-undefined $(RELDFLAGS)
-libdashconsensus_la_LIBADD = $(LIBDASHBLS) $(LIBSECP256K1) $(GMP_LIBS)
-libdashconsensus_la_CPPFLAGS = $(AM_CPPFLAGS) -I$(builddir)/obj -I$(srcdir)/secp256k1/include -DBUILD_BITCOIN_INTERNAL
-libdashconsensus_la_CPPFLAGS += -I$(srcdir)/dashbls/include -I$(srcdir)/dashbls/depends/relic/include -I$(srcdir)/dashbls/depends/minialloc/include
-libdashconsensus_la_CPPFLAGS += -I$(srcdir)/immer
-libdashconsensus_la_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
+libosmiumconsensus_la_LDFLAGS = $(AM_LDFLAGS) -no-undefined $(RELDFLAGS)
+libosmiumconsensus_la_LIBADD = $(LIBDASHBLS) $(LIBSECP256K1) $(GMP_LIBS)
+libosmiumconsensus_la_CPPFLAGS = $(AM_CPPFLAGS) -I$(builddir)/obj -I$(srcdir)/secp256k1/include -DBUILD_BITCOIN_INTERNAL
+libosmiumconsensus_la_CPPFLAGS += -I$(srcdir)/dashbls/include -I$(srcdir)/dashbls/depends/relic/include -I$(srcdir)/dashbls/depends/minialloc/include
+libosmiumconsensus_la_CPPFLAGS += -I$(srcdir)/immer
+libosmiumconsensus_la_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
 
 endif
 #

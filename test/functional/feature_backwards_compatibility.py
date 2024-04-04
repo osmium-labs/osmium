@@ -317,10 +317,10 @@ class BackwardsCompatibilityTest(BitcoinTestFramework):
 
         # Instead, we stop node and try to launch it with the wallet:
         self.stop_node(5)
-        # it expected to fail with error 'DBErrors::TOO_NEW' but Dash Core can open v18 by version 17
+        # it expected to fail with error 'DBErrors::TOO_NEW' but Osmium Core can open v18 by version 17
         # can be implemented in future if there's any incompatible versions
-        #node_v17.assert_start_raises_init_error(["-wallet=w3_v18"], "Error: Error loading w3_v18: Wallet requires newer version of Dash Core")
-        #node_v17.assert_start_raises_init_error(["-wallet=w3"], "Error: Error loading w3: Wallet requires newer version of Dash Core")
+        #node_v17.assert_start_raises_init_error(["-wallet=w3_v18"], "Error: Error loading w3_v18: Wallet requires newer version of Osmium Core")
+        #node_v17.assert_start_raises_init_error(["-wallet=w3"], "Error: Error loading w3: Wallet requires newer version of Osmium Core")
         self.start_node(5)
 
         # Open most recent wallet in v0.16 (no loadwallet RPC)
@@ -334,10 +334,10 @@ class BackwardsCompatibilityTest(BitcoinTestFramework):
         node_v17.createwallet(wallet_name="u1_v17")
         wallet = node_v17.get_wallet_rpc("u1_v17")
         address = wallet.getnewaddress()
-        info = wallet.getaddressinfo(address)
+        v17_info = wallet.getaddressinfo(address)
         # TODO enable back when HD wallets are created by default
-        #hdkeypath = info["hdkeypath"]
-        pubkey = info["pubkey"]
+        #v17_hdkeypath = v17_info["hdkeypath"]
+        v17_pubkey = v17_info["pubkey"]
 
         # Copy the 0.17 wallet to the last Bitcoin Core version and open it:
         node_v17.unloadwallet("u1_v17")
@@ -349,9 +349,21 @@ class BackwardsCompatibilityTest(BitcoinTestFramework):
         wallet = node_master.get_wallet_rpc("u1_v17")
         info = wallet.getaddressinfo(address)
         # TODO enable back when HD wallets are created by default
-        #descriptor = "pkh([" + info["hdmasterfingerprint"] + hdkeypath[1:] + "]" + pubkey + ")"
+        #descriptor = "pkh([" + info["hdmasterfingerprint"] + hdkeypath[1:] + "]" + v17_pubkey + ")"
         #assert_equal(info["desc"], descsum_create(descriptor))
-        assert_equal(info["pubkey"], pubkey)
+        assert_equal(info["pubkey"], v17_pubkey)
+
+        # Now copy that same wallet back to 0.17 to make sure no automatic upgrade breaks it
+        node_master.unloadwallet("u1_v17")
+        shutil.rmtree(os.path.join(node_v17_wallets_dir, "u1_v17"))
+        shutil.copytree(
+            os.path.join(node_master_wallets_dir, "u1_v17"),
+            os.path.join(node_v17_wallets_dir, "u1_v17")
+        )
+        node_v17.loadwallet("u1_v17")
+        wallet = node_v17.get_wallet_rpc("u1_v17")
+        info = wallet.getaddressinfo(address)
+        assert_equal(info, v17_info)
 
         # Copy the 0.19 wallet to the last Bitcoin Core version and open it:
         shutil.copytree(
@@ -360,6 +372,17 @@ class BackwardsCompatibilityTest(BitcoinTestFramework):
         )
         node_master.loadwallet("w1_v19")
         wallet = node_master.get_wallet_rpc("w1_v19")
+        assert wallet.getaddressinfo(address_18075)["solvable"]
+
+        # Now copy that same wallet back to 0.19 to make sure no automatic upgrade breaks it
+        node_master.unloadwallet("w1_v19")
+        shutil.rmtree(os.path.join(node_v19_wallets_dir, "w1_v19"))
+        shutil.copytree(
+            os.path.join(node_master_wallets_dir, "w1_v19"),
+            os.path.join(node_v19_wallets_dir, "w1_v19")
+        )
+        node_v19.loadwallet("w1_v19")
+        wallet = node_v19.get_wallet_rpc("w1_v19")
         assert wallet.getaddressinfo(address_18075)["solvable"]
 
 if __name__ == '__main__':

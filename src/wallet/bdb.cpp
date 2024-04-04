@@ -132,7 +132,7 @@ bool BerkeleyEnvironment::Open(bilingual_str& err)
     fs::path pathIn = strPath;
     TryCreateDirectories(pathIn);
     if (!LockDirectory(pathIn, ".walletlock")) {
-        LogPrintf("Cannot obtain a lock on wallet directory %s. Another instance of Dash Core may be using it.\n", strPath);
+        LogPrintf("Cannot obtain a lock on wallet directory %s. Another instance of Osmium Core may be using it.\n", strPath);
         err = strprintf(_("Error initializing wallet database environment %s!"), Directory());
         return false;
     }
@@ -274,7 +274,7 @@ bool BerkeleyDatabase::Verify(bilingual_str& errorStr)
         Db db(env->dbenv.get(), 0);
         int result = db.verify(strFile.c_str(), nullptr, nullptr, 0);
         if (result != 0) {
-            errorStr = strprintf(_("%s corrupt. Try using the wallet tool dash-wallet to salvage or restoring a backup."), file_path);
+            errorStr = strprintf(_("%s corrupt. Try using the wallet tool osmium-wallet to salvage or restoring a backup."), file_path);
             return false;
         }
     }
@@ -680,10 +680,10 @@ bool BerkeleyBatch::ReadAtCursor(CDataStream& ssKey, CDataStream& ssValue, bool&
     // Convert to streams
     ssKey.SetType(SER_DISK);
     ssKey.clear();
-    ssKey.write((char*)datKey.get_data(), datKey.get_size());
+    ssKey.write({BytePtr(datKey.get_data()), datKey.get_size()});
     ssValue.SetType(SER_DISK);
     ssValue.clear();
-    ssValue.write((char*)datValue.get_data(), datValue.get_size());
+    ssValue.write({BytePtr(datValue.get_data()), datValue.get_size()});
     return true;
 }
 
@@ -755,7 +755,7 @@ bool BerkeleyBatch::ReadKey(CDataStream&& key, CDataStream& value)
     SafeDbt datValue;
     int ret = pdb->get(activeTxn, datKey, datValue, 0);
     if (ret == 0 && datValue.get_data() != nullptr) {
-        value.write((char*)datValue.get_data(), datValue.get_size());
+        value.write({BytePtr(datValue.get_data()), datValue.get_size()});
         return true;
     }
     return false;

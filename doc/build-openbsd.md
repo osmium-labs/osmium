@@ -1,10 +1,8 @@
 OpenBSD build guide
 ======================
-(updated for OpenBSD 6.2)
+(updated for OpenBSD 6.7)
 
-This guide describes how to build dashd and command-line utilities on OpenBSD.
-
-OpenBSD is most commonly used as a server OS, so this guide does not contain instructions for building the GUI.
+This guide describes how to build osmiumd, osmium-qt, and command-line utilities on OpenBSD.
 
 Preparation
 -------------
@@ -13,22 +11,23 @@ Run the following as root to install the base dependencies for building:
 
 ```bash
 pkg_add git gmake libevent libtool
+pkg_add qt5 # (optional for enabling the GUI)
 pkg_add autoconf # (select highest version, e.g. 2.69)
 pkg_add automake # (select highest version, e.g. 1.15)
-pkg_add python # (select highest version, e.g. 3.6)
+pkg_add python # (select highest version, e.g. 3.8)
 pkg_add gmp
 pkg_add boost
 
-git clone https://github.com/dashpay/dash.git
+git clone https://github.com/osmium-labs/osmium.git
 ```
 
 See [dependencies.md](dependencies.md) for a complete overview.
 
 **Important**: From OpenBSD 6.2 onwards a C++11-supporting clang compiler is
-part of the base image, and while building it is necessary to make sure that this
-compiler is used and not ancient g++ 4.2.1. This is done by appending
-`CC=cc CXX=c++` to configuration commands. Mixing different compilers
-within the same executable will result in linker errors.
+part of the base image, and while building it is necessary to make sure that
+this compiler is used and not ancient g++ 4.2.1. This is done by appending
+`CC=cc CC_FOR_BUILD=cc CXX=c++` to configuration commands. Mixing different
+compilers within the same executable will result in errors.
 
 ### Building BerkeleyDB
 
@@ -50,7 +49,7 @@ from the root of the repository. Then set `BDB_PREFIX` for the next section:
 export BDB_PREFIX="$PWD/db4"
 ```
 
-### Building Dash Core
+### Building Osmium Core
 
 **Important**: Use `gmake` (the non-GNU `make` will exit with an error).
 
@@ -72,7 +71,15 @@ To configure with wallet:
 
 To configure without wallet:
 ```bash
-./configure --disable-wallet --with-gui=no CC=cc CXX=c++ MAKE=gmake
+./configure --disable-wallet --with-gui=no CC=cc CC_FOR_BUILD=cc CXX=c++ MAKE=gmake
+```
+
+To configure with GUI:
+```bash
+./configure --with-gui=yes CC=cc CXX=c++ \
+    BDB_LIBS="-L${BDB_PREFIX}/lib -ldb_cxx-4.8" \
+    BDB_CFLAGS="-I${BDB_PREFIX}/include" \
+    MAKE=gmake
 ```
 
 Build and run the tests:

@@ -1,12 +1,13 @@
 // Copyright (c) 2010 Satoshi Nakamoto
 // Copyright (c) 2009-2020 The Bitcoin Core developers
-// Copyright (c) 2014-2023 The Dash Core developers
+// Copyright (c) 2014-2024 The Dash Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #include <addressindex.h>
 #include <chainparams.h>
 #include <consensus/consensus.h>
+#include <deploymentstatus.h>
 #include <evo/mnauth.h>
 #include <httpserver.h>
 #include <index/blockfilterindex.h>
@@ -15,7 +16,6 @@
 #include <init.h>
 #include <interfaces/chain.h>
 #include <key_io.h>
-#include <llmq/utils.h>
 #include <net.h>
 #include <node/context.h>
 #include <rpc/blockchain.h>
@@ -48,7 +48,7 @@ static UniValue debug(const JSONRPCRequest& request)
         "libevent logging is configured on startup and cannot be modified by this RPC during runtime.\n"
         "There are also a few meta-categories:\n"
         " - \"all\", \"1\" and \"\" activate all categories at once;\n"
-        " - \"dash\" activates all Dash-specific categories at once;\n"
+        " - \"osmium\" activates all Osmium-specific categories at once;\n"
         " - \"none\" (or \"0\") deactivates all categories at once.\n"
         "Note: If specified category doesn't match any of the above, no error is thrown.\n",
         {
@@ -58,8 +58,8 @@ static UniValue debug(const JSONRPCRequest& request)
             RPCResult::Type::STR, "result", "\"Debug mode: \" followed by the specified category",
         },
         RPCExamples {
-            HelpExampleCli("debug", "dash")
-    + HelpExampleRpc("debug", "dash+net")
+            HelpExampleCli("debug", "osmium")
+    + HelpExampleRpc("debug", "osmium+net")
     }}.Check(request);
 
     std::string strMode = request.params[0].get_str();
@@ -101,26 +101,29 @@ static UniValue mnsync(const JSONRPCRequest& request)
 
     std::string strMode = request.params[0].get_str();
 
+    const NodeContext& node = EnsureAnyNodeContext(request.context);
+    auto& mn_sync = *node.mn_sync;
+
     if(strMode == "status") {
         UniValue objStatus(UniValue::VOBJ);
-        objStatus.pushKV("AssetID", ::masternodeSync->GetAssetID());
-        objStatus.pushKV("AssetName", ::masternodeSync->GetAssetName());
-        objStatus.pushKV("AssetStartTime", ::masternodeSync->GetAssetStartTime());
-        objStatus.pushKV("Attempt", ::masternodeSync->GetAttempt());
-        objStatus.pushKV("IsBlockchainSynced", ::masternodeSync->IsBlockchainSynced());
-        objStatus.pushKV("IsSynced", ::masternodeSync->IsSynced());
+        objStatus.pushKV("AssetID", mn_sync.GetAssetID());
+        objStatus.pushKV("AssetName", mn_sync.GetAssetName());
+        objStatus.pushKV("AssetStartTime", mn_sync.GetAssetStartTime());
+        objStatus.pushKV("Attempt", mn_sync.GetAttempt());
+        objStatus.pushKV("IsBlockchainSynced", mn_sync.IsBlockchainSynced());
+        objStatus.pushKV("IsSynced", mn_sync.IsSynced());
         return objStatus;
     }
 
     if(strMode == "next")
     {
-        ::masternodeSync->SwitchToNextAsset();
-        return "sync updated to " + ::masternodeSync->GetAssetName();
+        mn_sync.SwitchToNextAsset();
+        return "sync updated to " + mn_sync.GetAssetName();
     }
 
     if(strMode == "reset")
     {
-        ::masternodeSync->Reset(true);
+        mn_sync.Reset(true);
         return "success";
     }
     return "failure";
@@ -157,16 +160,17 @@ static UniValue spork(const JSONRPCRequest& request)
 
     // basic mode, show info
     std:: string strCommand = request.params[0].get_str();
+    const NodeContext& node = EnsureAnyNodeContext(request.context);
     if (strCommand == "show") {
         UniValue ret(UniValue::VOBJ);
         for (const auto& sporkDef : sporkDefs) {
-            ret.pushKV(std::string(sporkDef.name), sporkManager->GetSporkValue(sporkDef.sporkId));
+            ret.pushKV(std::string(sporkDef.name), node.sporkman->GetSporkValue(sporkDef.sporkId));
         }
         return ret;
     } else if(strCommand == "active"){
         UniValue ret(UniValue::VOBJ);
         for (const auto& sporkDef : sporkDefs) {
-            ret.pushKV(std::string(sporkDef.name), sporkManager->IsSporkActive(sporkDef.sporkId));
+            ret.pushKV(std::string(sporkDef.name), node.sporkman->IsSporkActive(sporkDef.sporkId));
         }
         return ret;
     }
@@ -206,7 +210,7 @@ static UniValue sporkupdate(const JSONRPCRequest& request)
     int64_t nValue = request.params[1].get_int64();
 
     // broadcast new spork
-    if (sporkManager->UpdateSpork(nSporkID, nValue, *node.connman)) {
+    if (node.sporkman->UpdateSpork(nSporkID, nValue, *node.connman)) {
         return "success";
     }
 
@@ -216,17 +220,18 @@ static UniValue sporkupdate(const JSONRPCRequest& request)
 static UniValue validateaddress(const JSONRPCRequest& request)
 {
             RPCHelpMan{"validateaddress",
-                "\nReturn information about the given dash address.\n",
+                "\nReturn information about the given Osmium address.\n",
                 {
-                    {"address", RPCArg::Type::STR, RPCArg::Optional::NO, "The dash address to validate"},
+                    {"address", RPCArg::Type::STR, RPCArg::Optional::NO, "The Osmium address to validate"},
                 },
                 RPCResult{
                     RPCResult::Type::OBJ, "", "",
                     {
-                        {RPCResult::Type::BOOL, "isvalid", "If the address is valid or not. If not, this is the only property returned."},
-                        {RPCResult::Type::STR, "address", "The dash address validated"},
+                        {RPCResult::Type::BOOL, "isvalid", "If the address is valid or not"},
+                        {RPCResult::Type::STR, "address", "The Osmium address validated"},
                         {RPCResult::Type::STR_HEX, "scriptPubKey", "The hex-encoded scriptPubKey generated by the address"},
                         {RPCResult::Type::BOOL, "isscript", "If the key is a script"},
+                        {RPCResult::Type::STR, "error", /* optional */ true, "Error message, if any"},
                     }
                 },
                 RPCExamples{
@@ -235,13 +240,14 @@ static UniValue validateaddress(const JSONRPCRequest& request)
                 },
             }.Check(request);
 
-    CTxDestination dest = DecodeDestination(request.params[0].get_str());
-    bool isValid = IsValidDestination(dest);
+    std::string error_msg;
+    CTxDestination dest = DecodeDestination(request.params[0].get_str(), error_msg);
+    const bool isValid = IsValidDestination(dest);
+    CHECK_NONFATAL(isValid == error_msg.empty());
 
     UniValue ret(UniValue::VOBJ);
     ret.pushKV("isvalid", isValid);
-    if (isValid)
-    {
+    if (isValid) {
         std::string currentAddress = EncodeDestination(dest);
         ret.pushKV("address", currentAddress);
 
@@ -250,7 +256,10 @@ static UniValue validateaddress(const JSONRPCRequest& request)
 
         UniValue detail = DescribeAddress(dest);
         ret.pushKVs(detail);
+    } else {
+        ret.pushKV("error", error_msg);
     }
+
     return ret;
 }
 
@@ -436,7 +445,7 @@ static UniValue verifymessage(const JSONRPCRequest& request)
     RPCHelpMan{"verifymessage",
         "\nVerify a signed message\n",
         {
-            {"address", RPCArg::Type::STR, RPCArg::Optional::NO, "The dash address to use for the signature."},
+            {"address", RPCArg::Type::STR, RPCArg::Optional::NO, "The Osmium address to use for the signature."},
             {"signature", RPCArg::Type::STR, RPCArg::Optional::NO, "The signature provided by the signer in base 64 encoding (see signmessage)."},
             {"message", RPCArg::Type::STR, RPCArg::Optional::NO, "The message that was signed."},
         },
@@ -522,7 +531,7 @@ static UniValue setmocktime(const JSONRPCRequest& request)
         "\nSet the local time to given timestamp (-regtest only)\n",
         {
             {"timestamp", RPCArg::Type::NUM, RPCArg::Optional::NO, UNIX_EPOCH_TIME + "\n"
-    "   Pass 0 to go back to using the system time."},
+             "Pass 0 to go back to using the system time."},
         },
         RPCResult{RPCResult::Type::NONE, "", ""},
         RPCExamples{""},
@@ -540,7 +549,10 @@ static UniValue setmocktime(const JSONRPCRequest& request)
     LOCK(cs_main);
 
     RPCTypeCheck(request.params, {UniValue::VNUM});
-    int64_t time = request.params[0].get_int64();
+    const int64_t time{request.params[0].get_int64()};
+    if (time < 0) {
+        throw JSONRPCError(RPC_INVALID_PARAMETER, strprintf("Mocktime can not be negative: %s.", time));
+    }
     SetMockTime(time);
     if (auto* node_context = GetContext<NodeContext>(request.context)) {
         for (const auto& chain_client : node_context->chain_clients) {
@@ -578,7 +590,7 @@ static UniValue mnauth(const JSONRPCRequest& request)
     ChainstateManager& chainman = EnsureAnyChainman(request.context);
 
     CBLSPublicKey publicKey;
-    bool bls_legacy_scheme = !llmq::utils::IsV19Active(chainman.ActiveChain().Tip());
+    const bool bls_legacy_scheme{!DeploymentActiveAfter(chainman.ActiveChain().Tip(), Params().GetConsensus(), Consensus::DEPLOYMENT_V19)};
     publicKey.SetHexStr(request.params[2].get_str(), bls_legacy_scheme);
     if (!publicKey.IsValid()) {
         throw JSONRPCError(RPC_INVALID_PARAMETER, "publicKey invalid");
@@ -680,7 +692,7 @@ static UniValue getaddressmempool(const JSONRPCRequest& request)
                     {RPCResult::Type::STR, "address", "The base58check encoded address"},
                     {RPCResult::Type::STR_HEX, "txid", "The related txid"},
                     {RPCResult::Type::NUM, "index", "The related input or output index"},
-                    {RPCResult::Type::NUM, "satoshis", "The difference of duffs"},
+                    {RPCResult::Type::NUM, "satoshis", "The difference of muffs"},
                     {RPCResult::Type::NUM_TIME, "timestamp", "The time the transaction entered the mempool (seconds)"},
                     {RPCResult::Type::STR_HEX, "prevtxid", "The previous txid (if spending)"},
                     {RPCResult::Type::NUM, "prevout", "The previous transaction output index (if spending)"},
@@ -751,7 +763,7 @@ static UniValue getaddressutxos(const JSONRPCRequest& request)
                     {RPCResult::Type::STR_HEX, "txid", "The output txid"},
                     {RPCResult::Type::NUM, "index", "The output index"},
                     {RPCResult::Type::STR_HEX, "script", "The script hex-encoded"},
-                    {RPCResult::Type::NUM, "satoshis", "The number of duffs of the output"},
+                    {RPCResult::Type::NUM, "satoshis", "The number of muffs of the output"},
                     {RPCResult::Type::NUM, "height", "The block height"},
                 }},
             }},
@@ -814,7 +826,7 @@ static UniValue getaddressdeltas(const JSONRPCRequest& request)
             {
                 {RPCResult::Type::OBJ, "", "",
                 {
-                    {RPCResult::Type::NUM, "satoshis", "The difference of duffs"},
+                    {RPCResult::Type::NUM, "satoshis", "The difference of muffs"},
                     {RPCResult::Type::STR_HEX, "txid", "The related txid"},
                     {RPCResult::Type::NUM, "index", "The related input or output index"},
                     {RPCResult::Type::NUM, "blockindex", "The related block index"},
@@ -898,10 +910,10 @@ static UniValue getaddressbalance(const JSONRPCRequest& request)
         RPCResult{
             RPCResult::Type::OBJ, "", "",
                 {
-                    {RPCResult::Type::NUM, "balance", "The current total balance in duffs"},
-                    {RPCResult::Type::NUM, "balance_immature", "The current immature balance in duffs"},
-                    {RPCResult::Type::NUM, "balance_spendable", "The current spendable balance in duffs"},
-                    {RPCResult::Type::NUM, "received", "The total number of duffs received (including change)"},
+                    {RPCResult::Type::NUM, "balance", "The current total balance in muffs"},
+                    {RPCResult::Type::NUM, "balance_immature", "The current immature balance in muffs"},
+                    {RPCResult::Type::NUM, "balance_spendable", "The current spendable balance in muffs"},
+                    {RPCResult::Type::NUM, "received", "The total number of muffs received (including change)"},
                 }},
         RPCExamples{
             HelpExampleCli("getaddressbalance", "'{\"addresses\": [\"" + EXAMPLE_ADDRESS[0] + "\"]}'")
@@ -1226,7 +1238,7 @@ static UniValue logging(const JSONRPCRequest& request)
     "The valid logging categories are: " + LogInstance().LogCategoriesString() + "\n"
     "In addition, the following are available as category names with special meanings:\n"
     "  - \"all\",  \"1\" : represent all logging categories.\n"
-    "  - \"dash\" activates all Dash-specific categories at once.\n"
+    "  - \"osmium\" activates all Osmium-specific categories at once.\n"
     "To deactivate all categories at once you can specify \"all\" in <exclude>.\n"
     "  - \"none\", \"0\" : even if other logging categories are specified, ignore all of them.\n"
     ,
@@ -1292,7 +1304,7 @@ static UniValue echo(const JSONRPCRequest& request)
                 "\nSimply echo back the input arguments. This command is for testing.\n"
                 "\nIt will return an internal bug report when exactly 100 arguments are passed.\n"
                 "\nThe difference between echo and echojson is that echojson has argument conversion enabled in the client-side table in "
-                "dash-cli and the GUI. There is no server-side difference.",
+                "osmium-cli and the GUI. There is no server-side difference.",
                 {},
                 RPCResult{RPCResult::Type::NONE, "", "Returns whatever was passed in"},
                 RPCExamples{""},
@@ -1385,10 +1397,10 @@ static const CRPCCommand commands[] =
     { "addressindex",       "getaddresstxids",        &getaddresstxids,        {"addresses"} },
     { "addressindex",       "getaddressbalance",      &getaddressbalance,      {"addresses"} },
 
-    /* Dash features */
-    { "dash",               "mnsync",                 &mnsync,                 {} },
-    { "dash",               "spork",                  &spork,                  {"command"} },
-    { "dash",               "sporkupdate",            &sporkupdate,            {"name","value"} },
+    /* Osmium features */
+    { "osmium",               "mnsync",                 &mnsync,                 {} },
+    { "osmium",               "spork",                  &spork,                  {"command"} },
+    { "osmium",               "sporkupdate",            &sporkupdate,            {"name","value"} },
 
     /* Not shown in help */
     { "hidden",             "setmocktime",            &setmocktime,            {"timestamp"}},

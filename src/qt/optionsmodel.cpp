@@ -1,5 +1,5 @@
 // Copyright (c) 2011-2020 The Bitcoin Core developers
-// Copyright (c) 2014-2022 The Dash Core developers
+// Copyright (c) 2014-2024 The Dash Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -33,8 +33,8 @@ const char *DEFAULT_GUI_PROXY_HOST = "127.0.0.1";
 
 static const QString GetDefaultProxyAddress();
 
-OptionsModel::OptionsModel(interfaces::Node& node, QObject *parent, bool resetSettings) :
-    QAbstractListModel(parent), m_node(node)
+OptionsModel::OptionsModel(QObject *parent, bool resetSettings) :
+    QAbstractListModel(parent)
 {
     Init(resetSettings);
 }
@@ -75,7 +75,7 @@ void OptionsModel::Init(bool resetSettings)
 
     // Display
     if (!settings.contains("nDisplayUnit"))
-        settings.setValue("nDisplayUnit", BitcoinUnits::DASH);
+        settings.setValue("nDisplayUnit", BitcoinUnits::OSMIUM);
     nDisplayUnit = settings.value("nDisplayUnit").toInt();
 
     if (!settings.contains("strThirdPartyTxUrls"))
@@ -88,7 +88,7 @@ void OptionsModel::Init(bool resetSettings)
 
     if (!settings.contains("fontFamily"))
         settings.setValue("fontFamily", GUIUtil::fontFamilyToString(GUIUtil::getFontFamilyDefault()));
-    if (m_node.softSetArg("-font-family", settings.value("fontFamily").toString().toStdString())) {
+    if (gArgs.SoftSetArg("-font-family", settings.value("fontFamily").toString().toStdString())) {
         if (GUIUtil::fontsLoaded()) {
             GUIUtil::setFontFamily(GUIUtil::fontFamilyFromString(settings.value("fontFamily").toString()));
         }
@@ -98,7 +98,7 @@ void OptionsModel::Init(bool resetSettings)
 
     if (!settings.contains("fontScale"))
         settings.setValue("fontScale", GUIUtil::getFontScaleDefault());
-    if (m_node.softSetArg("-font-scale", settings.value("fontScale").toString().toStdString())) {
+    if (gArgs.SoftSetArg("-font-scale", settings.value("fontScale").toString().toStdString())) {
         if (GUIUtil::fontsLoaded()) {
             GUIUtil::setFontScale(settings.value("fontScale").toInt());
         }
@@ -108,7 +108,7 @@ void OptionsModel::Init(bool resetSettings)
 
     if (!settings.contains("fontWeightNormal"))
         settings.setValue("fontWeightNormal", GUIUtil::weightToArg(GUIUtil::getFontWeightNormalDefault()));
-    if (m_node.softSetArg("-font-weight-normal", settings.value("fontWeightNormal").toString().toStdString())) {
+    if (gArgs.SoftSetArg("-font-weight-normal", settings.value("fontWeightNormal").toString().toStdString())) {
         if (GUIUtil::fontsLoaded()) {
             QFont::Weight weight;
             GUIUtil::weightFromArg(settings.value("fontWeightNormal").toInt(), weight);
@@ -125,7 +125,7 @@ void OptionsModel::Init(bool resetSettings)
 
     if (!settings.contains("fontWeightBold"))
         settings.setValue("fontWeightBold", GUIUtil::weightToArg(GUIUtil::getFontWeightBoldDefault()));
-    if (m_node.softSetArg("-font-weight-bold", settings.value("fontWeightBold").toString().toStdString())) {
+    if (gArgs.SoftSetArg("-font-weight-bold", settings.value("fontWeightBold").toString().toStdString())) {
         if (GUIUtil::fontsLoaded()) {
             QFont::Weight weight;
             GUIUtil::weightFromArg(settings.value("fontWeightBold").toInt(), weight);
@@ -144,8 +144,12 @@ void OptionsModel::Init(bool resetSettings)
 
 #ifdef ENABLE_WALLET
     if (!settings.contains("fCoinControlFeatures"))
-        settings.setValue("fCoinControlFeatures", false);
-    fCoinControlFeatures = settings.value("fCoinControlFeatures", false).toBool();
+        settings.setValue("fCoinControlFeatures", true);
+    fCoinControlFeatures = settings.value("fCoinControlFeatures", true).toBool();
+
+    // Governance
+    if (!settings.contains("fShowGovernanceTab"))
+        settings.setValue("fShowGovernanceTab", false);
 
     if (!settings.contains("fKeepChangeAddress"))
         settings.setValue("fKeepChangeAddress", false);
@@ -167,7 +171,7 @@ void OptionsModel::Init(bool resetSettings)
     fShowAdvancedCJUI = settings.value("fShowAdvancedCJUI", false).toBool();
 
     if (!settings.contains("fShowCoinJoinPopups"))
-        settings.setValue("fShowCoinJoinPopups", true);
+        settings.setValue("fShowCoinJoinPopups", false);
 
     if (!settings.contains("fLowKeysWarning"))
         settings.setValue("fLowKeysWarning", true);
@@ -178,7 +182,7 @@ void OptionsModel::Init(bool resetSettings)
     //
     // If setting doesn't exist create it with defaults.
     //
-    // If m_node.softSetArg() or m_node.softSetBoolArg() return false we were overridden
+    // If gArgs.SoftSetArg() or m_node.softSetBoolArg() return false we were overridden
     // by command-line and show this in the UI.
 
     // Main
@@ -202,12 +206,12 @@ void OptionsModel::Init(bool resetSettings)
 
     if (!settings.contains("nDatabaseCache"))
         settings.setValue("nDatabaseCache", (qint64)nDefaultDbCache);
-    if (!m_node.softSetArg("-dbcache", settings.value("nDatabaseCache").toString().toStdString()))
+    if (!gArgs.SoftSetArg("-dbcache", settings.value("nDatabaseCache").toString().toStdString()))
         addOverriddenOption("-dbcache");
 
     if (!settings.contains("nThreadsScriptVerif"))
         settings.setValue("nThreadsScriptVerif", DEFAULT_SCRIPTCHECK_THREADS);
-    if (!m_node.softSetArg("-par", settings.value("nThreadsScriptVerif").toString().toStdString()))
+    if (!gArgs.SoftSetArg("-par", settings.value("nThreadsScriptVerif").toString().toStdString()))
         addOverriddenOption("-par");
 
     if (!settings.contains("strDataDir"))
@@ -217,50 +221,44 @@ void OptionsModel::Init(bool resetSettings)
 #ifdef ENABLE_WALLET
     if (!settings.contains("bSpendZeroConfChange"))
         settings.setValue("bSpendZeroConfChange", true);
-    if (!m_node.softSetBoolArg("-spendzeroconfchange", settings.value("bSpendZeroConfChange").toBool()))
+    if (!gArgs.SoftSetBoolArg("-spendzeroconfchange", settings.value("bSpendZeroConfChange").toBool()))
         addOverriddenOption("-spendzeroconfchange");
 
     // CoinJoin
     if (!settings.contains("nCoinJoinSessions"))
         settings.setValue("nCoinJoinSessions", DEFAULT_COINJOIN_SESSIONS);
-    m_node.coinJoinOptions().setSessions(settings.value("nCoinJoinSessions").toInt());
 
     if (!settings.contains("nCoinJoinRounds"))
         settings.setValue("nCoinJoinRounds", DEFAULT_COINJOIN_ROUNDS);
-    if (!m_node.softSetArg("-coinjoinrounds", settings.value("nCoinJoinRounds").toString().toStdString()))
+    if (!gArgs.SoftSetArg("-coinjoinrounds", settings.value("nCoinJoinRounds").toString().toStdString()))
         addOverriddenOption("-coinjoinrounds");
-    m_node.coinJoinOptions().setRounds(settings.value("nCoinJoinRounds").toInt());
 
     if (!settings.contains("nCoinJoinAmount")) {
         // for migration from old settings
-        if (!settings.contains("nAnonymizeDashAmount"))
+        if (!settings.contains("nAnonymizeOsmiumAmount"))
             settings.setValue("nCoinJoinAmount", DEFAULT_COINJOIN_AMOUNT);
         else
-            settings.setValue("nCoinJoinAmount", settings.value("nAnonymizeDashAmount").toInt());
+            settings.setValue("nCoinJoinAmount", settings.value("nAnonymizeOsmiumAmount").toInt());
     }
-    if (!m_node.softSetArg("-coinjoinamount", settings.value("nCoinJoinAmount").toString().toStdString()))
+    if (!gArgs.SoftSetArg("-coinjoinamount", settings.value("nCoinJoinAmount").toString().toStdString()))
         addOverriddenOption("-coinjoinamount");
-    m_node.coinJoinOptions().setAmount(settings.value("nCoinJoinAmount").toInt());
 
     if (!settings.contains("fCoinJoinMultiSession"))
         settings.setValue("fCoinJoinMultiSession", DEFAULT_COINJOIN_MULTISESSION);
-    if (!m_node.softSetBoolArg("-coinjoinmultisession", settings.value("fCoinJoinMultiSession").toBool()))
+    if (!gArgs.SoftSetBoolArg("-coinjoinmultisession", settings.value("fCoinJoinMultiSession").toBool()))
         addOverriddenOption("-coinjoinmultisession");
-    m_node.coinJoinOptions().setMultiSessionEnabled(settings.value("fCoinJoinMultiSession").toBool());
 
     if (!settings.contains("nCoinJoinDenomsGoal"))
         settings.setValue("nCoinJoinDenomsGoal", DEFAULT_COINJOIN_DENOMS_GOAL);
-    m_node.coinJoinOptions().setDenomsGoal(settings.value("nCoinJoinDenomsGoal").toInt());
 
     if (!settings.contains("nCoinJoinDenomsHardCap"))
         settings.setValue("nCoinJoinDenomsHardCap", DEFAULT_COINJOIN_DENOMS_HARDCAP);
-    m_node.coinJoinOptions().setDenomsHardCap(settings.value("nCoinJoinDenomsHardCap").toInt());
 #endif
 
     // Network
     if (!settings.contains("fUseUPnP"))
         settings.setValue("fUseUPnP", DEFAULT_UPNP);
-    if (!m_node.softSetBoolArg("-upnp", settings.value("fUseUPnP").toBool()))
+    if (!gArgs.SoftSetBoolArg("-upnp", settings.value("fUseUPnP").toBool()))
         addOverriddenOption("-upnp");
 
     if (!settings.contains("fUseNatpmp")) {
@@ -272,15 +270,18 @@ void OptionsModel::Init(bool resetSettings)
 
     if (!settings.contains("fListen"))
         settings.setValue("fListen", DEFAULT_LISTEN);
-    if (!m_node.softSetBoolArg("-listen", settings.value("fListen").toBool()))
+    if (!gArgs.SoftSetBoolArg("-listen", settings.value("fListen").toBool())) {
         addOverriddenOption("-listen");
+    } else if (!settings.value("fListen").toBool()) {
+        gArgs.SoftSetBoolArg("-listenonion", false);
+    }
 
     if (!settings.contains("fUseProxy"))
         settings.setValue("fUseProxy", false);
     if (!settings.contains("addrProxy"))
         settings.setValue("addrProxy", GetDefaultProxyAddress());
     // Only try to set -proxy, if user has enabled fUseProxy
-    if (settings.value("fUseProxy").toBool() && !m_node.softSetArg("-proxy", settings.value("addrProxy").toString().toStdString()))
+    if ((settings.value("fUseProxy").toBool() && !gArgs.SoftSetArg("-proxy", settings.value("addrProxy").toString().toStdString())))
         addOverriddenOption("-proxy");
     else if(!settings.value("fUseProxy").toBool() && !gArgs.GetArg("-proxy", "").empty())
         addOverriddenOption("-proxy");
@@ -290,7 +291,7 @@ void OptionsModel::Init(bool resetSettings)
     if (!settings.contains("addrSeparateProxyTor"))
         settings.setValue("addrSeparateProxyTor", GetDefaultProxyAddress());
     // Only try to set -onion, if user has enabled fUseSeparateProxyTor
-    if (settings.value("fUseSeparateProxyTor").toBool() && !m_node.softSetArg("-onion", settings.value("addrSeparateProxyTor").toString().toStdString()))
+    if ((settings.value("fUseSeparateProxyTor").toBool() && !gArgs.SoftSetArg("-onion", settings.value("addrSeparateProxyTor").toString().toStdString())))
         addOverriddenOption("-onion");
     else if(!settings.value("fUseSeparateProxyTor").toBool() && !gArgs.GetArg("-onion", "").empty())
         addOverriddenOption("-onion");
@@ -298,7 +299,7 @@ void OptionsModel::Init(bool resetSettings)
     // Display
     if (!settings.contains("language"))
         settings.setValue("language", "");
-    if (!m_node.softSetArg("-lang", settings.value("language").toString().toStdString()))
+    if (!gArgs.SoftSetArg("-lang", settings.value("language").toString().toStdString()))
         addOverriddenOption("-lang");
 
     language = settings.value("language").toString();
@@ -392,10 +393,10 @@ void OptionsModel::SetPruneEnabled(bool prune, bool force)
     const int64_t prune_target_mib = PruneGBtoMiB(settings.value("nPruneSize").toInt());
     std::string prune_val = prune ? ToString(prune_target_mib) : "0";
     if (force) {
-        m_node.forceSetArg("-prune", prune_val);
+        gArgs.ForceSetArg("-prune", prune_val);
         return;
     }
-    if (!m_node.softSetArg("-prune", prune_val)) {
+    if (!gArgs.SoftSetArg("-prune", prune_val)) {
         addOverriddenOption("-prune");
     }
 }
@@ -660,44 +661,44 @@ bool OptionsModel::setData(const QModelIndex & index, const QVariant & value, in
             break;
         case CoinJoinSessions:
             if (settings.value("nCoinJoinSessions") != value) {
-                m_node.coinJoinOptions().setSessions(value.toInt());
-                settings.setValue("nCoinJoinSessions", m_node.coinJoinOptions().getSessions());
+                node().coinJoinOptions().setSessions(value.toInt());
+                settings.setValue("nCoinJoinSessions", node().coinJoinOptions().getSessions());
                 Q_EMIT coinJoinRoundsChanged();
             }
             break;
         case CoinJoinRounds:
             if (settings.value("nCoinJoinRounds") != value)
             {
-                m_node.coinJoinOptions().setRounds(value.toInt());
-                settings.setValue("nCoinJoinRounds", m_node.coinJoinOptions().getRounds());
+                node().coinJoinOptions().setRounds(value.toInt());
+                settings.setValue("nCoinJoinRounds", node().coinJoinOptions().getRounds());
                 Q_EMIT coinJoinRoundsChanged();
             }
             break;
         case CoinJoinAmount:
             if (settings.value("nCoinJoinAmount") != value)
             {
-                m_node.coinJoinOptions().setAmount(value.toInt());
-                settings.setValue("nCoinJoinAmount", m_node.coinJoinOptions().getAmount());
+                node().coinJoinOptions().setAmount(value.toInt());
+                settings.setValue("nCoinJoinAmount", node().coinJoinOptions().getAmount());
                 Q_EMIT coinJoinAmountChanged();
             }
             break;
         case CoinJoinDenomsGoal:
             if (settings.value("nCoinJoinDenomsGoal") != value) {
-                m_node.coinJoinOptions().setDenomsGoal(value.toInt());
-                settings.setValue("nCoinJoinDenomsGoal", m_node.coinJoinOptions().getDenomsGoal());
+                node().coinJoinOptions().setDenomsGoal(value.toInt());
+                settings.setValue("nCoinJoinDenomsGoal", node().coinJoinOptions().getDenomsGoal());
             }
             break;
         case CoinJoinDenomsHardCap:
             if (settings.value("nCoinJoinDenomsHardCap") != value) {
-                m_node.coinJoinOptions().setDenomsHardCap(value.toInt());
-                settings.setValue("nCoinJoinDenomsHardCap", m_node.coinJoinOptions().getDenomsHardCap());
+                node().coinJoinOptions().setDenomsHardCap(value.toInt());
+                settings.setValue("nCoinJoinDenomsHardCap", node().coinJoinOptions().getDenomsHardCap());
             }
             break;
         case CoinJoinMultiSession:
             if (settings.value("fCoinJoinMultiSession") != value)
             {
-                m_node.coinJoinOptions().setMultiSessionEnabled(value.toBool());
-                settings.setValue("fCoinJoinMultiSession", m_node.coinJoinOptions().isMultiSessionEnabled());
+                node().coinJoinOptions().setMultiSessionEnabled(value.toBool());
+                settings.setValue("fCoinJoinMultiSession", node().coinJoinOptions().isMultiSessionEnabled());
             }
             break;
 #endif

@@ -2,16 +2,16 @@
 # Copyright (c) 2019-2020 The Bitcoin Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
-"""Test dashd aborts if can't disconnect a block.
+"""Test osmiumd aborts if can't disconnect a block.
 
 - Start a single node and generate 3 blocks.
 - Delete the undo data.
 - Mine a fork that requires disconnecting the tip.
-- Verify that dashd AbortNode's.
+- Verify that osmiumd AbortNode's.
 """
 
 from test_framework.test_framework import BitcoinTestFramework
-from test_framework.util import wait_until, get_datadir_path
+from test_framework.util import get_datadir_path
 import os
 
 
@@ -41,7 +41,7 @@ class AbortNodeTest(BitcoinTestFramework):
 
             # Check that node0 aborted
             self.log.info("Waiting for crash")
-            wait_until(lambda: self.nodes[0].is_node_stopped(), timeout=200)
+            self.nodes[0].wait_until_stopped(timeout=200)
         self.log.info("Node crashed - now verifying restart fails")
         self.nodes[0].assert_start_raises_init_error()
 

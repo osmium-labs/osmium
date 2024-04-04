@@ -1,4 +1,4 @@
-// Copyright (c) 2017 The Bitcoin Core developers
+// Copyright (c) 2017-2019 The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -6,7 +6,7 @@
 #define BITCOIN_WALLETINITINTERFACE_H
 
 class ArgsManager;
-class CJClientManager;
+class CoinJoinWalletManager;
 
 struct NodeContext;
 
@@ -21,9 +21,9 @@ public:
     /** Add wallets that should be opened to list of chain clients. */
     virtual void Construct(NodeContext& node) const = 0;
 
-    // Dash Specific WalletInitInterface
+    // Osmium Specific WalletInitInterface
     virtual void AutoLockMasternodeCollaterals() const = 0;
-    virtual void InitCoinJoinSettings(const CJClientManager& clientman) const = 0;
+    virtual void InitCoinJoinSettings(const CoinJoinWalletManager& cjwalletman) const = 0;
     virtual bool InitAutoBackup() const = 0;
 
     virtual ~WalletInitInterface() {}

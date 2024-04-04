@@ -4,6 +4,7 @@
 
 #include <qt/bitcoin.h>
 
+#include <compat.h>
 #include <util/translation.h>
 #include <util/url.h>
 
@@ -14,8 +15,11 @@
 
 /** Translate string to current locale using Qt. */
 extern const std::function<std::string(const char*)> G_TRANSLATION_FUN = [](const char* psz) {
-    return QCoreApplication::translate("dash-core", psz).toStdString();
+    return QCoreApplication::translate("osmium-core", psz).toStdString();
 };
 UrlDecodeFn* const URL_DECODE = urlDecode;
 
-int main(int argc, char* argv[]) { return GuiMain(argc, argv); }
+MAIN_FUNCTION
+{
+    return GuiMain(argc, argv);
+}

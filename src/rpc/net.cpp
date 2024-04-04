@@ -1,5 +1,5 @@
 // Copyright (c) 2009-2020 The Bitcoin Core developers
-// Copyright (c) 2014-2022 The Dash Core developers
+// Copyright (c) 2014-2024 The Dash Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -23,11 +23,21 @@
 #include <util/strencodings.h>
 #include <util/string.h>
 #include <util/system.h>
+#include <util/translation.h>
 #include <validation.h>
 #include <version.h>
 #include <warnings.h>
 
 #include <univalue.h>
+
+const std::vector<std::string> CONNECTION_TYPE_DOC{
+        "outbound-full-relay (default automatic connections)",
+        "block-relay-only (does not relay transactions or addresses)",
+        "inbound (initiated by the peer)",
+        "manual (added via addnode RPC or -addnode/-connect configuration options)",
+        "addr-fetch (short-lived automatic connection for soliciting addresses)",
+        "feeler (short-lived automatic connection for testing addresses)"
+};
 
 static UniValue getconnectioncount(const JSONRPCRequest& request)
 {
@@ -106,6 +116,8 @@ static UniValue getpeerinfo(const JSONRPCRequest& request)
                     {RPCResult::Type::BOOL, "relaytxes", "Whether peer has asked us to relay transactions to it"},
                     {RPCResult::Type::NUM_TIME, "lastsend", "The " + UNIX_EPOCH_TIME + " of the last send"},
                     {RPCResult::Type::NUM_TIME, "lastrecv", "The " + UNIX_EPOCH_TIME + " of the last receive"},
+                    {RPCResult::Type::NUM_TIME, "last_transaction", "The " + UNIX_EPOCH_TIME + " of the last valid transaction received from this peer"},
+                    {RPCResult::Type::NUM_TIME, "last_block", "The " + UNIX_EPOCH_TIME + " of the last block received from this peer"},
                     {RPCResult::Type::NUM, "bytessent", "The total bytes sent"},
                     {RPCResult::Type::NUM, "bytesrecv", "The total bytes received"},
                     {RPCResult::Type::NUM_TIME, "conntime", "The " + UNIX_EPOCH_TIME + " of the connection"},
@@ -117,6 +129,9 @@ static UniValue getpeerinfo(const JSONRPCRequest& request)
                     {RPCResult::Type::STR, "subver", "The string version"},
                     {RPCResult::Type::BOOL, "inbound", "Inbound (true) or Outbound (false)"},
                     {RPCResult::Type::BOOL, "addnode", "Whether connection was due to addnode/-connect or if it was an automatic/inbound connection"},
+                    {RPCResult::Type::STR, "connection_type", "Type of connection: \n" + Join(CONNECTION_TYPE_DOC, ",\n") + ".\n"
+                                                              "Please note this output is unlikely to be stable in upcoming releases as we iterate to\n"
+                                                              "best capture connection behaviors."},
                     {RPCResult::Type::BOOL, "masternode", "Whether connection was due to masternode connection attempt"},
                     {RPCResult::Type::NUM, "startingheight", "The starting height (block) of the peer"},
                     {RPCResult::Type::NUM, "banscore", "The ban score"},
@@ -169,7 +184,7 @@ static UniValue getpeerinfo(const JSONRPCRequest& request)
         if (!(stats.addrLocal.empty())) {
             obj.pushKV("addrlocal", stats.addrLocal);
         }
-        obj.pushKV("network", stats.m_network);
+        obj.pushKV("network", GetNetworkName(stats.m_network));
         if (stats.m_mapped_as != 0) {
             obj.pushKV("mapped_as", uint64_t(stats.m_mapped_as));
         }
@@ -184,6 +199,8 @@ static UniValue getpeerinfo(const JSONRPCRequest& request)
         obj.pushKV("relaytxes", stats.fRelayTxes);
         obj.pushKV("lastsend", stats.nLastSend);
         obj.pushKV("lastrecv", stats.nLastRecv);
+        obj.pushKV("last_transaction", stats.nLastTXTime);
+        obj.pushKV("last_block", stats.nLastBlockTime);
         obj.pushKV("bytessent", stats.nSendBytes);
         obj.pushKV("bytesrecv", stats.nRecvBytes);
         obj.pushKV("conntime", stats.nTimeConnected);
@@ -236,6 +253,7 @@ static UniValue getpeerinfo(const JSONRPCRequest& request)
                 recvPerMsgCmd.pushKV(i.first, i.second);
         }
         obj.pushKV("bytesrecv_per_msg", recvPerMsgCmd);
+        obj.pushKV("connection_type", stats.m_conn_type_string);
 
         ret.push_back(obj);
     }
@@ -259,8 +277,8 @@ static UniValue addnode(const JSONRPCRequest& request)
         },
         RPCResult{RPCResult::Type::NONE, "", ""},
         RPCExamples{
-            HelpExampleCli("addnode", "\"192.168.0.6:9999\" \"onetry\"")
-    + HelpExampleRpc("addnode", "\"192.168.0.6:9999\", \"onetry\"")
+            HelpExampleCli("addnode", "\"192.168.0.6:9969\" \"onetry\"")
+    + HelpExampleRpc("addnode", "\"192.168.0.6:9969\", \"onetry\"")
         },
     }.Check(request);
 
@@ -273,7 +291,7 @@ static UniValue addnode(const JSONRPCRequest& request)
     if (strCommand == "onetry")
     {
         CAddress addr;
-        node.connman->OpenNetworkConnection(addr, false, nullptr, strNode.c_str(), false, false, true);
+        node.connman->OpenNetworkConnection(addr, false, nullptr, strNode.c_str(), ConnectionType::MANUAL);
         return NullUniValue;
     }
 
@@ -303,9 +321,9 @@ static UniValue disconnectnode(const JSONRPCRequest& request)
         },
         RPCResult{RPCResult::Type::NONE, "", ""},
         RPCExamples{
-            HelpExampleCli("disconnectnode", "\"192.168.0.6:9999\"")
+            HelpExampleCli("disconnectnode", "\"192.168.0.6:9969\"")
     + HelpExampleCli("disconnectnode", "\"\" 1")
-    + HelpExampleRpc("disconnectnode", "\"192.168.0.6:9999\"")
+    + HelpExampleRpc("disconnectnode", "\"192.168.0.6:9969\"")
     + HelpExampleRpc("disconnectnode", "\"\", 1")
         },
     }.Check(request);
@@ -355,7 +373,7 @@ static UniValue getaddednodeinfo(const JSONRPCRequest& request)
                             {
                                 {RPCResult::Type::OBJ, "", "",
                                 {
-                                    {RPCResult::Type::STR, "address", "The dash server IP and port we're connected to"},
+                                    {RPCResult::Type::STR, "address", "The Osmium server IP and port we're connected to"},
                                     {RPCResult::Type::STR, "connected", "connection, inbound or outbound"},
                                 }},
                             }},
@@ -592,7 +610,7 @@ static UniValue getnetworkinfo(const JSONRPCRequest& request)
         }
     }
     obj.pushKV("localaddresses", localAddresses);
-    obj.pushKV("warnings",       GetWarnings(false));
+    obj.pushKV("warnings",       GetWarnings(false).original);
     return obj;
 }
 
@@ -849,8 +867,8 @@ static UniValue addpeeraddress(const JSONRPCRequest& request)
             },
         },
         RPCExamples{
-            HelpExampleCli("addpeeraddress", "\"1.2.3.4\" 9999")
-    + HelpExampleRpc("addpeeraddress", "\"1.2.3.4\", 9999")
+            HelpExampleCli("addpeeraddress", "\"1.2.3.4\" 9969")
+    + HelpExampleRpc("addpeeraddress", "\"1.2.3.4\", 9969")
         },
     }.Check(request);
 

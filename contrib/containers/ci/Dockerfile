@@ -25,9 +25,11 @@ RUN apt-get update && apt-get install $APT_ARGS \
     ccache \
     clang \
     cmake \
-    git \
     g++ \
     gettext \
+    git \
+    libc++-dev \
+    libc++abi-dev \
     libtool \
     libxcb-icccm4 \
     libxcb-image0 \
@@ -77,6 +79,7 @@ RUN pip3 install \
     lief==0.12.1 \
     pyzmq \
     vulture==2.3 \
+    mypy==0.781 \
     yq \
     multiprocess
 
@@ -91,8 +94,8 @@ ARG GROUP_ID=1000
 # add user with specified (or default) user/group ids
 ENV USER_ID ${USER_ID}
 ENV GROUP_ID ${GROUP_ID}
-RUN groupadd -g ${GROUP_ID} dash
-RUN useradd -u ${USER_ID} -g dash -s /bin/bash -m -d /home/dash dash
+RUN groupadd -g ${GROUP_ID} osmium
+RUN useradd -u ${USER_ID} -g osmium -s /bin/bash -m -d /home/osmium osmium
 
 # Packages needed for all target builds
 RUN apt-get update && apt-get install $APT_ARGS \
@@ -135,7 +138,7 @@ RUN \
   update-alternatives --set x86_64-w64-mingw32-g++  /usr/bin/x86_64-w64-mingw32-g++-posix; \
   exit 0
 
-ARG LLVM_VERSION=15
+ARG LLVM_VERSION=16
 # Setup Clang+LLVM support
 RUN apt-get update && apt-get install $APT_ARGS \
     lsb-release \
@@ -150,7 +153,7 @@ RUN cd /tmp && \
     rm -rf /tmp/llvm.sh
 
 RUN \
-  mkdir -p /src/dash && \
+  mkdir -p /src/osmium && \
   mkdir -p /cache/ccache && \
   mkdir /cache/depends && \
   mkdir /cache/sdk-sources && \
@@ -159,6 +162,6 @@ RUN \
   chown ${USER_ID}:${GROUP_ID} /cache && \
   chown ${USER_ID}:${GROUP_ID} -R /cache
 
-WORKDIR /src/dash
+WORKDIR /src/osmium
 
-USER dash
+USER osmium

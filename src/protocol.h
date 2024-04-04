@@ -11,6 +11,7 @@
 #define BITCOIN_PROTOCOL_H
 
 #include <netaddress.h>
+#include <primitives/transaction.h>
 #include <serialize.h>
 #include <streams.h>
 #include <uint256.h>
@@ -251,7 +252,7 @@ extern const char* GETCFCHECKPT;
  */
 extern const char* CFCHECKPT;
 
-// Dash message types
+// Osmium message types
 // NOTE: do NOT declare non-implmented here, we don't want them to be exposed to the outside
 // TODO: add description
 extern const char* SPORK;
@@ -287,7 +288,6 @@ extern const char* QSIGSHARE;
 extern const char* QGETDATA;
 extern const char* QDATA;
 extern const char* CLSIG;
-extern const char* ISLOCK;
 extern const char* ISDLOCK;
 extern const char* MNAUTH;
 extern const char* GETHEADERS2;
@@ -309,10 +309,10 @@ enum ServiceFlags : uint64_t {
     // Nothing
     NODE_NONE = 0,
     // NODE_NETWORK means that the node is capable of serving the complete block chain. It is currently
-    // set by all Dash Core non pruned nodes, and is unset by SPV clients or other light clients.
+    // set by all Osmium Core non pruned nodes, and is unset by SPV clients or other light clients.
     NODE_NETWORK = (1 << 0),
     // NODE_BLOOM means the node is capable and willing to handle bloom-filtered connections.
-    // Dash Core nodes used to support this by default, without advertising this bit,
+    // Osmium Core nodes used to support this by default, without advertising this bit,
     // but no longer do as of protocol version 70201 (= NO_BLOOM_VERSION)
     NODE_BLOOM = (1 << 2),
     // NODE_COMPACT_FILTERS means the node will service basic block filter requests.
@@ -497,18 +497,18 @@ public:
  * These numbers are defined by the protocol. When adding a new value, be sure
  * to mention it in the respective BIP.
  */
-enum GetDataMsg {
+enum GetDataMsg : uint32_t {
     UNDEFINED = 0,
     MSG_TX = 1,
     MSG_BLOCK = 2,
     // The following can only occur in getdata. Invs always use TX or BLOCK.
     MSG_FILTERED_BLOCK = 3,                           //!< Defined in BIP37
-    // Dash message types
+    // Osmium message types
     // NOTE: we must keep this enum consistent and backwards compatible
     /* MSG_LEGACY_TXLOCK_REQUEST = 4, */              // Legacy InstantSend and not used anymore
     /* MSG_TXLOCK_VOTE = 5, */                        // Legacy InstantSend and not used anymore
     MSG_SPORK = 6,
-    /* 7 - 15 were used in old Dash versions and were mainly budget and MN broadcast/ping related*/
+    /* 7 - 15 were used in old Osmium versions and were mainly budget and MN broadcast/ping related*/
     MSG_DSTX = 16,
     MSG_GOVERNANCE_OBJECT = 17,
     MSG_GOVERNANCE_OBJECT_VOTE = 18,
@@ -525,7 +525,7 @@ enum GetDataMsg {
     /* MSG_QUORUM_DEBUG_STATUS = 27, */               // was shortly used on testnet/devnet/regtest
     MSG_QUORUM_RECOVERED_SIG = 28,
     MSG_CLSIG = 29,
-    MSG_ISLOCK = 30,
+    /* MSG_ISLOCK = 30, */                            // Non-deterministic InstantSend and not used anymore
     MSG_ISDLOCK = 31,
 };
 
@@ -534,7 +534,7 @@ class CInv
 {
 public:
     CInv();
-    CInv(int typeIn, const uint256& hashIn);
+    CInv(uint32_t typeIn, const uint256& hashIn);
 
     SERIALIZE_METHODS(CInv, obj) { READWRITE(obj.type, obj.hash); }
 
@@ -544,11 +544,28 @@ public:
     std::string GetCommand() const;
     std::string ToString() const;
 
+    // Single-message helper methods
+    bool IsMsgTx()        const { return type == MSG_TX; }
+    bool IsMsgBlk() const { return type == MSG_BLOCK; }
+    bool IsMsgDstx()       const { return type == MSG_DSTX; }
+    bool IsMsgFilteredBlk() const { return type == MSG_FILTERED_BLOCK; }
+    bool IsMsgCmpctBlk() const { return type == MSG_CMPCT_BLOCK; }
+
+    // Combined-message helper methods
+    bool IsGenTxMsg() const
+    {
+        return type == MSG_TX || type == MSG_DSTX;
+    }
+    bool IsGenBlkMsg() const
+    {
+        return type == MSG_BLOCK || type == MSG_FILTERED_BLOCK || type == MSG_CMPCT_BLOCK;
+    }
+
 private:
     const char* GetCommandInternal() const;
 
 public:
-    int type;
+    uint32_t type;
     uint256 hash;
 };
 

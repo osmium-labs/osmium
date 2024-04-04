@@ -14,7 +14,7 @@
 // Example(s): We use assert(...) extensively with the assumption of it never
 //             being a noop at runtime.
 #if defined(NDEBUG)
-# error "Dash Core cannot be compiled without assertions."
+# error "Osmium Core cannot be compiled without assertions."
 #endif
 
 // Assumption: We assume a C++17 (ISO/IEC 14882:2017) compiler (minimum requirement).
@@ -35,11 +35,6 @@ static_assert(std::numeric_limits<double>::is_iec559, "IEEE 754 double assumed")
 //             trust -- verify!).
 // Example(s): Everywhere :-)
 static_assert(std::numeric_limits<unsigned char>::digits == 8, "8-bit byte assumed");
-
-// Assumption: We assume floating-point widths.
-// Example(s): Type punning in serialization code (ser_{float,double}_to_uint{32,64}).
-static_assert(sizeof(float) == 4, "32-bit float assumed");
-static_assert(sizeof(double) == 8, "64-bit double assumed");
 
 // Assumption: We assume integer widths.
 // Example(s): GetSizeOfCompactSize and WriteCompactSize in the serialization

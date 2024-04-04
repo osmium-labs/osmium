@@ -1,5 +1,5 @@
 // Copyright (c) 2015-2020 The Bitcoin Core developers
-// Copyright (c) 2014-2022 The Dash Core developers
+// Copyright (c) 2014-2024 The Dash Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -12,10 +12,11 @@
 #include <node/context.h>
 #include <pubkey.h>
 #include <random.h>
-#include <txdb.h>
 #include <txmempool.h>
 #include <util/check.h>
+#include <util/system.h>
 #include <util/string.h>
+#include <util/vector.h>
 
 #include <stdexcept>
 #include <type_traits>
@@ -25,11 +26,14 @@
 extern const std::function<void(const std::string&)> G_TEST_LOG_FUN;
 
 // Enable BOOST_CHECK_EQUAL for enum class types
+namespace std {
 template <typename T>
 std::ostream& operator<<(typename std::enable_if<std::is_enum<T>::value, std::ostream>::type& stream, const T& e)
 {
     return stream << static_cast<typename std::underlying_type<T>::type>(e);
 }
+} // namespace std
+
 /**
  * This global and the helpers that use it are not thread-safe.
  *
@@ -69,15 +73,14 @@ static inline bool InsecureRandBool() { return g_insecure_rand_ctx.randbool(); }
 
 static constexpr CAmount CENT{1000000};
 
-/* Initialize Dash-specific components after chainstate initialization */
-void DashTestSetup(NodeContext& node);
-void DashTestSetupClose(NodeContext& node);
+/* Initialize Osmium-specific components after chainstate initialization */
+void OsmiumTestSetup(NodeContext& node);
+void OsmiumTestSetupClose(NodeContext& node);
 
 /** Basic testing setup.
  * This just configures logging, data dir and chain parameters.
  */
 struct BasicTestingSetup {
-    ECCVerifyHandle globalVerifyHandle;
     NodeContext m_node;
 
     explicit BasicTestingSetup(const std::string& chainName = CBaseChainParams::MAIN, const std::vector<const char*>& extra_args = {});
@@ -134,6 +137,25 @@ struct TestChainSetup : public RegTestingSetup
     //! Mine a series of new blocks on the active chain.
     void mineBlocks(int num_blocks);
 
+    /**
+     * Create a transaction and submit to the mempool.
+     *
+     * @param input_transaction  The transaction to spend
+     * @param input_vout         The vout to spend from the input_transaction
+     * @param input_height       The height of the block that included the input_transaction
+     * @param input_signing_key  The key to spend the input_transaction
+     * @param output_destination Where to send the output
+     * @param output_amount      How much to send
+     * @param submit             Whether or not to submit to mempool
+     */
+    CMutableTransaction CreateValidMempoolTransaction(CTransactionRef input_transaction,
+                                                      int input_vout,
+                                                      int input_height,
+                                                      CKey input_signing_key,
+                                                      CScript output_destination,
+                                                      CAmount output_amount = CAmount(1 * COIN),
+                                                      bool submit = true);
+
     std::vector<CTransactionRef> m_coinbase_txns; // For convenience, coinbase transactions
     CKey coinbaseKey; // private/public key needed to spend coinbase transactions
 };
@@ -164,6 +186,23 @@ struct TestChainV19BeforeActivationSetup : public TestChainSetup
 {
     TestChainV19BeforeActivationSetup();
 };
+
+/**
+ * Make a test setup that has disk access to the debug.log file disabled. Can
+ * be used in "hot loops", for example fuzzing or benchmarking.
+ */
+template <class T = const BasicTestingSetup>
+std::unique_ptr<T> MakeNoLogFileContext(const std::string& chain_name = CBaseChainParams::REGTEST, const std::vector<const char*>& extra_args = {})
+{
+    const std::vector<const char*> arguments = Cat(
+        {
+            "-nodebuglogfile",
+            "-nodebug",
+        },
+        extra_args);
+
+    return std::make_unique<T>(chain_name, arguments);
+}
 
 class CTxMemPoolEntry;
 
@@ -211,6 +250,11 @@ public:
 private:
     const std::string m_reason;
 };
+
+/* This is defined in merkle_tests.cpp, but also used by auxpow_tests.cpp.  */
+namespace merkle_tests {
+std::vector<uint256> BlockMerkleBranch(const CBlock& block, uint32_t position);
+}
 
 // define an implicit conversion here so that uint256 may be used directly in BOOST_CHECK_*
 std::ostream& operator<<(std::ostream& os, const uint256& num);

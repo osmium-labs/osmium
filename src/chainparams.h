@@ -23,6 +23,11 @@ typedef std::map<int, uint256> MapCheckpoints;
 
 struct CCheckpointData {
     MapCheckpoints mapCheckpoints;
+
+    int GetHeight() const {
+        const auto& final_checkpoint = mapCheckpoints.rbegin();
+        return final_checkpoint->first /* height */;
+    }
 };
 
 struct AssumeutxoHash : public BaseHash<uint256> {
@@ -61,7 +66,7 @@ struct ChainTxData {
 
 /**
  * CChainParams defines various tweakable parameters of a given instance of the
- * Dash system.
+ * Osmium system.
  */
 class CChainParams
 {
@@ -134,6 +139,7 @@ public:
     void UpdateDIP8Parameters(int nActivationHeight);
     void UpdateBudgetParameters(int nMasternodePaymentsStartBlock, int nBudgetPaymentsStartBlock, int nSuperblockStartBlock);
     void UpdateLLMQInstantSend(Consensus::LLMQType llmqType);
+    void UpdateLLMQParams(size_t totalMnCount, int height);
     /**
      * Validate params for Masternodes EHF
      *
@@ -147,7 +153,7 @@ public:
     int FulfilledRequestExpireTime() const { return nFulfilledRequestExpireTime; }
     const std::vector<std::string>& SporkAddresses() const { return vSporkAddresses; }
     int MinSporkKeys() const { return nMinSporkKeys; }
-    std::optional<Consensus::LLMQParams> GetLLMQ(Consensus::LLMQType llmqType) const;
+    [[nodiscard]] std::optional<Consensus::LLMQParams> GetLLMQ(Consensus::LLMQType llmqType) const;
 
 protected:
     CChainParams() {}
@@ -184,7 +190,6 @@ protected:
     uint16_t nDefaultPlatformP2PPort;
     uint16_t nDefaultPlatformHTTPPort;
 
-    void AddLLMQ(Consensus::LLMQType llmqType);
 };
 
 /**
@@ -192,7 +197,7 @@ protected:
  * @returns a CChainParams* of the chosen chain.
  * @throws a std::runtime_error if the chain is not supported.
  */
-std::unique_ptr<const CChainParams> CreateChainParams(const std::string& chain);
+std::unique_ptr<CChainParams> CreateChainParams(const ArgsManager& args, const std::string& chain);
 
 /**
  * Return the currently selected parameters. This won't change after app
@@ -205,5 +210,7 @@ const CChainParams &Params();
  * @throws std::runtime_error when the chain is not supported.
  */
 void SelectParams(const std::string& chain);
+
+void UpdateLLMQParams(size_t totalMnCount, int height);
 
 #endif // BITCOIN_CHAINPARAMS_H

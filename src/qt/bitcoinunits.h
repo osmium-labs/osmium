@@ -1,5 +1,5 @@
 // Copyright (c) 2011-2020 The Bitcoin Core developers
-// Copyright (c) 2014-2022 The Dash Core developers
+// Copyright (c) 2014-2023 The Dash Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -26,7 +26,7 @@
 #define THIN_SP_UTF8 REAL_THIN_SP_UTF8
 #define THIN_SP_HTML HTML_HACK_SP
 
-/** Dash unit definitions. Encapsulates parsing and formatting
+/** Osmium unit definitions. Encapsulates parsing and formatting
    and serves as list model for drop-down selection boxes.
 */
 class BitcoinUnits: public QAbstractListModel
@@ -36,22 +36,22 @@ class BitcoinUnits: public QAbstractListModel
 public:
     explicit BitcoinUnits(QObject *parent);
 
-    /** Dash units.
+    /** Osmium units.
       @note Source: https://en.bitcoin.it/wiki/Units . Please add only sensible ones
      */
     enum Unit
     {
-        DASH,
-        mDASH,
-        uDASH,
-        duffs
+        OSMIUM,
+        mOSMIUM,
+        uOSMIUM,
+        muffs
     };
 
-    enum SeparatorStyle
+    enum class SeparatorStyle
     {
-        separatorNever,
-        separatorStandard,
-        separatorAlways
+        NEVER,
+        STANDARD,
+        ALWAYS
     };
 
     //! @name Static API
@@ -71,15 +71,17 @@ public:
     //! Number of decimals left
     static int decimals(int unit);
     //! Format as string
-    static QString format(int unit, const CAmount& amount, bool plussign=false, SeparatorStyle separators=separatorStandard);
-    static QString simpleFormat(int unit, const CAmount& amount, bool plussign=false, SeparatorStyle separators=separatorStandard);
+    static QString format(int unit, const CAmount& amount, bool plussign = false, SeparatorStyle separators = SeparatorStyle::STANDARD, bool justify = false);
+    static QString simpleFormat(int unit, const CAmount& amount, bool plussign=false, SeparatorStyle separators=SeparatorStyle::STANDARD);
     //! Format as string (with unit)
-    static QString formatWithUnit(int unit, const CAmount& amount, bool plussign=false, SeparatorStyle separators=separatorStandard);
+    static QString formatWithUnit(int unit, const CAmount& amount, bool plussign=false, SeparatorStyle separators=SeparatorStyle::STANDARD);
     //! Format as HTML string (with unit)
-    static QString formatHtmlWithUnit(int unit, const CAmount& amount, bool plussign=false, SeparatorStyle separators=separatorStandard);
+    static QString formatHtmlWithUnit(int unit, const CAmount& amount, bool plussign=false, SeparatorStyle separators=SeparatorStyle::STANDARD);
+    //! Format as string (with unit) of fixed length to preserve privacy, if it is set.
+    static QString formatWithPrivacy(int unit, const CAmount& amount, SeparatorStyle separators, bool privacy);
     //! Format as string (with unit) but floor value up to "digits" settings
-    static QString floorWithUnit(int unit, const CAmount& amount, bool plussign=false, SeparatorStyle separators=separatorStandard);
-    static QString floorHtmlWithUnit(int unit, const CAmount& amount, bool plussign=false, SeparatorStyle separators=separatorStandard);
+    static QString floorWithUnit(int unit, const CAmount& amount, bool plussign=false, SeparatorStyle separators=SeparatorStyle::STANDARD);
+    static QString floorHtmlWithPrivacy(int unit, const CAmount& amount, SeparatorStyle separators, bool privacy);
     //! Parse string to coin amount
     static bool parse(int unit, const QString &value, CAmount *val_out);
     //! Gets title for amount column including current display unit if optionsModel reference available */

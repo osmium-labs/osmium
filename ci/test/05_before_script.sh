@@ -7,10 +7,10 @@
 export LC_ALL=C.UTF-8
 
 # Make sure default datadir does not exist and is never read by creating a dummy file
-if [ "$TRAVIS_OS_NAME" == "osx" ]; then
-  echo > $HOME/Library/Application\ Support/DashCore
+if [ "$CI_OS_NAME" == "macos" ]; then
+  echo > $HOME/Library/Application\ Support/OsmiumCore
 else
-  DOCKER_EXEC echo \> \$HOME/.dashcore
+  DOCKER_EXEC echo \> \$HOME/.osmiumcore
 fi
 
 DOCKER_EXEC mkdir -p ${DEPENDS_DIR}/SDKs ${DEPENDS_DIR}/sdk-sources
