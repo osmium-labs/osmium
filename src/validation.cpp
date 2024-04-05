@@ -1167,8 +1167,8 @@ static std::pair<CAmount, CAmount> GetBlockSubsidyHelper(int nPrevBits, int nPre
     if (nPrevHeight == 0) {
         nSubsidyBase = 7000;
     // maybe change rewards for initial phase
-    } else if (nPrevHeight <= 100) {
-        nSubsidyBase = 1;
+    } else if (nPrevHeight <= 500) {
+        nSubsidyBase = 0.1;
     } else {
         nSubsidyBase = 1;
     }
