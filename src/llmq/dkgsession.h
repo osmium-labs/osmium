@@ -265,7 +265,7 @@ class CDKGSession
     friend class CDKGLogger;
 
 private:
-    const Consensus::LLMQParams params;
+    const Consensus::LLMQParams& params;
 
     CBLSWorker& blsWorker;
     CBLSWorkerCache cache;

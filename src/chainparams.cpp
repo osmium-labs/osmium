@@ -163,17 +163,28 @@ public:
         consensus.nGovernanceMinQuorum = 10;
         consensus.nGovernanceFilterElements = 20000;
         consensus.nMasternodeMinimumConfirmations = 15;
-        consensus.BIP34Height = 250;
+        consensus.BIP34Height = 1; // BIP34 activated immediately
         consensus.BIP34Hash = uint256();
-        consensus.BIP65Height = 440;
-        consensus.BIP66Height = 410;
-        consensus.BIP147Height = 200;
-        consensus.CSVHeight = 200;
-        consensus.DIP0001Height = 2000;
-        consensus.DIP0003Height = 200;
-        consensus.DIP0003EnforcementHeight = 250;
+        consensus.BIP65Height = 1; // BIP65 activated immediately
+        consensus.BIP66Height = 1; // BIP66 activated immediately
+        consensus.BIP147Height = 1; // BIP147 activated immediately
+        consensus.CSVHeight = 1; // BIP68 activated immediately
+        consensus.DIP0001Height = 2; // DIP0001 activated immediately
+        consensus.DIP0003Height = 2; // DIP0003 activated immediately
+        consensus.DIP0003EnforcementHeight = 2; // DIP0003 activated immediately
         consensus.DIP0003EnforcementHash = uint256();
-        consensus.DIP0008Height = 200;
+        consensus.DIP0008Height = 2; // DIP0008 activated immediately
+        // consensus.BIP34Height = 250;
+        // consensus.BIP34Hash = uint256();
+        // consensus.BIP65Height = 440;
+        // consensus.BIP66Height = 410;
+        // consensus.BIP147Height = 200;
+        // consensus.CSVHeight = 200;
+        // consensus.DIP0001Height = 2000;
+        // consensus.DIP0003Height = 200;
+        // consensus.DIP0003EnforcementHeight = 250;
+        // consensus.DIP0003EnforcementHash = uint256();
+        // consensus.DIP0008Height = 200;
         consensus.BRRHeight = 999999;
         consensus.DIP0020Height = 150;
         consensus.DIP0024Height = 350;
@@ -407,10 +418,10 @@ public:
         consensus.vDeployments[Consensus::DEPLOYMENT_MN_RR].useEHF = true;
 
         // The best chain should have at least this much work.
-        consensus.nMinimumChainWork = uint256S("000000000000000000000000000000000000000000000000006f57aef77d23f2"); // 885
+        consensus.nMinimumChainWork = uint256S("0x0000000000000000000000000000000000000000000000000000000000100010"); // 
 
         // By default assume that the signatures in ancestors of this block are valid.
-        consensus.defaultAssumeValid = uint256S("0x00000000143cb36897e0f1a16c177a3d8e6058c8695c3d1fda2f266b8c436649"); // 500
+        consensus.defaultAssumeValid = uint256S("0x000001c18eb51d23ad275da2fd118c311bbb47b39789da2c3d394a5215173915"); // Genesis block
 
         // AuxPoW parameters
         consensus.nAuxpowChainId = 0x0063;
@@ -427,10 +438,10 @@ public:
         m_assumed_blockchain_size = 1;
         m_assumed_chain_state_size = 1;
 
-        genesis = CreateGenesisBlock(1711913529, 549654, 0x1e0ffff0, 1, 50 * COIN);
+        genesis = CreateGenesisBlock(1712307956, 577923, 0x1e0ffff0, 1, 50 * COIN);
         consensus.hashGenesisBlock = genesis.GetHash();
 
-        assert(consensus.hashGenesisBlock == uint256S("0x0000022de142f363601441c5917269652c4af23155a2c9417329a5913e887c64"));
+        assert(consensus.hashGenesisBlock == uint256S("0x000001c18eb51d23ad275da2fd118c311bbb47b39789da2c3d394a5215173915"));
         assert(genesis.hashMerkleRoot == uint256S("0x63789c0e4f65b919fdb1c068b2abbbc0164e4937dc87c6cc4f465a00b50d8d21"));
 
         vFixedSeeds.clear();
@@ -486,8 +497,7 @@ public:
 
         checkpointData = {
             {
-                {0, uint256S("0x0000022de142f363601441c5917269652c4af23155a2c9417329a5913e887c64")},
-                {500, uint256S("0x00000000143cb36897e0f1a16c177a3d8e6058c8695c3d1fda2f266b8c436649")},
+                {0, uint256S("0x000001c18eb51d23ad275da2fd118c311bbb47b39789da2c3d394a5215173915")},
             }
         };
 
