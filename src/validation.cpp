@@ -1165,8 +1165,7 @@ static std::pair<CAmount, CAmount> GetBlockSubsidyHelper(int nPrevBits, int nPre
     const bool isDevnet = Params().NetworkIDString() == CBaseChainParams::DEVNET;
 
     if (nPrevHeight == 0) {
-        nSubsidyBase = 7000;
-    // maybe change rewards for initial phase
+        nSubsidyBase = 8000;
     } else if (nPrevHeight <= 500) {
         nSubsidyBase = 0.1;
     } else {
