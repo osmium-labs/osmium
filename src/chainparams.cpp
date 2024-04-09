@@ -157,7 +157,7 @@ public:
         consensus.nBudgetPaymentsCycleBlocks = 250;
         consensus.nBudgetPaymentsWindowBlocks = 100;
         consensus.nSuperblockStartBlock = 500;
-        consensus.nSuperblockStartHash = uint256(); //ok
+        consensus.nSuperblockStartHash = uint256();
         consensus.nSuperblockCycle = 960 * 30; // ~ one month
         consensus.nSuperblockMaturityWindow = 960 * 3; // ~3 days before actual Superblock is emitted
         consensus.nGovernanceMinQuorum = 10;
@@ -174,17 +174,6 @@ public:
         consensus.DIP0003EnforcementHeight = 2; // DIP0003 activated immediately
         consensus.DIP0003EnforcementHash = uint256();
         consensus.DIP0008Height = 2; // DIP0008 activated immediately
-        // consensus.BIP34Height = 250;
-        // consensus.BIP34Hash = uint256();
-        // consensus.BIP65Height = 440;
-        // consensus.BIP66Height = 410;
-        // consensus.BIP147Height = 200;
-        // consensus.CSVHeight = 200;
-        // consensus.DIP0001Height = 2000;
-        // consensus.DIP0003Height = 200;
-        // consensus.DIP0003EnforcementHeight = 250;
-        // consensus.DIP0003EnforcementHash = uint256();
-        // consensus.DIP0008Height = 200;
         consensus.BRRHeight = 999999;
         consensus.DIP0020Height = 150;
         consensus.DIP0024Height = 350;
@@ -247,32 +236,10 @@ public:
         m_assumed_blockchain_size = 1;
         m_assumed_chain_state_size = 1;
 
-        genesis = CreateGenesisBlock(1390095618, 332465, 0x1e0ffff0, 1, 1 * COIN);
+        genesis = CreateGenesisBlock(1712423191, 679254, 0x1e0ffff0, 1, 1 * COIN);
         consensus.hashGenesisBlock = genesis.GetHash();
 
-        // calculate main genesis block
-        // consensus.hashGenesisBlock = uint256S("0x00");
-        if (true && (genesis.GetHash() != consensus.hashGenesisBlock)) {
-            std::cout << std::string("Calculating main genesis block...\n");
-            arith_uint256 hashTarget = arith_uint256().SetCompact(genesis.nBits);
-            uint256 hash;
-            genesis.nNonce = 0;
-            while (UintToArith256(genesis.GetHash()) > hashTarget)
-            {
-                ++genesis.nNonce;
-                if (genesis.nNonce == 0)
-                {
-                    ++genesis.nTime;
-                }
-            }
-            std::cout << "Genesis block found!\n";
-            std::cout << "nonce: " << genesis.nNonce << "\n";
-            std::cout << "time: " << genesis.nTime << "\n";
-            std::cout << "blockhash: " << genesis.GetHash().ToString().c_str() << "\n";
-            std::cout << "merklehash: " << genesis.hashMerkleRoot.ToString().c_str() << "\n";
-        }
-
-        assert(consensus.hashGenesisBlock == uint256S("0x0000057b3cfa7a5e3588cbc6b87139a903fa02572f2b2a086a678303fd80f5ba"));
+        assert(consensus.hashGenesisBlock == uint256S("0x000007a47e3912a2e5d08e54f6a8455da0cf77e1d6ff10079133309250d58536"));
         assert(genesis.hashMerkleRoot == uint256S("0xd295e8aaaa0f191abb59e0908d11591dd6cb4c1038634892009c1e312edc2746"));
 
         // Note that of those which support the service bits prefix, most only support a subset of
@@ -322,7 +289,7 @@ public:
         nPoolMaxParticipants = 20;
         nFulfilledRequestExpireTime = 60*60; // fulfilled requests expire in 1 hour
 
-        vSporkAddresses = {"SMasPeRmUAyVKmHjJNfahE7mSy94brfz2Q"};
+        vSporkAddresses = {"SbZKRxQap7jWypXcH2GRoq3UAxQd7mZF5U"};
         nMinSporkKeys = 1;
 
         std::vector<DevfeeRewardStructure> rewardStructures = {  {INT_MAX, 19}  }; // 5% dev fee
@@ -330,7 +297,7 @@ public:
 
         checkpointData = {
             {
-                {0, uint256S("0x0000072a3f81ac29245401d3c65445c928689df024a6d923db70115b94cf28fc")},
+                {0, uint256S("0x000007a47e3912a2e5d08e54f6a8455da0cf77e1d6ff10079133309250d58536")},
             }
         };
 
@@ -505,11 +472,11 @@ public:
             // TODO to be specified in a future patch.
         };
 
-        // getchaintxstats 884 00000000000528fc61144e7c990a66f1530f75d3a8453e94fd9c6630488deee4
+        // getchaintxstats ...
         chainTxData = ChainTxData{
-                1712004118,
-                1887,
-                0.0216,       // * estimated number of transactions per second after that timestamp
+                0,
+                0,
+                0,       // * estimated number of transactions per second after that timestamp
         };
     }
 };

@@ -1,6 +1,6 @@
-# Osmium Core version v0.1.4
+# Osmium Core version v0.1.5
 
-This is the first testnet release of Osmuim Core, forked directly from Dash v20.1.0
+This is the second testnet release of Osmuim Core, with additional tweaks and fixes.
 
 This release is for testing purposes only and should not be used in mainnet. Any coins mined or transferred in mainnet will be invalid!
 

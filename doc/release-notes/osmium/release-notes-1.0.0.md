@@ -1,6 +1,6 @@
 # Osmium Core version v1.0.0
 
-This is a the first mainnet release of Osmuim Core, forked directly from Dash v20.1.0
+This is the first mainnet release of Osmuim Core, forked directly from Dash v20.1.0
 
 Please report bugs using the issue tracker at GitHub:
 
@@ -12,3 +12,4 @@ Please report bugs using the issue tracker at GitHub:
 Thanks to everyone who directly contributed to this release:
 
 - mancini
+- nando
