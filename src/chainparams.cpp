@@ -1359,14 +1359,25 @@ void CChainParams::UpdateLLMQParams(size_t totalMnCount, int height) {
             consensus.llmqs[Consensus::LLMQ_50_60] = Consensus::llmq_10_60;
             consensus.llmqs[Consensus::LLMQ_400_60] = Consensus::llmq_20_60;
             consensus.llmqs[Consensus::LLMQ_400_85] = Consensus::llmq_20_85;
+            if (height >= 26495)
+                consensus.llmqs[Consensus::LLMQ_60_75] = Consensus::llmq_10_75;
         } else if (totalMnCount < 600) {
             consensus.llmqs[Consensus::LLMQ_50_60] = Consensus::llmq_50_60;
             consensus.llmqs[Consensus::LLMQ_400_60] = Consensus::llmq_40_60;
             consensus.llmqs[Consensus::LLMQ_400_85] = Consensus::llmq_40_85;
+            consensus.llmqs[Consensus::LLMQ_60_75] = Consensus::llmq_10_75;
+            if (totalMnCount >= 200)
+                consensus.llmqs[Consensus::LLMQ_60_75] = Consensus::llmq_20_75;
         } else {
             consensus.llmqs[Consensus::LLMQ_50_60] = Consensus::llmq_50_60;
             consensus.llmqs[Consensus::LLMQ_400_60] = Consensus::llmq_400_60;
             consensus.llmqs[Consensus::LLMQ_400_85] = Consensus::llmq_400_85;
+            consensus.llmqs[Consensus::LLMQ_60_75] = Consensus::llmq_20_75;
+            if (totalMnCount > 2000)
+                consensus.llmqs[Consensus::LLMQ_60_75] = Consensus::llmq_60_75;
         }
+    } else {
+        if (height >= 26495 && totalMnCount < 80)
+            consensus.llmqs[Consensus::LLMQ_60_75] = Consensus::llmq_10_75;
     }
 }
