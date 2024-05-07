@@ -413,6 +413,47 @@ namespace Consensus {
         .recoveryMembers = 25,
     };
 
+    static constexpr LLMQParams llmq_20_75 = {
+        .type = LLMQType::LLMQ_60_75,
+        .name = "llmq_20_75",
+        .useRotation = true,
+        .size = 20,
+        .minSize = 16,
+        .threshold = 15,
+
+        .dkgInterval = 24 * 12, // DKG cycle every 12 hours
+        .dkgPhaseBlocks = 2,
+        .dkgMiningWindowStart = 42, // signingActiveQuorumCount + dkgPhaseBlocks * 5 = after finalization
+        .dkgMiningWindowEnd = 50,
+        .dkgBadVotesThreshold = 16, // 80%
+
+        .signingActiveQuorumCount = 8,
+        .keepOldConnections = 64,
+        .keepOldKeys = 64,
+        .recoveryMembers = 10,
+    };
+
+    static constexpr LLMQParams llmq_10_75 = {
+        .type = LLMQType::LLMQ_60_75,
+        .name = "llmq_10_75",
+        .useRotation = true,
+        .size = 10,
+        .minSize = 8,
+        .threshold = 7,
+
+        .dkgInterval = 24 * 12, // DKG cycle every 12 hours
+        .dkgPhaseBlocks = 2,
+        .dkgMiningWindowStart = 42, // signingActiveQuorumCount + dkgPhaseBlocks * 5 = after finalization
+        .dkgMiningWindowEnd = 50,
+        .dkgBadVotesThreshold = 8, // 80%
+
+        .signingActiveQuorumCount = 8,
+        .keepOldConnections = 64,
+        .keepOldKeys = 64,
+        .recoveryMembers = 5,
+    };
+
+
     /**
      * llmq_400_60
      * This quorum is deployed on mainnet and requires
