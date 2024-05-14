@@ -299,6 +299,7 @@ public:
             {
                 {0, uint256S("0x000007a47e3912a2e5d08e54f6a8455da0cf77e1d6ff10079133309250d58536")},
                 {475, uint256S("0x0000000000000298ab2be0093c4fe96bf8e153fce2e599e3a420a73527e5e775")},
+                {28800, uint256S("0x5bf3c726794289df1270490126aed32e23be2feed49112829b0461520be05112")},
             }
         };
 
@@ -306,11 +307,11 @@ public:
          // TODO to be specified in a future patch.
         };
 
-        // getchaintxstats 300 503a3c4a47b30bb1ae5b651da1322b5bf4b13c86943e05f92d2d4adc1f604b7b
+        // getchaintxstats 31500 0000000000000079892d0b1bc5c00cccb8b33d1d239b1179e75c2ddef35511f2
         chainTxData = ChainTxData{
-                1712674189,
-                529,   
-                0.0392,
+                1715665229,
+                87516,   
+                0.02895,
         };
     }
 };
