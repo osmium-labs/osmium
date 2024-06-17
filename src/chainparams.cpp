@@ -149,7 +149,7 @@ public:
         consensus.nSubsidyHalvingInterval = 172800;
         consensus.BIP16Height = 0;
         consensus.nMasternodePaymentsStartBlock = 250; // not true, but it's ok as long as it's less then nMasternodePaymentsIncreaseBlock
-        consensus.nMasternodePaymentsIncreaseBlock = 9999999; // disabled
+        consensus.nMasternodePaymentsIncreaseBlock = 65000;
         consensus.nMasternodePaymentsIncreasePeriod = 960 * 30;
         consensus.nInstantSendConfirmationsRequired = 6;
         consensus.nInstantSendKeepLock = 24;
@@ -327,7 +327,7 @@ public:
         consensus.nSubsidyHalvingInterval = 172800;
         consensus.BIP16Height = 0;
         consensus.nMasternodePaymentsStartBlock = 250;
-        consensus.nMasternodePaymentsIncreaseBlock = 350;
+        consensus.nMasternodePaymentsIncreaseBlock = 631;
         consensus.nMasternodePaymentsIncreasePeriod = 10;
         consensus.nInstantSendConfirmationsRequired = 2;
         consensus.nInstantSendKeepLock = 6;
@@ -388,7 +388,7 @@ public:
         consensus.vDeployments[Consensus::DEPLOYMENT_MN_RR].useEHF = true;
 
         // The best chain should have at least this much work.
-        consensus.nMinimumChainWork = uint256S("0x0000000000000000000000000000000000000000000000000000000000100010"); // 
+        consensus.nMinimumChainWork = uint256S("0x000000000000000000000000000000000000000000000000000000009517f5ae"); // 693
 
         // By default assume that the signatures in ancestors of this block are valid.
         consensus.defaultAssumeValid = uint256S("0x000001c18eb51d23ad275da2fd118c311bbb47b39789da2c3d394a5215173915"); // Genesis block
@@ -468,6 +468,7 @@ public:
         checkpointData = {
             {
                 {0, uint256S("0x000001c18eb51d23ad275da2fd118c311bbb47b39789da2c3d394a5215173915")},
+                {680, uint256S("0x06ffdf6da1d613bda85fa6d806fa21f553ea2d98b0643577370a2b59ce1870c5")},
             }
         };
 
@@ -475,11 +476,11 @@ public:
             // TODO to be specified in a future patch.
         };
 
-        // getchaintxstats ...
+        // getchaintxstats 670 (1aa973a8e0233166c3d85d70c5d703f152094125d35d14d07049b54756cd7db9)
         chainTxData = ChainTxData{
-                0,
-                0,
-                0,       // * estimated number of transactions per second after that timestamp
+                1718624187,
+                1495,
+                0.0262,       // * estimated number of transactions per second after that timestamp
         };
     }
 };

@@ -1217,6 +1217,11 @@ CAmount GetBlockSubsidy(const CBlockIndex* const pindex, const Consensus::Params
 CAmount GetMasternodePayment(int nHeight, CAmount blockValue, bool fV20Active)
 {
     CAmount ret = blockValue * 9 / 19; // 50% after superblock reduction
+
+    const int nMNPIBlock = Params().GetConsensus().nMasternodePaymentsIncreaseBlock;
+    
+    if(nHeight >= nMNPIBlock)                  ret = blockValue * 72 / 95; // 65000 - 80% - 2024-06-19
+
     return ret;
 }
 

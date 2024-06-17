@@ -1,6 +1,6 @@
 # Osmium Core version v1.0.1
 
-This is a mandatory fix mainnet release of Osmuim Core.
+This is a mandatory fix mainnet release of Osmium Core.
 
 Please report bugs using the issue tracker at GitHub:
 

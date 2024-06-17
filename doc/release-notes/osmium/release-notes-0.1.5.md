@@ -1,6 +1,6 @@
 # Osmium Core version v0.1.5
 
-This is the second testnet release of Osmuim Core, with additional tweaks and fixes.
+This is the second testnet release of Osmium Core, with additional tweaks and fixes.
 
 This release is for testing purposes only and should not be used in mainnet. Any coins mined or transferred in mainnet will be invalid!
 
