@@ -136,7 +136,7 @@ static std::set<QWidget*> setRectsDisabled;
 
 static const std::map<ThemedColor, QColor> themedColors = {
     { ThemedColor::DEFAULT, QColor(85, 85, 85) },
-    { ThemedColor::PRIMARY, QColor(171, 132, 187) },
+    { ThemedColor::PRIMARY, QColor(178, 54, 71) },
     { ThemedColor::UNCONFIRMED, QColor(128, 128, 128) },
     { ThemedColor::BLUE, QColor(106, 172, 251) },
     { ThemedColor::ORANGE, QColor(199, 147, 4) },
@@ -154,19 +154,19 @@ static const std::map<ThemedColor, QColor> themedColors = {
 
 static const std::map<ThemedColor, QColor> themedDarkColors = {
     { ThemedColor::DEFAULT, QColor(199, 199, 199) },
-    { ThemedColor::PRIMARY, QColor(171, 132, 187) },
+    { ThemedColor::PRIMARY, QColor(178, 54, 71) },
     { ThemedColor::UNCONFIRMED, QColor(160, 165, 168) },
     { ThemedColor::BLUE, QColor(106, 172, 251) },
-    { ThemedColor::ORANGE, QColor(231, 193, 59) },
-    { ThemedColor::RED, QColor(220, 25, 25) },
+    { ThemedColor::ORANGE, QColor(255, 214, 68) },
+    { ThemedColor::RED, QColor(197, 120, 103) },
     { ThemedColor::GREEN, QColor(167, 197, 103) },
     { ThemedColor::BAREADDRESS, QColor(181, 186, 189) },
     { ThemedColor::TX_STATUS_OPENUNTILDATE, QColor(64, 64, 255) },
-    { ThemedColor::BACKGROUND_WIDGET, QColor(30, 30, 30) },
-    { ThemedColor::BORDER_WIDGET, QColor(30, 30, 30) },
-    { ThemedColor::BACKGROUND_NETSTATS, QColor(17, 19, 20) },
-    { ThemedColor::BORDER_NETSTATS, QColor(17, 19, 20) },
-    { ThemedColor::QR_PIXEL, QColor(171, 132, 187) },
+    { ThemedColor::BACKGROUND_WIDGET, QColor(30, 40, 51) },
+    { ThemedColor::BORDER_WIDGET, QColor(30, 40, 51) },
+    { ThemedColor::BACKGROUND_NETSTATS, QColor(3, 18, 30) },
+    { ThemedColor::BORDER_NETSTATS, QColor(3, 18, 30) },
+    { ThemedColor::QR_PIXEL, QColor(200, 200, 200) },
     { ThemedColor::ICON_ALTERNATIVE_COLOR, QColor(74, 74, 75) },
 };
 
@@ -181,16 +181,13 @@ static const std::map<ThemedStyle, QString> themedStyles = {
 };
 
 static const std::map<ThemedStyle, QString> themedDarkStyles = {
-    { ThemedStyle::TS_INVALID, "background:#a84832;" },
-    // { ThemedStyle::TS_ERROR, "color:#a84832;" },
-    { ThemedStyle::TS_ERROR, "color:#dc1919;" },
-    { ThemedStyle::TS_WARNING, "color:#999900;" },
-    { ThemedStyle::TS_SUCCESS, "color:#5e8c41;" },
-    { ThemedStyle::TS_COMMAND, "color:#ab84bb;" },
-    // { ThemedStyle::TS_PRIMARY, "color:#c7c7c7;" },
+    { ThemedStyle::TS_INVALID, "background:#67BFC5;" },
+    { ThemedStyle::TS_ERROR, "color:#C57867;" },
+    { ThemedStyle::TS_WARNING, "color:#FFD644;" },
+    { ThemedStyle::TS_SUCCESS, "color:#A7C567;" },
+    { ThemedStyle::TS_COMMAND, "color:#FFD644;" },
     { ThemedStyle::TS_PRIMARY, "color:#fff;" },
-    // { ThemedStyle::TS_SECONDARY, "color:#aaa;" },
-    { ThemedStyle::TS_SECONDARY, "color:#B5BABD;" },
+    { ThemedStyle::TS_SECONDARY, "color:#B23647;" },
 };
 
 QColor getThemedQColor(ThemedColor color)
