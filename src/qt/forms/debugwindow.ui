@@ -317,17 +317,15 @@
          </property>
         </widget>
        </item>
-       <!-- 
-        Disable Evonodes
-        <item row="10" column="0">
-        <widget class="QLabel" name="evoCountLabel">
+       <item row="10" column="0">
+        <widget class="QLabel" name="superCountLabel">
          <property name="text">
-          <string>Number of EvoNodes</string>
+          <string>Number of Supernodes</string>
          </property>
         </widget>
        </item>
        <item row="10" column="1">
-        <widget class="QLabel" name="evoCount">
+        <widget class="QLabel" name="superCount">
          <property name="cursor">
           <cursorShape>IBeamCursor</cursorShape>
          </property>
@@ -338,7 +336,7 @@
           <set>Qt::LinksAccessibleByMouse|Qt::TextSelectableByKeyboard|Qt::TextSelectableByMouse</set>
          </property>
         </widget>
-       </item> -->
+       </item>
        <item row="11" column="0">
         <widget class="QLabel" name="label_10">
          <property name="text">

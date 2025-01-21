@@ -620,7 +620,7 @@ namespace Consensus {
      * This quorum is deployed on mainnet and requires
      * 80 - 100 participants
      *
-     * Used by Osmium Platform
+     * Used by Dash Platform
      */
     static constexpr LLMQParams llmq_100_67 = {
         .type = LLMQType::LLMQ_100_67,

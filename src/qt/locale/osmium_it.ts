@@ -2779,8 +2779,8 @@ https://www.transifex.com/projects/p/osmium/</translation>
         <translation>Numero di Masternode regolari</translation>
     </message>
     <message>
-        <source>Number of EvoNodes</source>
-        <translation>Numero di EvoNodi</translation>
+        <source>Number of Supernodes</source>
+        <translation>Numero di Supernodi</translation>
     </message>
     <message>
         <source>Current block height</source>

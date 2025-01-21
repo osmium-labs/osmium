@@ -150,6 +150,7 @@ public:
         consensus.BIP16Height = 0;
         consensus.nMasternodePaymentsStartBlock = 250; // not true, but it's ok as long as it's less then nMasternodePaymentsIncreaseBlock
         consensus.nMasternodePaymentsIncreaseBlock = 65000;
+        consensus.nMasternodePaymentsIncreaseBlock2 = 270000;
         consensus.nMasternodePaymentsIncreasePeriod = 960 * 30;
         consensus.nInstantSendConfirmationsRequired = 6;
         consensus.nInstantSendKeepLock = 24;
@@ -180,6 +181,7 @@ public:
         consensus.DIP0024QuorumsHeight = 350;
         consensus.V19Height = 350;
         consensus.MinBIP9WarningHeight = 350 + 960; // V19 activation height + miner confirmation window
+        consensus.SupernodeHeight = 271000;
         consensus.powLimit = uint256S("00000fffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"); // ~uint256(0) >> 20
         consensus.nPowTargetTimespan = 24 * 60 * 60; // Osmium: 1 day
         consensus.nPowTargetSpacing = 1.5 * 60; // Osmium: 1.5 minutes
@@ -211,10 +213,10 @@ public:
         consensus.vDeployments[Consensus::DEPLOYMENT_MN_RR].useEHF = true;
 
         // The best chain should have at least this much work.
-        consensus.nMinimumChainWork = uint256S("0x0000000000000000000000000000000000000000000001f628e4d0f14c611b1c"); // 57600
+        consensus.nMinimumChainWork = uint256S("0x0000000000000000000000000000000000000000000008d5d50c6435059fd5bd"); // 261000
 
         // By default assume that the signatures in ancestors of this block are valid.
-        consensus.defaultAssumeValid = uint256S("0xc2f23d0d544c03fde89d0f1e1a05438d89b89bda4c7248470eb960d47fb2bb87"); // 57600
+        consensus.defaultAssumeValid = uint256S("0xd5d5126a312a291cca89a3b2d15c06fec240a07d5d6c71dbe95247314c6380f1"); // 261000
 
         // AuxPoW parameters
         consensus.nAuxpowChainId = 0x0062;
@@ -301,6 +303,7 @@ public:
                 {475, uint256S("0x0000000000000298ab2be0093c4fe96bf8e153fce2e599e3a420a73527e5e775")},
                 {28800, uint256S("0x5bf3c726794289df1270490126aed32e23be2feed49112829b0461520be05112")},
                 {57600, uint256S("0xc2f23d0d544c03fde89d0f1e1a05438d89b89bda4c7248470eb960d47fb2bb87")},
+                {261000, uint256S("0xd5d5126a312a291cca89a3b2d15c06fec240a07d5d6c71dbe95247314c6380f1")},
             }
         };
 
@@ -308,11 +311,11 @@ public:
          // TODO to be specified in a future patch.
         };
 
-        // getchaintxstats 57000 (eaa43453523132803393e8e8105c0cf1a7ae0f18c8ef1d2f344832bceaf27881)
+        // getchaintxstats 261000 (d5d5126a312a291cca89a3b2d15c06fec240a07d5d6c71dbe95247314c6380f1)
         chainTxData = ChainTxData{
-                1718098460,
-                135867,   
-                0.02491,
+                1737368544,
+                444004,   
+                0.01796,
         };
     }
 };
@@ -328,6 +331,7 @@ public:
         consensus.BIP16Height = 0;
         consensus.nMasternodePaymentsStartBlock = 250;
         consensus.nMasternodePaymentsIncreaseBlock = 631;
+        consensus.nMasternodePaymentsIncreaseBlock2 = 167166;
         consensus.nMasternodePaymentsIncreasePeriod = 10;
         consensus.nInstantSendConfirmationsRequired = 2;
         consensus.nInstantSendKeepLock = 6;
@@ -356,6 +360,7 @@ public:
         consensus.DIP0024Height = 300;
         consensus.DIP0024QuorumsHeight = 300;
         consensus.V19Height = 300;
+        consensus.SupernodeHeight = 167176;
         consensus.MinBIP9WarningHeight = 300 + 960; // v19 activation height + miner confirmation window
         consensus.powLimit = uint256S("7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"); // ~uint256(0) >> 1
         consensus.nPowTargetTimespan = 24 * 60 * 60; // Osmium: 1 day
@@ -388,7 +393,7 @@ public:
         consensus.vDeployments[Consensus::DEPLOYMENT_MN_RR].useEHF = true;
 
         // The best chain should have at least this much work.
-        consensus.nMinimumChainWork = uint256S("0x000000000000000000000000000000000000000000000000000000009517f5ae"); // 693
+        consensus.nMinimumChainWork = uint256S("0x0000000000000000000000000000000000000000000000000000005971bcf19a"); // 167200
 
         // By default assume that the signatures in ancestors of this block are valid.
         consensus.defaultAssumeValid = uint256S("0x000001c18eb51d23ad275da2fd118c311bbb47b39789da2c3d394a5215173915"); // Genesis block
@@ -469,6 +474,7 @@ public:
             {
                 {0, uint256S("0x000001c18eb51d23ad275da2fd118c311bbb47b39789da2c3d394a5215173915")},
                 {680, uint256S("0x06ffdf6da1d613bda85fa6d806fa21f553ea2d98b0643577370a2b59ce1870c5")},
+                {167200, uint256S("0x47848c15b97d31ec51fe6395e4444e901a25f1a4c6e38236e1f1a8b9b00feeac")},
             }
         };
 
@@ -476,11 +482,11 @@ public:
             // TODO to be specified in a future patch.
         };
 
-        // getchaintxstats 670 (1aa973a8e0233166c3d85d70c5d703f152094125d35d14d07049b54756cd7db9)
+        // getchaintxstats 167200 (47848c15b97d31ec51fe6395e4444e901a25f1a4c6e38236e1f1a8b9b00feeac)
         chainTxData = ChainTxData{
-                1718624187,
-                1495,
-                0.0262,       // * estimated number of transactions per second after that timestamp
+                1737365580,
+                364806,
+                0.0194,       // * estimated number of transactions per second after that timestamp
         };
     }
 };
@@ -496,6 +502,7 @@ public:
         consensus.BIP16Height = 0;
         consensus.nMasternodePaymentsStartBlock = 4010; // not true, but it's ok as long as it's less then nMasternodePaymentsIncreaseBlock
         consensus.nMasternodePaymentsIncreaseBlock = 4030;
+        consensus.nMasternodePaymentsIncreaseBlock2 = 5050;
         consensus.nMasternodePaymentsIncreasePeriod = 10;
         consensus.nInstantSendConfirmationsRequired = 2;
         consensus.nInstantSendKeepLock = 6;
@@ -524,6 +531,7 @@ public:
         consensus.DIP0024Height = 300;
         consensus.DIP0024QuorumsHeight = 300;
         consensus.V19Height = 300;
+        consensus.SupernodeHeight = 2000;
         consensus.MinBIP9WarningHeight = 300 + 2016; // v19 activation height + miner confirmation window
         consensus.powLimit = uint256S("7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"); // ~uint256(0) >> 1
         consensus.nPowTargetTimespan = 24 * 60 * 60; // Osmium: 1 day
@@ -742,6 +750,7 @@ public:
         consensus.BIP16Height = 0; // always enforce P2SH BIP16 on regtest
         consensus.nMasternodePaymentsStartBlock = 500;
         consensus.nMasternodePaymentsIncreaseBlock = 350;
+        consensus.nMasternodePaymentsIncreaseBlock2 = 650;
         consensus.nMasternodePaymentsIncreasePeriod = 10;
         consensus.nInstantSendConfirmationsRequired = 2;
         consensus.nInstantSendKeepLock = 6;
@@ -771,6 +780,7 @@ public:
         consensus.DIP0024Height = 900;
         consensus.DIP0024QuorumsHeight = 900;
         consensus.V19Height = 900;
+        consensus.SupernodeHeight = 2000;
         consensus.MinBIP9WarningHeight = 0;
         consensus.powLimit = uint256S("7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"); // ~uint256(0) >> 1
         consensus.nPowTargetTimespan = 24 * 60 * 60; // Osmium: 1 day

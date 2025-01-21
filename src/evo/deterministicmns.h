@@ -242,14 +242,14 @@ public:
         return ranges::count_if(mnMap, [this](const auto& p){ return IsMNValid(*p.second); });
     }
 
-    [[nodiscard]] size_t GetAllEvoCount() const
+    [[nodiscard]] size_t GetAllSuperCount() const
     {
-        return ranges::count_if(mnMap, [this](const auto& p) { return p.second->nType == MnType::Evo; });
+        return ranges::count_if(mnMap, [this](const auto& p) { return p.second->nType == MnType::Super; });
     }
 
-    [[nodiscard]] size_t GetValidEvoCount() const
+    [[nodiscard]] size_t GetValidSuperCount() const
     {
-        return ranges::count_if(mnMap, [this](const auto& p) { return p.second->nType == MnType::Evo && IsMNValid(*p.second); });
+        return ranges::count_if(mnMap, [this](const auto& p) { return p.second->nType == MnType::Super && IsMNValid(*p.second); });
     }
 
     [[nodiscard]] size_t GetValidWeightedMNsCount() const
@@ -356,8 +356,8 @@ public:
      * @param modifier
      * @return
      */
-    [[nodiscard]] std::vector<CDeterministicMNCPtr> CalculateQuorum(size_t maxSize, const uint256& modifier, const bool onlyEvoNodes = false) const;
-    [[nodiscard]] std::vector<std::pair<arith_uint256, CDeterministicMNCPtr>> CalculateScores(const uint256& modifier, const bool onlyEvoNodes) const;
+    [[nodiscard]] std::vector<CDeterministicMNCPtr> CalculateQuorum(size_t maxSize, const uint256& modifier, const bool onlySuperNodes = false) const;
+    [[nodiscard]] std::vector<std::pair<arith_uint256, CDeterministicMNCPtr>> CalculateScores(const uint256& modifier, const bool onlySuperNodes) const;
 
     /**
      * Calculates the maximum penalty which is allowed at the height of this MN list. It is dynamic and might change
