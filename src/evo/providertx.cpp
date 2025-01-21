@@ -17,8 +17,8 @@ bool CProRegTx::IsTriviallyValid(bool is_basic_scheme_active, TxValidationState&
     if (nVersion == 0 || nVersion > GetVersion(is_basic_scheme_active)) {
         return state.Invalid(TxValidationResult::TX_CONSENSUS, "bad-protx-version");
     }
-    if (nVersion != BASIC_BLS_VERSION && nType == MnType::Evo) {
-        return state.Invalid(TxValidationResult::TX_CONSENSUS, "bad-protx-evo-version");
+    if (nVersion != BASIC_BLS_VERSION && nType == MnType::Super) {
+        return state.Invalid(TxValidationResult::TX_CONSENSUS, "bad-protx-super-version");
     }
     if (!IsValidMnType(nType)) {
         return state.Invalid(TxValidationResult::TX_CONSENSUS, "bad-protx-type");
@@ -96,8 +96,8 @@ bool CProUpServTx::IsTriviallyValid(bool is_basic_scheme_active, TxValidationSta
     if (nVersion == 0 || nVersion > GetVersion(is_basic_scheme_active)) {
         return state.Invalid(TxValidationResult::TX_CONSENSUS, "bad-protx-version");
     }
-    if (nVersion != BASIC_BLS_VERSION && nType == MnType::Evo) {
-        return state.Invalid(TxValidationResult::TX_CONSENSUS, "bad-protx-evo-version");
+    if (nVersion != BASIC_BLS_VERSION && nType == MnType::Super) {
+        return state.Invalid(TxValidationResult::TX_CONSENSUS, "bad-protx-super-version");
     }
 
     return true;

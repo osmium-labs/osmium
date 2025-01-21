@@ -132,13 +132,11 @@
            <string>Service</string>
           </property>
          </column>
-         <!-- 
-          Disable EvoNodes
-          <column>
+         <column>
           <property name="text">
            <string>Type</string>
           </property>
-         </column> -->
+         </column>
          <column>
           <property name="text">
            <string>Status</string>

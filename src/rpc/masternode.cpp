@@ -38,7 +38,7 @@ static void masternode_list_help(const JSONRPCRequest& request)
         "Available modes:\n"
         "  addr           - Print ip address associated with a masternode (can be additionally filtered, partial match)\n"
         "  recent         - Print info in JSON format for active and recently banned masternodes (can be additionally filtered, partial match)\n"
-        "  evo            - Print info in JSON format for EvoNodes only\n"
+        "  super          - Print info in JSON format for Supernodes only\n"
         "  full           - Print info in format 'status payee lastpaidtime lastpaidblock IP'\n"
         "                   (can be additionally filtered, partial match)\n"
         "  info           - Print info in format 'status payee IP'\n"
@@ -116,22 +116,21 @@ static UniValue masternode_count(const JSONRPCRequest& request)
     obj.pushKV("total", total);
     obj.pushKV("enabled", enabled);
 
-    // Disable Evonodes
-    // int evo_total = mnList.GetAllEvoCount();
-    // int evo_enabled = mnList.GetValidEvoCount();
+    int super_total = mnList.GetAllSuperCount();
+    int super_enabled = mnList.GetValidSuperCount();
 
-    // UniValue evoObj(UniValue::VOBJ);
-    // evoObj.pushKV("total", evo_total);
-    // evoObj.pushKV("enabled", evo_enabled);
+    UniValue superObj(UniValue::VOBJ);
+    superObj.pushKV("total", super_total);
+    superObj.pushKV("enabled", super_enabled);
 
-    // UniValue regularObj(UniValue::VOBJ);
-    // regularObj.pushKV("total", total - evo_total);
-    // regularObj.pushKV("enabled", enabled - evo_enabled);
+    UniValue regularObj(UniValue::VOBJ);
+    regularObj.pushKV("total", total - super_total);
+    regularObj.pushKV("enabled", enabled - super_enabled);
 
-    // UniValue detailedObj(UniValue::VOBJ);
-    // detailedObj.pushKV("regular", regularObj);
-    // detailedObj.pushKV("evo", evoObj);
-    // obj.pushKV("detailed", detailedObj);
+    UniValue detailedObj(UniValue::VOBJ);
+    detailedObj.pushKV("regular", regularObj);
+    detailedObj.pushKV("super", superObj);
+    obj.pushKV("detailed", detailedObj);
 
     return obj;
 }
@@ -274,8 +273,7 @@ static UniValue masternode_status(const JSONRPCRequest& request)
     }
     if (dmn) {
         mnObj.pushKV("proTxHash", dmn->proTxHash.ToString());
-        // Disable Evonodes
-        // mnObj.pushKV("type", std::string(GetMnType(dmn->nType).description));
+        mnObj.pushKV("type", std::string(GetMnType(dmn->nType).description));
         mnObj.pushKV("collateralHash", dmn->collateralOutpoint.hash.ToString());
         mnObj.pushKV("collateralIndex", (int)dmn->collateralOutpoint.n);
         mnObj.pushKV("dmnState", dmn->pdmnState->ToJson(dmn->nType));
@@ -595,7 +593,7 @@ static UniValue masternodelist(const JSONRPCRequest& request, ChainstateManager&
                 strMode != "owneraddress" && strMode != "votingaddress" &&
                 strMode != "lastpaidtime" && strMode != "lastpaidblock" &&
                 strMode != "payee" && strMode != "pubkeyoperator" &&
-                strMode != "status" && strMode != "recent" && strMode != "evo"))
+                strMode != "status" && strMode != "recent" && strMode != "super"))
     {
         masternode_list_help(request);
     }
@@ -625,7 +623,7 @@ static UniValue masternodelist(const JSONRPCRequest& request, ChainstateManager&
     };
 
     bool showRecentMnsOnly = strMode == "recent";
-    bool showEvoOnly = strMode == "evo";
+    bool showSuperOnly = strMode == "super";
     int tipHeight = WITH_LOCK(cs_main, return chainman.ActiveChain().Tip()->nHeight);
     mnList.ForEachMN(false, [&](auto& dmn) {
         if (showRecentMnsOnly && mnList.IsMNPoSeBanned(dmn)) {
@@ -633,7 +631,7 @@ static UniValue masternodelist(const JSONRPCRequest& request, ChainstateManager&
                 return;
             }
         }
-        if (showEvoOnly && dmn.nType != MnType::Evo) {
+        if (showSuperOnly && dmn.nType != MnType::Super) {
             return;
         }
 
@@ -683,7 +681,7 @@ static UniValue masternodelist(const JSONRPCRequest& request, ChainstateManager&
             if (strFilter !="" && strInfo.find(strFilter) == std::string::npos &&
                 strOutpoint.find(strFilter) == std::string::npos) return;
             obj.pushKV(strOutpoint, strInfo);
-        } else if (strMode == "json" || strMode == "recent" || strMode == "evo") {
+        } else if (strMode == "json" || strMode == "recent" || strMode == "super") {
             std::ostringstream streamInfo;
             streamInfo <<  dmn.proTxHash.ToString() << " " <<
                            dmn.pdmnState->addr.ToString() << " " <<
@@ -704,13 +702,6 @@ static UniValue masternodelist(const JSONRPCRequest& request, ChainstateManager&
             objMN.pushKV("address", dmn.pdmnState->addr.ToString());
             objMN.pushKV("payee", payeeStr);
             objMN.pushKV("status", dmnToStatus(dmn));
-            // Disable Evonodes
-            // objMN.pushKV("type", std::string(GetMnType(dmn.nType).description));
-            // if (dmn.nType == MnType::Evo) {
-            //     objMN.pushKV("platformNodeID", dmn.pdmnState->platformNodeID.ToString());
-            //     objMN.pushKV("platformP2PPort", dmn.pdmnState->platformP2PPort);
-            //     objMN.pushKV("platformHTTPPort", dmn.pdmnState->platformHTTPPort);
-            // }
             objMN.pushKV("pospenaltyscore", dmn.pdmnState->nPoSePenalty);
             objMN.pushKV("consecutivePayments", dmn.pdmnState->nConsecutivePayments);
             objMN.pushKV("lastpaidtime", dmnToLastPaidTime(dmn));

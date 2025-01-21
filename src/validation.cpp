@@ -1219,8 +1219,10 @@ CAmount GetMasternodePayment(int nHeight, CAmount blockValue, bool fV20Active)
     CAmount ret = blockValue * 9 / 19; // 50% after superblock reduction
 
     const int nMNPIBlock = Params().GetConsensus().nMasternodePaymentsIncreaseBlock;
+    const int nMNPIBlock2 = Params().GetConsensus().nMasternodePaymentsIncreaseBlock2;
     
-    if(nHeight >= nMNPIBlock)                  ret = blockValue * 72 / 95; // 65000 - 80% - 2024-06-19
+    if(nHeight >= nMNPIBlock)                  ret = blockValue * 72 / 95; // 65000 - 72% - 2024-06-19
+    if(nHeight >= nMNPIBlock2)                 ret = blockValue * 72 / 85; // 270000 - 85% - 2025-01-XX
 
     return ret;
 }

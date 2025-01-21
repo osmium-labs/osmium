@@ -3594,8 +3594,8 @@ https://www.transifex.com/projects/p/osmium/</translation>
     </message>
     <message>
         <location line="+20"/>
-        <source>Number of EvoNodes</source>
-        <translation>Number of EvoNodes</translation>
+        <source>Number of Supernodes</source>
+        <translation>Number of Supernodes</translation>
     </message>
     <message>
         <location line="+27"/>

@@ -2788,8 +2788,8 @@ https://www.transifex.com/projects/p/osmium/</translation>
         <translation>Количество обычных Мастернод</translation>
     </message>
     <message>
-        <source>Number of EvoNodes</source>
-        <translation>Количество нод Evo</translation>
+        <source>Number of Supernodes</source>
+        <translation>Количество нод Super</translation>
     </message>
     <message>
         <source>Current block height</source>

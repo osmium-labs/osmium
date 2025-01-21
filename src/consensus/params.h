@@ -30,6 +30,7 @@ enum BuriedDeployment : int16_t
     DEPLOYMENT_DIP0020,
     DEPLOYMENT_DIP0024,
     DEPLOYMENT_BRR,
+    DEPLOYMENT_SUPERNODES,
     DEPLOYMENT_V19,
 };
 constexpr bool ValidDeployment(BuriedDeployment dep) { return DEPLOYMENT_HEIGHTINCB <= dep && dep <= DEPLOYMENT_V19; }
@@ -89,6 +90,7 @@ struct Params {
     int BIP16Height;
     int nMasternodePaymentsStartBlock;
     int nMasternodePaymentsIncreaseBlock;
+    int nMasternodePaymentsIncreaseBlock2;
     int nMasternodePaymentsIncreasePeriod; // in blocks
     int nInstantSendConfirmationsRequired; // in blocks
     int nInstantSendKeepLock; // in blocks
@@ -141,6 +143,8 @@ struct Params {
      * Default BIP9Deployment::nThresholdStart value for deployments where it's not specified and for unknown deployments.
      * Examples: 1916 for 95%, 1512 for testchains.
      */
+    int SupernodeHeight;
+    /** Block height at which Supernodes become active */
     uint32_t nRuleChangeActivationThreshold;
     // Default BIP9Deployment::nWindowSize value for deployments where it's not specified and for unknown deployments.
     uint32_t nMinerConfirmationWindow;
@@ -200,6 +204,8 @@ struct Params {
             return BRRHeight;
         case DEPLOYMENT_V19:
             return V19Height;
+        case DEPLOYMENT_SUPERNODES:
+            return SupernodeHeight;
         } // no default case, so the compiler can warn about missing cases
         return std::numeric_limits<int>::max();
     }

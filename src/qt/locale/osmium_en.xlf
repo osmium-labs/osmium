@@ -3761,8 +3761,8 @@ https://www.transifex.com/projects/p/osmium/</target>
         <context-group purpose="location"><context context-type="linenumber">302</context></context-group>
       </trans-unit>
       <trans-unit id="_msg677" approved="yes">
-        <source xml:space="preserve">Number of EvoNodes</source>
-        <target xml:space="preserve">Number of EvoNodes</target>
+        <source xml:space="preserve">Number of Supernodes</source>
+        <target xml:space="preserve">Number of Supernodes</target>
         <context-group purpose="location"><context context-type="linenumber">322</context></context-group>
       </trans-unit>
       <trans-unit id="_msg678" approved="yes">
