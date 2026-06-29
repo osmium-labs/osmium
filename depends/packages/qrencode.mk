@@ -2,7 +2,6 @@ package=qrencode
 $(package)_version=4.1.1
 $(package)_download_path=https://github.com/fukuchi/libqrencode/archive/refs/tags/
 $(package)_file_name=v$($(package)_version).tar.gz
-$(package)_build_subdir=libqrencode-$($(package)_version)
 $(package)_sha256_hash=5385bc1b8c2f20f3b91d258bf8ccc8cf62023935df2d2676b5b67049f31a049c
 
 define $(package)_set_vars
@@ -14,7 +13,9 @@ $(package)_config_opts_android=--with-pic
 endef
 
 define $(package)_preprocess_cmds
-  cp -f $(BASEDIR)/config.guess $(BASEDIR)/config.sub use
+  mkdir -p m4 use && \
+  autoreconf -if && \
+  cp -f $(BASEDIR)/config.guess $(BASEDIR)/config.sub .
 endef
 
 define $(package)_config_cmds
@@ -30,5 +31,5 @@ define $(package)_stage_cmds
 endef
 
 define $(package)_postprocess_cmds
-  rm lib/*.la
+  rm -f lib/*.la
 endef
