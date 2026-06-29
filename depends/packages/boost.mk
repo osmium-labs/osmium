@@ -1,8 +1,8 @@
 package=boost
-$(package)_version=1.77.0
+$(package)_version=1.80.0
 $(package)_download_path=https://archives.boost.io/release/$($(package)_version)/source
-$(package)_file_name=boost_1_77_0.tar.bz2
-$(package)_sha256_hash=fc9f85fc030e233142908241af7a846e60630aa7388de9a5fafb1f3a26840854
+$(package)_file_name=boost_1_80_0.tar.bz2
+$(package)_sha256_hash=1e19565d82e43bc59209a168f5ac899d3ba471d55c7610c677d4ccf2c9c500c0
 $(package)_dependencies=native_b2
 
 define $(package)_set_vars
@@ -17,10 +17,7 @@ $(package)_config_opts_x86_64=architecture=x86 address-model=64
 $(package)_config_opts_i686=architecture=x86 address-model=32
 $(package)_config_opts_aarch64=address-model=64
 $(package)_config_opts_armv7a=address-model=32
-$(package)_config_opts_i686_android=address-model=32
-$(package)_config_opts_aarch64_android=address-model=64
-$(package)_config_opts_x86_64_android=address-model=64
-$(package)_config_opts_armv7a_android=address-model=32
+
 unary_function=unary_function
 ifneq (,$(findstring clang,$($(package)_cxx)))
 $(package)_toolset_$(host_os)=clang
@@ -30,7 +27,8 @@ endif
 else
 $(package)_toolset_$(host_os)=gcc
 endif
-$(package)_config_libraries=filesystem,test
+
+$(package)_config_libraries=filesystem,test,system,thread,program_options
 $(package)_cxxflags=-std=c++17 -fvisibility=hidden
 $(package)_cxxflags_linux=-fPIC
 $(package)_cxxflags_freebsd=-fPIC
@@ -39,10 +37,16 @@ $(package)_cxxflags_android=-fPIC
 $(package)_cxxflags_x86_64=-fcf-protection=full
 endef
 
-# Fix missing unary_function in clang15 on macos, can be removed after upgrading to 1.81
 define $(package)_preprocess_cmds
   sed -i.old "s/unary_function/$(unary_function)/" boost/container_hash/hash.hpp && \
-  echo "using $($(package)_toolset_$(host_os)) : : $($(package)_cxx) : <cflags>\"$($(package)_cflags)\" <cxxflags>\"$($(package)_cxxflags)\" <compileflags>\"$($(package)_cppflags)\" <linkflags>\"$($(package)_ldflags)\" <archiver>\"$($(package)_ar)\" <striper>\"$(host_STRIP)\"  <ranlib>\"$(host_RANLIB)\" <rc>\"$(host_WINDRES)\" : ;" > user-config.jam
+  \
+  if [ "$(host_os)" = "mingw32" ]; then \
+    echo "using gcc : mingw32 : $($(package)_cxx) : <rc>$(host_WINDRES) <archiver>$(host_AR) <ranlib>$(host_RANLIB) <cflags>\"$($(package)_cflags)\" <cxxflags>\"$($(package)_cxxflags)\" <compileflags>\"$($(package)_cppflags)\" ;" > user-config.jam; \
+  elif [ "$(host_os)" = "darwin" ]; then \
+    echo "using clang : darwin : $($(package)_cxx) : <archiver>$(host_AR) <ranlib>$(host_RANLIB) <cflags>\"$($(package)_cflags)\" <cxxflags>\"$($(package)_cxxflags)\" <compileflags>\"$($(package)_cppflags)\" ;" > user-config.jam; \
+  else \
+    echo "using gcc : : $($(package)_cxx) : <archiver>$(host_AR) <ranlib>$(host_RANLIB) <cflags>\"$($(package)_cflags)\" <cxxflags>\"$($(package)_cxxflags)\" <compileflags>\"$($(package)_cppflags)\" ;" > user-config.jam; \
+  fi
 endef
 
 define $(package)_config_cmds
@@ -50,9 +54,9 @@ define $(package)_config_cmds
 endef
 
 define $(package)_build_cmds
-  b2 -d2 -j2 -d1 --prefix=$($(package)_staging_prefix_dir) $($(package)_config_opts) toolset=$($(package)_toolset_$(host_os)) stage
+  b2 -d2 -j2 --prefix=$($(package)_staging_prefix_dir) $($(package)_config_opts) stage
 endef
 
 define $(package)_stage_cmds
-  b2 -d0 -j4 --prefix=$($(package)_staging_prefix_dir) $($(package)_config_opts) toolset=$($(package)_toolset_$(host_os)) install
+  b2 -d0 -j4 --prefix=$($(package)_staging_prefix_dir) $($(package)_config_opts) install
 endef
