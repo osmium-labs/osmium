@@ -531,15 +531,15 @@ CBlock getBlock13b8a()
     return block;
 }
 
-TestChainV19Setup::TestChainV19Setup() : TestChainSetup(899)
+TestChainV19Setup::TestChainV19Setup() : TestChainSetup(349)
 {
     bool v19_just_activated{DeploymentActiveAfter(::ChainActive().Tip(), Params().GetConsensus(), Consensus::DEPLOYMENT_V19) &&
                             !DeploymentActiveAt(*::ChainActive().Tip(), Params().GetConsensus(), Consensus::DEPLOYMENT_V19)};
     assert(v19_just_activated);
 }
 
-// 5 blocks earlier
-TestChainV19BeforeActivationSetup::TestChainV19BeforeActivationSetup() : TestChainSetup(894)
+// 6 blocks earlier
+TestChainV19BeforeActivationSetup::TestChainV19BeforeActivationSetup() : TestChainSetup(344)
 {
     bool v19_active{DeploymentActiveAfter(::ChainActive().Tip(), Params().GetConsensus(), Consensus::DEPLOYMENT_V19)};
     assert(!v19_active);
