@@ -199,9 +199,12 @@ BasicTestingSetup::~BasicTestingSetup()
     try {
         fs::remove_all(m_path_root);
     } catch (const fs::filesystem_error& e) {
-        #ifdef __unix__
+        #ifdef _WIN32
+        std::string cmd = "rmdir /s /q \"" + m_path_root.string() + "\"";
+        std::system(cmd.c_str());
+        #elif defined(__unix__)
         std::string cmd = "rm -rf \"" + m_path_root.string() + "\"";
-        std::system(cmd);
+        std::system(cmd.c_str());
         #endif
     }
 
