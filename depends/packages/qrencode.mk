@@ -33,3 +33,4 @@ endef
 define $(package)_postprocess_cmds
   rm -f lib/*.la
 endef
+
