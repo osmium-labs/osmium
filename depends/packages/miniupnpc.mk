@@ -1,9 +1,8 @@
 package=miniupnpc
-$(package)_version=2.2.2
-$(package)_download_path=https://miniupnp.tuxfamily.org/files/
+$(package)_version=2.2.8
+$(package)_download_path=http://miniupnp.free.fr/files/
 $(package)_file_name=$(package)-$($(package)_version).tar.gz
-$(package)_sha256_hash=888fb0976ba61518276fe1eda988589c700a3f2a69d71089260d75562afd3687
-$(package)_patches=dont_leak_info.patch respect_mingw_cflags.patch
+$(package)_sha256_hash=05b929679091b9921b6b6c1f25e39e4c8d1f4d46c8feb55a412aa697aee03a93
 
 # Next time this package is updated, ensure that _WIN32_WINNT is still properly set.
 # See discussion in https://github.com/bitcoin/bitcoin/pull/25964.
@@ -14,17 +13,12 @@ $(package)_build_opts_mingw32=-f Makefile.mingw CFLAGS="$($(package)_cflags) -D_
 $(package)_build_env+=CFLAGS="$($(package)_cflags) $($(package)_cppflags)" AR="$($(package)_ar)"
 endef
 
-define $(package)_preprocess_cmds
-  patch -p1 < $($(package)_patch_dir)/dont_leak_info.patch && \
-  patch -p1 < $($(package)_patch_dir)/respect_mingw_cflags.patch
-endef
-
 define $(package)_build_cmds
-	$(MAKE) libminiupnpc.a $($(package)_build_opts)
+$(MAKE) build/libminiupnpc.a $($(package)_build_opts)
 endef
 
 define $(package)_stage_cmds
-	mkdir -p $($(package)_staging_prefix_dir)/include/miniupnpc $($(package)_staging_prefix_dir)/lib &&\
-	install *.h $($(package)_staging_prefix_dir)/include/miniupnpc &&\
-	install libminiupnpc.a $($(package)_staging_prefix_dir)/lib
+        mkdir -p $($(package)_staging_prefix_dir)/include/miniupnpc $($(package)_staging_prefix_dir)/lib &&\
+        install include/*.h $($(package)_staging_prefix_dir)/include/miniupnpc &&\
+        install build/libminiupnpc.a $($(package)_staging_prefix_dir)/lib
 endef
