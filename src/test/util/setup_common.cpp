@@ -196,7 +196,15 @@ BasicTestingSetup::~BasicTestingSetup()
     m_node.evodb.reset();
 
     LogInstance().DisconnectTestLogger();
-    fs::remove_all(m_path_root);
+    try {
+        fs::remove_all(m_path_root);
+    } catch (const fs::filesystem_error& e) {
+        #ifdef __unix__
+        std::string cmd = "rm -rf \"" + m_path_root.string() + "\"";
+        std::system(cmd);
+        #endif
+    }
+
     gArgs.ClearArgs();
     ECC_Stop();
 }
