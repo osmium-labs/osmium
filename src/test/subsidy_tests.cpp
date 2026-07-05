@@ -13,88 +13,33 @@ BOOST_FIXTURE_TEST_SUITE(subsidy_tests, TestingSetup)
 
 BOOST_AUTO_TEST_CASE(block_subsidy_test)
 {
+    // Maximus emission schedule (see whitepaper):
+    //   block 1 premine: 6000 MAXI
+    //   regular reward: 0.5 MAXI, reduced by 0.8% every 36000 blocks (~monthly)
+    //   15% superblock allocation for nPrevHeight > 18000
+    //   supply cap trajectory: ~2.25M MAXI
+    // Expected values computed by replicating GetBlockSubsidyHelper's integer math.
     const auto chainParams = CreateChainParams(*m_node.args, CBaseChainParams::MAIN);
+    const auto& consensus = chainParams->GetConsensus();
 
-    uint32_t nPrevBits;
-    int32_t nPrevHeight;
-    CAmount nSubsidy;
+    struct Probe { int nPrevHeight; CAmount miner; CAmount superblock; };
+    const Probe probes[] = {
+        {       0, CAmount{600000000000}, CAmount{0}},        // premine
+        {       1, CAmount{50000000},     CAmount{0}},        // initial 0.5
+        {   17999, CAmount{50000000},     CAmount{0}},        // before superblock start
+        {   18000, CAmount{50000000},     CAmount{0}},        // boundary: strict >, still no cut
+        {   18001, CAmount{42500000},     CAmount{7500000}},  // 15% superblock cut begins
+        {   35999, CAmount{42500000},     CAmount{7500000}},  // before 1st reduction
+        {   36000, CAmount{42160000},     CAmount{7440000}},  // 1st monthly 0.8% reduction
+        {   72000, CAmount{41822720},     CAmount{7380480}},  // 2nd reduction
+        {  360000, CAmount{39219824},     CAmount{6921144}},  // ~10 months in
+        { 1800000, CAmount{28442797},     CAmount{5019315}},  // ~50 months in
+    };
 
-    // details for block 4249 (subsidy returned will be for block 4250)
-    nPrevBits = 0x1c4a47c4;
-    nPrevHeight = 4249;
-    nSubsidy = GetBlockSubsidyInner(nPrevBits, nPrevHeight, chainParams->GetConsensus(), /*fV20Active=*/ false);
-    BOOST_CHECK_EQUAL(nSubsidy, 50000000000ULL);
-
-    // details for block 4249 (subsidy returned will be for block 4250)
-    // v20 should make difference for blocks with low diff, regardless of their height
-    nPrevBits = 0x1c4a47c4;
-    nPrevHeight = 4249;
-    nSubsidy = GetBlockSubsidyInner(nPrevBits, nPrevHeight, chainParams->GetConsensus(), /*fV20Active=*/ true);
-    BOOST_CHECK_EQUAL(nSubsidy, 500000000ULL);
-
-    // details for block 4501 (subsidy returned will be for block 4502)
-    nPrevBits = 0x1c4a47c4;
-    nPrevHeight = 4501;
-    nSubsidy = GetBlockSubsidyInner(nPrevBits, nPrevHeight, chainParams->GetConsensus(), /*fV20Active=*/ false);
-    BOOST_CHECK_EQUAL(nSubsidy, 5600000000ULL);
-
-    // details for block 5464 (subsidy returned will be for block 5465)
-    nPrevBits = 0x1c29ec00;
-    nPrevHeight = 5464;
-    nSubsidy = GetBlockSubsidyInner(nPrevBits, nPrevHeight, chainParams->GetConsensus(), /*fV20Active=*/ false);
-    BOOST_CHECK_EQUAL(nSubsidy, 2100000000ULL);
-
-    // details for block 5465 (subsidy returned will be for block 5466)
-    nPrevBits = 0x1c29ec00;
-    nPrevHeight = 5465;
-    nSubsidy = GetBlockSubsidyInner(nPrevBits, nPrevHeight, chainParams->GetConsensus(), /*fV20Active=*/ false);
-    BOOST_CHECK_EQUAL(nSubsidy, 12200000000ULL);
-
-    // details for block 17588 (subsidy returned will be for block 17589)
-    nPrevBits = 0x1c08ba34;
-    nPrevHeight = 17588;
-    nSubsidy = GetBlockSubsidyInner(nPrevBits, nPrevHeight, chainParams->GetConsensus(), /*fV20Active=*/ false);
-    BOOST_CHECK_EQUAL(nSubsidy, 6100000000ULL);
-
-    // details for block 99999 (subsidy returned will be for block 100000)
-    nPrevBits = 0x1b10cf42;
-    nPrevHeight = 99999;
-    nSubsidy = GetBlockSubsidyInner(nPrevBits, nPrevHeight, chainParams->GetConsensus(), /*fV20Active=*/ false);
-    BOOST_CHECK_EQUAL(nSubsidy, 500000000ULL);
-
-    // details for block 210239 (subsidy returned will be for block 210240)
-    nPrevBits = 0x1b11548e;
-    nPrevHeight = 210239;
-    nSubsidy = GetBlockSubsidyInner(nPrevBits, nPrevHeight, chainParams->GetConsensus(), /*fV20Active=*/ false);
-    BOOST_CHECK_EQUAL(nSubsidy, 500000000ULL);
-
-    // 1st subsidy reduction happens here
-
-    // details for block 210240 (subsidy returned will be for block 210241)
-    nPrevBits = 0x1b10d50b;
-    nPrevHeight = 210240;
-    nSubsidy = GetBlockSubsidyInner(nPrevBits, nPrevHeight, chainParams->GetConsensus(), /*fV20Active=*/ false);
-    BOOST_CHECK_EQUAL(nSubsidy, 464285715ULL);
-
-    // details for block 210240 (subsidy returned will be for block 210241)
-    // v20 makes no difference for blocks with high enough diff while budgets aren't active yet
-    nPrevBits = 0x1b10d50b;
-    nPrevHeight = 210240;
-    nSubsidy = GetBlockSubsidyInner(nPrevBits, nPrevHeight, chainParams->GetConsensus(), /*fV20Active=*/ true);
-    BOOST_CHECK_EQUAL(nSubsidy, 464285715ULL);
-
-    // details for block 420480 (subsidy returned will be for block 210241)
-    nPrevBits = 0x1b10d50b;
-    nPrevHeight = 420480;
-    nSubsidy = GetBlockSubsidyInner(nPrevBits, nPrevHeight, chainParams->GetConsensus(), /*fV20Active=*/ false);
-    BOOST_CHECK_EQUAL(nSubsidy, 388010205ULL); // 431122450 * 0.9
-
-    // details for block 420480 (subsidy returned will be for block 210241)
-    // budgets are active, reallocation matters now
-    nPrevBits = 0x1b10d50b;
-    nPrevHeight = 420480;
-    nSubsidy = GetBlockSubsidyInner(nPrevBits, nPrevHeight, chainParams->GetConsensus(), /*fV20Active=*/ true);
-    BOOST_CHECK_EQUAL(nSubsidy, 344897960ULL); // 431122450 * 0.8
+    for (const auto& p : probes) {
+        BOOST_CHECK_EQUAL(GetBlockSubsidyInner(0, p.nPrevHeight, consensus, /*fV20Active=*/false), p.miner);
+        BOOST_CHECK_EQUAL(GetSuperblockSubsidyInner(0, p.nPrevHeight, consensus, /*fV20Active=*/false), p.superblock);
+    }
 }
 
 BOOST_AUTO_TEST_SUITE_END()
