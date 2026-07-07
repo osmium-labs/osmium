@@ -273,6 +273,33 @@ BOOST_AUTO_TEST_CASE(processnewblock_signals_ordering)
  */
     BOOST_AUTO_TEST_CASE(mempool_locks_reorg_DISABLED)
 {
+    // ===================================================================
+    // DISABLED PENDING LLMQ FUNCTIONAL-TEST SUPPORT — not a consensus bug.
+    //
+    // This test hand-builds synthetic fork chains in memory, then submits
+    // them to trigger a reorg. On this fork, blocks inside a DKG mining
+    // window must carry quorum commitments (llmq/blockprocessor.cpp:
+    // ProcessBlock -> GetNumCommitmentsRequired, "bad-qc-missing").
+    //
+    // Window math (LLMQ_TEST, params.h): dkgInterval=24, window=[10,18],
+    // so e.g. cycle-2 requires a commitment at heights 34..42. The test's
+    // 110+ block chains cross several such windows.
+    //
+    // Why it can't be fixed cheaply here: GetNumCommitmentsRequired,
+    // IsMiningPhase, and GetQuorumBlockHash are all ACTIVE-CHAIN-relative
+    // (they assert nHeight <= ChainActive().Height()+1 and read active-chain
+    // ancestors). The test builds blocks off-chain / ahead of tip, so a
+    // commitment fabricated at build time references the wrong ancestry once
+    // a reorg is in flight. Correctly fixing requires either reimplementing
+    // window/commitment fabrication against arbitrary in-memory chains, or
+    // restructuring the submit flow (risking the mempool-atomicity property
+    // this test exists to verify).
+    //
+    // Correct home: functional tests with a real regtest node running actual
+    // DKG sessions (see -llmqtestparams). Do NOT "fix" by disabling LLMQ on
+    // regtest wholesale — that breaks the functional LLMQ suite needed before
+    // mainnet (was attempted and reverted).
+    // ===================================================================
     return;
     bool ignored;
     auto ProcessBlock = [&](std::shared_ptr<const CBlock> block) -> bool {
