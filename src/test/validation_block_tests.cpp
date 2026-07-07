@@ -277,7 +277,6 @@ BOOST_AUTO_TEST_CASE(processnewblock_signals_ordering)
     bool ignored;
     auto ProcessBlock = [&](std::shared_ptr<const CBlock> block) -> bool {
         bool ok = Assert(m_node.chainman)->ProcessNewBlock(Params(), block, /* fForceProcessing */ true, /* fNewBlock */ &ignored);
-        if (!ok) printf("PROCESSBLOCK FAILED: hash=%s height~=%d time=%u\n", block->GetHash().ToString().substr(0,12).c_str(), ::ChainActive().Height() + 1, block->nTime);
         return ok;
     };
     // Process all mined blocks
