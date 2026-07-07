@@ -37,6 +37,17 @@ bool VerifyWallets(interfaces::Chain& chain)
             chain.initError(strprintf(_("Specified -walletdir \"%s\" is a relative path"), wallet_dir.string()));
             return false;
         }
+        // On newer boost, fs::canonical no longer strips a trailing separator,
+        // leaving filename() empty (e.g. ".../wallets/"). Normalize so the stored
+        // walletdir is consistent regardless of how the user typed it.
+        // fs::canonical on newer boost leaves a trailing separator (filename()
+        // becomes "."), e.g. ".../wallets/". Strip trailing separators so the
+        // stored walletdir is consistent regardless of how the user typed it.
+        {
+            std::string wd = canonical_wallet_dir.string();
+            while (wd.size() > 1 && (wd.back() == '/' || wd.back() == '\\')) wd.pop_back();
+            canonical_wallet_dir = fs::path(wd);
+        }
         gArgs.ForceSetArg("-walletdir", canonical_wallet_dir.string());
     }
 
