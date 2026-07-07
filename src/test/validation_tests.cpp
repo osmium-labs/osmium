@@ -27,8 +27,8 @@ BOOST_AUTO_TEST_CASE(test_assumeutxo)
     }
 
     const auto out110 = *ExpectedAssumeutxo(110, *params);
-    BOOST_CHECK_EQUAL(out110.hash_serialized.ToString(), "9b2a277a3e3b979f1a539d57e949495d7f8247312dbc32bce6619128c192b44b");
-    BOOST_CHECK_EQUAL(out110.nChainTx, (unsigned int)110);
+    BOOST_CHECK_EQUAL(out110.hash_serialized.ToString(), "927d43dbac32e62d607da7e2f1c12274cd30c341eae38a7e6019083c655c7145"); // regenerated for Maximus (devfee UTXOs)
+    BOOST_CHECK_EQUAL(out110.nChainTx, (unsigned int)170);
 
     const auto out210 = *ExpectedAssumeutxo(210, *params);
     BOOST_CHECK_EQUAL(out210.hash_serialized.ToString(), "d4c97d32882583b057efc3dce673e44204851435e6ffcef20346e69cddc7c91e");
