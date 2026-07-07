@@ -861,11 +861,11 @@ public:
         m_assumeutxo_data = MapAssumeutxo{
             {
                 110,
-                {AssumeutxoHash{uint256S("0x9b2a277a3e3b979f1a539d57e949495d7f8247312dbc32bce6619128c192b44b")}, 110},
+                {AssumeutxoHash{uint256S("0x927d43dbac32e62d607da7e2f1c12274cd30c341eae38a7e6019083c655c7145")}, 170}, // Maximus regtest: hash+coin-count regenerated (devfee adds a 2nd coinbase UTXO past height 50)
             },
             {
                 210,
-                {AssumeutxoHash{uint256S("0xd4c97d32882583b057efc3dce673e44204851435e6ffcef20346e69cddc7c91e")}, 210},
+                {AssumeutxoHash{uint256S("0xd4c97d32882583b057efc3dce673e44204851435e6ffcef20346e69cddc7c91e")}, 210}, // TODO: inherited Dash value, not yet regenerated for Maximus (no test exercises height 210 currently)
             },
         };
 
