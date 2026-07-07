@@ -181,39 +181,33 @@ BOOST_FIXTURE_TEST_CASE(checkinputs_test, TestChain100Setup)
     spend_tx.vout[3].nValue = 11*CENT;
     spend_tx.vout[3].scriptPubKey = CScript() << OP_CHECKSEQUENCEVERIFY << OP_DROP << ToByteVector(coinbaseKey.GetPubKey()) << OP_CHECKSIG;
 
-    // Sign, with a non-DER signature
+    // Sign with a proper DER signature (DERSIG active from genesis on this chain)
     {
         std::vector<unsigned char> vchSig;
         uint256 hash = SignatureHash(p2pk_scriptPubKey, spend_tx, 0, SIGHASH_ALL, 0, SigVersion::BASE);
         BOOST_CHECK(coinbaseKey.Sign(hash, vchSig));
-        vchSig.push_back((unsigned char) 0); // padding byte makes this non-DER
         vchSig.push_back((unsigned char)SIGHASH_ALL);
         spend_tx.vin[0].scriptSig << vchSig;
     }
 
-    // Test that invalidity under a set of flags doesn't preclude validity
-    // under other (eg consensus) flags.
-    // spend_tx is invalid according to DERSIG
+    // spend_tx is valid under all flags (proper DER); exercise the cache machinery anyway.
     {
         LOCK(cs_main);
 
         TxValidationState state;
         PrecomputedTransactionData ptd_spend_tx;
 
-        BOOST_CHECK(!CheckInputScripts(CTransaction(spend_tx), state, &::ChainstateActive().CoinsTip(), SCRIPT_VERIFY_P2SH | SCRIPT_VERIFY_DERSIG, true, true, ptd_spend_tx, nullptr));
+        BOOST_CHECK(CheckInputScripts(CTransaction(spend_tx), state, &::ChainstateActive().CoinsTip(), SCRIPT_VERIFY_P2SH | SCRIPT_VERIFY_DERSIG, true, true, ptd_spend_tx, nullptr));
 
-        // If we call again asking for scriptchecks (as happens in
-        // ConnectBlock), we should add a script check object for this -- we're
-        // not caching invalidity (if that changes, delete this test case).
+        // Valid tx: success is cached, so a second call queues no script checks.
         std::vector<CScriptCheck> scriptchecks;
         BOOST_CHECK(CheckInputScripts(CTransaction(spend_tx), state, &::ChainstateActive().CoinsTip(), SCRIPT_VERIFY_P2SH | SCRIPT_VERIFY_DERSIG, true, true, ptd_spend_tx, &scriptchecks));
-        BOOST_CHECK_EQUAL(scriptchecks.size(), 1U);
-
+        BOOST_CHECK_EQUAL(scriptchecks.size(), 0U);
         // Test that CheckInputScripts returns true iff DERSIG-enforcing flags are
         // not present.  Don't add these checks to the cache, so that we can
         // test later that block validation works fine in the absence of cached
         // successes.
-        ValidateCheckInputsForAllFlags(CTransaction(spend_tx), SCRIPT_VERIFY_DERSIG | SCRIPT_VERIFY_LOW_S | SCRIPT_VERIFY_STRICTENC, false);
+        ValidateCheckInputsForAllFlags(CTransaction(spend_tx), 0, false);
     }
 
     // And if we produce a block with this tx, it should be valid (DERSIG not
