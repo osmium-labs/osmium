@@ -1,159 +1,141 @@
-NOTE : 12.1 -- REWRITE
+Masternode Governance & Budget System
+======================================
 
+Maximus supports decentralized budgets ("governance objects") that are paid
+directly from the blockchain via superblocks. This document reflects the
+current `gobject`-based RPC interface (verified against `src/rpc/governance.cpp`).
 
-Masternode Budget API
-=======================
+> This document replaces an earlier version describing a legacy
+> `mngovernance`/`mnfinalbudget` interface that no longer exists in this
+> codebase.
 
-Maximus now supports full decentralized budgets that are paid directly from the blockchain via superblocks once per month.
+Overview
+--------
 
-Budgets go through a series of stages before being paid:
- * prepare - create a special transaction that destroys coins in order to make a proposal
- * submit - propagate transaction to peers on network
- * voting - lobby for votes on your proposal
- * get enough votes - make it into the budget
- * finalization - at the end of each payment period, proposals are sorted then compiled into a finalized budget
- * finalized budget voting - masternodes that agree with the finalization will vote on that budget
- * payment - the winning finalized budget is paid
+Governance objects go through these stages:
 
+ * **prepare** — create a collateral transaction that funds a proposal (fee: **1 MAXI**, see `GOVERNANCE_PROPOSAL_FEE_TX`)
+ * **submit** — propagate the proposal to the network
+ * **voting** — masternodes vote `funding`/`valid`/`delete`/`endorsed`, each with an outcome of `yes`/`no`/`abstain`
+ * **superblock** — once per cycle, funded proposals are paid out automatically by the network
 
-1. Prepare collateral transaction
---
+Superblocks occur every `nSuperblockCycle` blocks (**36000 blocks (~1 month) on mainnet**),
+starting at block `nSuperblockStartBlock` (**18000**). These values differ on
+testnet/devnet/regtest — query them live with `getgovernanceinfo` rather than
+assuming mainnet numbers.
 
-In this transaction we prepare collateral for "_cool-project_". This proposal will pay _1200_ MAXIMUS, _12_ times over the course of a year totaling _24000_ MAXIMUS.
+1. Prepare a proposal
+----------------------
 
-**Warning: if you change any fields within this command, the collateral transaction will become invalid.**
+    gobject prepare <parent-hash> <revision> <time> <data-hex> <use-IS> [outputHash] [outputIndex]
 
-Format: ```mngovernance prepare proposal-name url payment-count block-start maximus-address monthly-payment-maximus```
+  - `parent-hash` — hash of the parent object; use `"0"` for a top-level proposal
+  - `revision` — object revision number (start at `1`)
+  - `time` — creation timestamp
+  - `data-hex` — the proposal payload, hex-encoded JSON (name, URL, payment amount, start/end block, payout address)
+  - `use-IS` — deprecated, ignored (kept for backward compatibility)
+  - `outputHash`/`outputIndex` — optional: a specific UTXO to pay the collateral fee from
 
-Example: ```mngovernance prepare cool-project http://www.cool-project/one.json 12 100000 y6R9oN12KnB9zydzTLc3LikD9cCjjQzYG7 1200 true```
+This creates and broadcasts a **1 MAXI** collateral transaction. Output is the
+transaction hash — save it for the next step.
 
-Output: ```464a0eb70ea91c94295214df48c47baa72b3876cfb658744aaf863c7b5bf1ff0```
+**Warning:** if any field in the proposal data changes after this step, the
+collateral transaction becomes invalid and must be recreated.
 
-This is the collateral hash, copy this output for the next step.
+2. Submit the proposal
+-----------------------
 
-2 Submit proposal to network
---
+    gobject submit <parent-hash> <revision> <time> <data-hex> <fee-txid>
 
-Now we can submit our proposal to the network.
+`fee-txid` is the collateral transaction hash from step 1. The collateral
+transaction must have enough confirmations before this succeeds. Output is
+the proposal's governance-object hash, used by all subsequent commands.
 
-Format: ```mngovernance submit proposal-name url payment-count block-start maximus-address monthly-payment-maximus fee-tx```
+3. Inspect a proposal
+-----------------------
 
-Example: ```mngovernance submit cool-project http://www.cool-project/one.json 12 100000 y6R9oN12KnB9zydzTLc3LikD9cCjjQzYG7 1200 464a0eb70ea91c94295214df48c47baa72b3876cfb658744aaf863c7b5bf1ff0```
+    gobject get <governance-hash>
 
-Output : ```a2b29778ae82e45a973a94309ffa6aa2e2388b8f95b39ab3739f0078835f0491```
+Returns full details: data, collateral hash, vote tallies (`AbsoluteYesCount`,
+`YesCount`, `NoCount`, `AbstainCount`) per signal (funding/valid/delete/endorsed),
+and local validity status.
 
-This is your proposal hash, which other nodes will use to vote on it.
+    gobject list [signal] [type]
 
-3. Lobby for votes
---
+Lists all known governance objects. `signal` filters by
+`valid|funding|delete|endorsed|all` (default `valid`); `type` filters by
+`proposals|triggers|all` (default `all`).
 
-Double check your information.
+4. Vote on a proposal
+-----------------------
 
-Format: ```mngovernance getproposal proposal-hash```
+Requires a wallet loaded with masternode voting keys.
 
-Example: ```mngovernance getproposal a2b29778ae82e45a973a94309ffa6aa2e2388b8f95b39ab3739f0078835f0491```
-￼
-```
-{
-    "Name" : "cool-project",
-    "Hash" : "a2b29778ae82e45a973a94309ffa6aa2e2388b8f95b39ab3739f0078835f0491",
-    "FeeHash" : "464a0eb70ea91c94295214df48c47baa72b3876cfb658744aaf863c7b5bf1ff0",
-    "URL" : "http://www.cool-project/one.json",
-    "BlockStart" : 100000,
-    "BlockEnd" : 100625,
-    "TotalPaymentCount" : 12,
-    "RemainingPaymentCount" : 12,
-    "PaymentAddress" : "y6R9oN12KnB9zydzTLc3LikD9cCjjQzYG7",
-    "Ratio" : 0.00000000,
-    "Yeas" : 0,
-    "Nays" : 0,
-    "Abstains" : 0,
-    "TotalPayment" : 14400.00000000,
-    "MonthlyPayment" : 1200.00000000,
-    "IsValid" : true,
-    "fValid" : true
-}
-```
+    gobject vote-many <governance-hash> <vote> <vote-outcome>
 
-If everything looks correct, you can ask for votes from other masternodes. To vote on a proposal, load a wallet with _masternode.conf_ file. You do not need to access your cold wallet to vote for proposals.
+Votes with every masternode voting key present in the local wallet.
+  - `vote` — one of `funding|valid|delete|endorsed`
+  - `vote-outcome` — one of `yes|no|abstain`
 
-Format: ```mngovernance vote proposal-hash [yes|no]```
+    gobject vote-alias <governance-hash> <vote> <vote-outcome> <protx-hash>
 
-Example: ```mngovernance vote a2b29778ae82e45a973a94309ffa6aa2e2388b8f95b39ab3739f0078835f0491 yes```
+Votes with a single specific masternode's voting key (by its `proTxHash`).
 
-4.  Make it into the budget
---
+A proposal typically needs its `AbsoluteYesCount` on the `funding` signal to
+clear a threshold of roughly 10% of the current masternode count (computed
+live — see `fundingthreshold` in `getgovernanceinfo`, below) to be included
+in the next superblock.
 
-After you get enough votes, execute ```mngovernance projection``` to see if you made it into the budget. If you the budget was finalized at this moment which proposals would be in it. Note: Proposals must be active at least 1 day on the network and receive 10% of the masternode network in yes votes in order to qualify (E.g. if there is 3500 masternodes, you will need 350 yes votes.)
+5. Check governance & superblock parameters
+---------------------------------------------
 
-```mngovernance projection```:￼
-```
-{
-    "cool-project" : {
-        "Hash" : "a2b29778ae82e45a973a94309ffa6aa2e2388b8f95b39ab3739f0078835f0491",
-        "FeeHash" : "464a0eb70ea91c94295214df48c47baa72b3876cfb658744aaf863c7b5bf1ff0",
-        "URL" : "http://www.cool-project/one.json",
-        "BlockStart" : 100000,
-        "BlockEnd" : 100625,
-        "TotalPaymentCount" : 12,
-        "RemainingPaymentCount" : 12,
-        "PaymentAddress" : "y6R9oN12KnB9zydzTLc3LikD9cCjjQzYG7",
-        "Ratio" : 1.00000000,
-        "Yeas" : 33,
-        "Nays" : 0,
-        "Abstains" : 0,
-        "TotalPayment" : 14400.00000000,
-        "MonthlyPayment" : 1200.00000000,
-        "IsValid" : true,
-        "fValid" : true
-    }
-}
-```
+    getgovernanceinfo
 
-5. Finalized budget
---
+Returns live parameters, including:
+  - `governanceminquorum` — absolute minimum vote count for a governance action
+  - `proposalfee` — current collateral fee required (in MAXI)
+  - `superblockcycle` — blocks between superblocks
+  - `superblockmaturitywindow` — the superblock trigger creation window
+  - `lastsuperblock` / `nextsuperblock` — block heights
+  - `fundingthreshold` — absolute yes-vote count currently required to fund a proposal
+  - `governancebudget` — total superblock budget available next cycle, in MAXI
 
-```
-"main" : {
-        "FeeTX" : "d6b8de9a4cadfe148f91e8fe8eed407199f96639b482f956ae6f539b8339f87c",
-        "Hash" : "6e8bbaba5113de592f6888f200f146448440b7e606fcf62ef84e60e1d5ac7d64",
-        "BlockStart" : 100000,
-        "BlockEnd" : 100000,
-        "Proposals" : "cool-project",
-        "VoteCount" : 46,
-        "Status" : "OK"
-    },
-```
+    getsuperblockbudget <block-height>
+
+Returns the maximum total superblock payout allowed at a given height.
 
 6. Get paid
---
+------------
 
-When block ```1000000``` is reached you'll receive a payment for ```1200``` MAXIMUS to ```y6R9oN12KnB9zydzTLc3LikD9cCjjQzYG7```.
+If a proposal's funding vote clears the threshold before the superblock
+maturity window closes, it is included in the next superblock and paid
+automatically to the address specified in its proposal data — no further
+action is required.
 
-7. Command list
---
+7. Full command reference
+---------------------------
 
-The following RPC commands are supported:
+    gobject "command"... ( "passphrase" )
+      check              - Validate governance object data (proposal only)
+      prepare            - Prepare governance object by signing and creating a collateral tx
+      list-prepared      - List governance objects prepared by this wallet
+      submit             - Submit governance object to network
+      deserialize        - Deserialize governance object from hex string to JSON
+      count              - Count governance objects and votes
+      get                - Get governance object by hash
+      getcurrentvotes    - Get current (tallying) votes for a governance object
+      list               - List governance objects (filterable by signal/type)
+      diff               - List differences since last diff or list
+      vote-alias         - Vote on a governance object by masternode proTxHash
+      vote-many          - Vote on a governance object using all wallet-held voting keys
 
- - mngovernance "command"... ( "passphrase" )
-  - check              - Scan proposals and remove invalid from proposals list
-  - prepare            - Prepare proposal by signing and creating tx
-  - submit             - Submit proposal to network
-  - getproposalhash    - Get proposal hash(es) by proposal name
-  - getproposal        - Show proposal
-  - getvotes           - Show detailed votes list for proposal
-  - list               - List all proposals
-  - nextblock          - Get info about next superblock for budget system
-  - nextsuperblocksize - Get superblock size for a given blockheight
-  - projection         - Show the projection of which proposals will be paid the next cycle
-  - vote               - Vote on a proposal by single masternode (using maximus.conf setup)
-  - vote-many          - Vote on a proposal by all masternodes for which the voting key is in the wallet
-  - vote-alias         - Vote on a proposal by alias
- - mnfinalbudget "command"... ( "passphrase" )
-  - vote-many   - Vote on a finalized budget
-  - vote        - Vote on a finalized budget
-  - show        - Show existing finalized budgets
-  - getvotes    - Get vote information for each finalized budget
-  - prepare     - Manually prepare a finalized budget
-  - submit      - Manually submit a finalized budget
+    voteraw <mn-collateral-tx-hash> <mn-collateral-tx-index> <governance-hash> <vote-signal> <vote-outcome> <time> <vote-sig>
 
+  - Relay a governance vote using an externally-provided signature (for offline/cold-key signing setups)
+
+    getgovernanceinfo
+    getsuperblockbudget <height>
+
+All commands and their exact parameters are also available live via
+`maximus-cli help gobject` and `maximus-cli help <command>` on a running node,
+which will always be authoritative over this document.
