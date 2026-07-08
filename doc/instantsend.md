@@ -11,9 +11,11 @@ When a "Transaction Lock" occurs the hash of the related transaction is broadcas
 * `zmqpubrawtxlock`: publishes the raw transaction when locked via InstantSend
 * `zmqpubhashtxlock`: publishes the transaction hash when locked via InstantSend
 
-This mechanism has been integrated into Bitcore-Node-Maximus which allows for notification to be broadcast through Insight API in one of two ways:
-* WebSocket: [https://github.com/dashpay/insight-api-maximus#web-socket-api](https://github.com/dashpay/insight-api-maximus#web-socket-api)
-* API: [https://github.com/dashpay/insight-api-maximus#instantsend-transactions](https://github.com/dashpay/insight-api-maximus#instantsend-transactions)
+This mechanism is compatible with Dash's Bitcore-Node/Insight API tooling, which allows for notification to be
+broadcast through Insight API in one of two ways (note: this is Dash's own tooling; Maximus does not currently
+maintain its own fork of it):
+* WebSocket: [https://github.com/dashpay/insight-api#web-socket-api](https://github.com/dashpay/insight-api#web-socket-api)
+* API: [https://github.com/dashpay/insight-api#instantsend-transactions](https://github.com/dashpay/insight-api#instantsend-transactions)
 
 #### Command line option
 
