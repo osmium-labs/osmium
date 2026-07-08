@@ -15,6 +15,7 @@
 #include <consensus/validation.h>
 #include <deploymentstatus.h>
 #include <script/standard.h>
+#include <spork.h>
 #include <validation.h>
 #include <validationinterface.h>
 #include <univalue.h>
@@ -1440,7 +1441,7 @@ static bool CheckService(const ProTx& proTx, TxValidationState& state)
         return state.Invalid(TxValidationResult::TX_BAD_SPECIAL, "bad-protx-ipaddr-port");
     }
 
-    if (!proTx.addr.IsIPv4()) {
+    if (!proTx.addr.IsIPv4() && !sporkManager->IsSporkActive(SPORK_25_IPV6_ENABLED)) {
         return state.Invalid(TxValidationResult::TX_BAD_SPECIAL, "bad-protx-ipaddr");
     }
 
