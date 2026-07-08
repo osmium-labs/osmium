@@ -399,6 +399,13 @@ of reasons for this, some of which you can do something about:
 Backporting
 -----------
 
+**Note:** This section describes a Bitcoin-backporting workflow inherited from
+Dash (Maximus's upstream lineage via Osmium). It was actively practiced by Dash
+maintainers prior to the fork, but has not been used by the Maximus team since.
+The instructions below are preserved as reference in case this workflow is
+picked up in the future; verify the linked spreadsheet and process are still
+relevant before relying on them.
+
 Security and bug fixes can be backported from `master` to release
 branches.
 If the backport is non-trivial, it may be appropriate to open an
@@ -421,8 +428,9 @@ https://github.com/bitcoin/bitcoin/pull/16189).
 Also see the [backport.py script](
 https://github.com/bitcoin-core/bitcoin-maintainer-tools#backport).
 
-Bitcoin Backports are an incredibly valuable part of Maximus's development. Backporting allows us to easily implement new
-features, improvements and fixes as bitcoin implements them.
+Bitcoin backports were an incredibly valuable part of Dash's development (Maximus's upstream lineage), allowing
+easy adoption of new features, improvements and fixes as Bitcoin implements them. Whether Maximus continues this
+practice is an open question for the team to decide.
 
 To see detailed statistics & progress see Google Sheet tracker: [Bitcoin backports for Maximus](https://docs.google.com/spreadsheets/d/1DnKxat0S0H62CJOzXpKGPXTa8hgoVOjGYZzoClmGSB8/edit?usp=sharing).
 You should use this sheet to find what PRs to backport and its commit.
