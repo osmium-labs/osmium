@@ -179,7 +179,7 @@ popd
 Non-codesigners: wait for Windows/macOS detached signatures:
 
 - Once the Windows/macOS builds each have 3 matching signatures, they will be signed with their respective release keys.
-- Detached signatures will then be committed to the [maximus-detached-sigs](https://github.com/maximus-chain/maximus-detached-sigs) repository, which can be combined with the unsigned apps to create signed binaries.
+- Detached signatures would then be committed to a detached-sigs repository (does not currently exist for this project - see caveat at top of document), which can be combined with the unsigned apps to create signed binaries.
 
 Create (and optionally verify) the codesigned outputs:
 - [Codesigning](/contrib/guix/README.md#codesigning)

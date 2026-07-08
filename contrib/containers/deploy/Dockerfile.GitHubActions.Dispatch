@@ -43,7 +43,7 @@ RUN mkdir built-target && \
 esac
 
 FROM ubuntu:focal
-LABEL maintainer="Maximus Developers <dev@maximus.org>"
+LABEL maintainer="Maximus Developers <dev@maximuschain.com>"
 LABEL description="Dockerised MaximusCore"
 
 ARG USER_ID

@@ -1,5 +1,5 @@
 FROM phusion/baseimage:focal-1.0.0
-LABEL maintainer="Maximus Developers <dev@maximus.org>"
+LABEL maintainer="Maximus Developers <dev@maximuschain.com>"
 LABEL description="Dockerised MaximusCore, built from Travis"
 
 ARG USER_ID
