@@ -155,7 +155,7 @@ subsequent comment to the PR.
 ### Translation changes
 
 Note that translations should not be submitted as pull requests. Please see
-[Translation Process](https://github.com/dashpay/dash/blob/master/doc/translation_process.md)
+[Translation Process](doc/translation_process.md)
 for more information on helping with translations.
 
 ### Work in Progress Changes and Requests for Comments
@@ -355,8 +355,8 @@ before and after commits must be present locally.
 
 ```
 function gfd() {
-        local fp1=$(git show-branch --merge-base develop $1)
-        local fp2=$(git show-branch --merge-base develop $2)
+        local fp1=$(git show-branch --merge-base Testnet $1)
+        local fp2=$(git show-branch --merge-base Testnet $2)
         echo fp1=$fp1
         echo fp2=$fp2
         diff --color=always -u -I'^[^-+]' <(git diff $fp1..$1) <(git diff $fp2..$2)
