@@ -63,4 +63,4 @@ Windows | `%APPDATA%\MaximusCore\` | `C:\Users\username\AppData\Roaming\MaximusC
 Linux | `$HOME/.maximuscore/` | `/home/username/.maximuscore/maximus.conf`
 macOS | `$HOME/Library/Application Support/MaximusCore/` | `/Users/username/Library/Application Support/MaximusCore/maximus.conf`
 
-You can find an example maximus.conf file in [share/examples/maximus.conf](../share/examples/maximus.conf).
+You can find an example maximus.conf file in [contrib/debian/examples/maximus.conf](../contrib/debian/examples/maximus.conf).
