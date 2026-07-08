@@ -1,6 +1,19 @@
 Release Process
 ====================
 
+> **Note:** Much of this document describes a multi-signer Guix reproducible-build
+> and codesigning pipeline inherited from Dash. Verified as of 2026-07: no builder
+> keys are on file (`contrib/builder-keys/keys/` is empty), the referenced
+> `guix.sigs`/`maximus-detached-sigs` repos don't exist under this project, and no
+> Guix build output has ever been produced here. Maximus's actual published
+> releases (e.g. v1.1.0) were done via a simpler process, not this pipeline.
+> Treat the sections below as a reference for what a mature reproducible-build
+> process looks like (useful if the team adopts one), not as the current
+> real-world release procedure. Also note: several links below originally
+> pointed to `maximus.org`, which is NOT this project's domain (that domain
+> belongs to an unrelated company/is parked). Those links have been corrected
+> below to `maximuschain.com`, the real site.
+
 * [ ] Update translations, see [translation_process.md](https://github.com/dashpay/dash/blob/master/doc/translation_process.md#synchronising-translations).
 * [ ] Update manpages, see [gen-manpages.sh](https://github.com/maximus-chain/maximus/blob/master/contrib/devtools/README.md#gen-manpagessh).
 
@@ -40,7 +53,7 @@ Check out the source code in the following directory hierarchy.
 cd /path/to/your/toplevel/build
 git clone https://github.com/dashpay/guix.sigs.git
 git clone https://github.com/dashpay/dash-detached-sigs.git
-git clone https://github.com/maximus/maximus.git
+git clone https://github.com/Maximus-Chain/maximus.git
 ```
 
 ### Maximus Core maintainers/release engineers, suggestion for writing release notes
@@ -201,10 +214,10 @@ popd
        for troubleshooting by developers. It is assumed that anyone that is
        interested in debugging can run guix to generate the files for
        themselves. To avoid end-user confusion about which file to pick, as well
-       as save storage space *do not upload these to the maximus.org server*.
+       as save storage space *do not upload these to the maximuschain.com server*.
 
        ```sh
-       find guix-build-${VERSION}/output/ -maxdepth 2 -type f -not -name "SHA256SUMS.part" -and -not -name "*debug*" -exec scp {} user@maximus.org:/var/www/bin/maximus-core-${VERSION} \;
+       find guix-build-${VERSION}/output/ -maxdepth 2 -type f -not -name "SHA256SUMS.part" -and -not -name "*debug*" -exec scp {} user@maximuschain.com:/var/www/bin/maximus-core-${VERSION} \;
        ```
 
     2. The `SHA256SUMS` file
@@ -214,11 +227,11 @@ popd
 * [ ] Notarize macOS binaries
 * [ ] Publish release on GitHub
 * [ ] Fast-forward `master` branch on GitHub
-* [ ] Update the maximus.org download links
+* [ ] Update the maximuschain.com download links
 * [ ] Ensure that docker hub images are up to date
 
 ### Announce the release:
-* [ ] Release on Maximus forum: https://www.maximus.org/forum/topic/official-announcements.54/ (necessary so we have a permalink to use on twitter, reddit, etc.)
+* [ ] Release on Maximus forum: https://www.maximuschain.com/forum/topic/official-announcements.54/ (necessary so we have a permalink to use on twitter, reddit, etc.)
 * [ ] Prepare product brief (major versions only)
 * [ ] Prepare a release announcement tweet
 * [ ] Follow-up tweets with any important block heights for consensus changes
@@ -227,7 +240,7 @@ popd
 
 ### After the release:
 * [ ] Submit patches to BTCPay to ensure they use latest / compatible version see https://github.com/dashpay/dash/issues/4211#issuecomment-966608207
-* [ ] Update Core and User docs (docs.maximus.org)
+* [ ] Update Core and User docs (docs.maximuschain.com)
 * [ ] Test Docker build runs without error in Maximusmate
 * [ ] Add new Release Process items to repo [Release Process](release-process.md) document
 * [ ] Merge `master` branch back into `develop` so that `master` could be fast-forwarded on next release again
