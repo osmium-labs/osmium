@@ -791,6 +791,10 @@
 <context>
     <name>CoinControlDialog</name>
     <message>
+        <source>select smallest</source>
+        <translation>选择最小的</translation>
+    </message>
+    <message>
         <source>Quantity:</source>
         <translation>总量：</translation>
     </message>

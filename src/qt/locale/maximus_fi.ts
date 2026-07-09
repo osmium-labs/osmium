@@ -783,6 +783,10 @@
 <context>
     <name>CoinControlDialog</name>
     <message>
+        <source>select smallest</source>
+        <translation>Valitse pienimmät</translation>
+    </message>
+    <message>
         <source>Quantity:</source>
         <translation>Määrä:</translation>
     </message>

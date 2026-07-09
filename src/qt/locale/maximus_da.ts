@@ -1,7 +1,10 @@
-<TS version="2.1" language="dk">
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE TS>
+<TS version="2.1" language="da">
 <context>
     <name>AddressBookPage</name>
     <message>
+        <location filename="../forms/addressbookpage.ui" line="+27"/>
         <source>Enter address or label to search</source>
         <translation>Indtast adresse eller etiket for at søge</translation>
     </message>
@@ -98,7 +101,7 @@
     <message>
         <location line="+5"/>
         <source>These are your Maximus addresses for receiving payments. Use the &apos;Create new receiving address&apos; button in the receive tab to create new addresses.</source>
-        <translation>Dette er dine Maximus-adresser til modtagelse af betalinger. Brug knappen 'Opret ny modtagelsesadresse' i fanen for modtagelse for at generere nye adresser.</translation>
+        <translation>Dette er dine Maximus-adresser til modtagelse af betalinger. Brug knappen &apos;Opret ny modtagelsesadresse&apos; i fanen for modtagelse for at generere nye adresser.</translation>
     </message>
     <message>
         <location line="+7"/>
@@ -426,7 +429,7 @@
     <message>
         <location line="+1"/>
         <source>Request payments (generates QR codes and maximus: URIs)</source>
-        <translation>Anmod om betalinger (genererer QR-koder og maximus: URI'er)</translation>
+        <translation>Anmod om betalinger (genererer QR-koder og maximus: URI&apos;er)</translation>
     </message>
     <message>
         <location line="+74"/>
@@ -838,7 +841,7 @@
     <message numerus="yes">
         <location line="+554"/>
         <source>%n active connection(s) to Maximus network</source>
-        <translation type="finished">
+        <translation>
             <numerusform>%n aktiv forbindelse til Maximus-netværket</numerusform>
             <numerusform>%n aktive forbindelser til Maximus-netværket</numerusform>
         </translation>
@@ -1100,6 +1103,11 @@
     </message>
     <message>
         <location line="+16"/>
+        <source>select smallest</source>
+        <translation>vælg midste</translation>
+    </message>
+    <message>
+        <location line="+16"/>
         <source>toggle lock state</source>
         <translation>Skift låsestatus</translation>
     </message>
@@ -1215,7 +1223,7 @@
         <translation>Kopiér byttepenge</translation>
     </message>
     <message>
-        <location line="+139"/>
+        <location line="+177"/>
         <source>Please switch to &quot;List mode&quot; to use this function.</source>
         <translation>Skift venligst til &quot;Listevisning&quot; for at bruge denne funktion.</translation>
     </message>
@@ -1542,12 +1550,11 @@
         <translation>Da dette er første gang programmet startes, kan du vælge, hvor %1 skal gemme sine data.</translation>
     </message>
     <message>
-        <location line="+157"/>
         <source>When you click OK, %1 will begin to download and process the full %4 block chain (%2GB) starting with the earliest transactions in %3 when %4 initially launched.</source>
-        <translation>Når du klikker på OK, vil %1 begynde at downloade og behandle hele %4 blockchainen (%2 GB) startende med de tidligste transaktioner i %3 da %4 oprindeligt blev lanceret.</translation>
+        <translation type="vanished">Når du klikker på OK, vil %1 begynde at downloade og behandle hele %4 blockchainen (%2 GB) startende med de tidligste transaktioner i %3 da %4 oprindeligt blev lanceret.</translation>
     </message>
     <message>
-        <location line="+32"/>
+        <location line="+189"/>
         <source>Limit block chain storage to</source>
         <translation>Begræns blockchain-lager til</translation>
     </message>
@@ -1567,7 +1574,12 @@
         <translation>Første synkronisering er meget krævende og kan afsløre skjulte hardwareproblemer. %1 fortsætter altid downloadingen, hvor den slap.</translation>
     </message>
     <message>
-        <location line="+10"/>
+        <location line="-10"/>
+        <source>When you click OK, %1 will begin to download and process the full %4 block chain (%2 GB) starting with the earliest transactions in %3 when %4 initially launched.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+20"/>
         <source>If you have chosen to limit block chain storage (pruning), the historical data must still be downloaded and processed, but will be deleted afterward to keep your disk usage low.</source>
         <translation>Hvis du har valgt at begrænse blockchain-lageret (beskæring), skal de historiske data stadig downloades og behandles, men de vil blive slettet bagefter for at holde dit diskforbrug lavt.</translation>
     </message>
@@ -2154,7 +2166,13 @@
         <translation>Viser, om den angivne standard SOCKS5-proxy bruges til at nå peers via denne netværkstype.</translation>
     </message>
     <message>
-        <location line="+300"/>
+        <location line="+169"/>
+        <source>Language missing or translation incomplete? Help contributing translations here:
+https://explore.transifex.com/maximus/maximus/</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+131"/>
         <source>Options set in this dialog are overridden by the command line or in the configuration file:</source>
         <translation>Indstillinger angivet i dette vindue tilsidesættes af kommandolinjen eller i konfigurationsfilen:</translation>
     </message>
@@ -2177,12 +2195,12 @@
         <location line="+858"/>
         <location line="+13"/>
         <source>Third party URLs (e.g. a block explorer) that appear in the transactions tab as context menu items.&lt;br/&gt;%s in the URL is replaced by transaction hash. Multiple URLs are separated by vertical bar |.</source>
-        <translation>Tredjeparts-URL'er (f.eks. en blok-explorer), der vises i transaktionsfanen som punkter i genvejsmenuen.&lt;br/&gt;%s i URL'en erstattes af transaktions-hashen. Flere URL'er adskilles med en lodret streg |.</translation>
+        <translation>Tredjeparts-URL&apos;er (f.eks. en blok-explorer), der vises i transaktionsfanen som punkter i genvejsmenuen.&lt;br/&gt;%s i URL&apos;en erstattes af transaktions-hashen. Flere URL&apos;er adskilles med en lodret streg |.</translation>
     </message>
     <message>
         <location line="-10"/>
         <source>&amp;Third party transaction URLs</source>
-        <translation>&amp;Tredjeparts-URL'er for transaktioner</translation>
+        <translation>&amp;Tredjeparts-URL&apos;er for transaktioner</translation>
     </message>
     <message>
         <location line="-696"/>
@@ -2319,12 +2337,11 @@
         <translation>Brugerfladens sprog kan indstilles her. Denne indstilling træder i kraft efter genstart af %1.</translation>
     </message>
     <message>
-        <location line="+21"/>
         <source>Language missing or translation incomplete? Contact team on Discord</source>
-        <translation>Mangler sproget, eller er oversættelsen ufuldstændig? Kontakt Team på Discord</translation>
+        <translation type="vanished">Mangler sproget, eller er oversættelsen ufuldstændig? Kontakt Team på Discord</translation>
     </message>
     <message>
-        <location line="+26"/>
+        <location line="+47"/>
         <source>&amp;Unit to show amounts in:</source>
         <translation>&amp;Enhed til visning af beløb:</translation>
     </message>
@@ -2366,12 +2383,12 @@
     <message>
         <location line="+81"/>
         <source>default</source>
-        <translation>"Standard</translation>
+        <translation>&quot;Standard</translation>
     </message>
     <message>
         <location line="+241"/>
         <source>Confirm options reset</source>
-        <translation>"Bekræft nulstilling af indstillinger</translation>
+        <translation>&quot;Bekræft nulstilling af indstillinger</translation>
     </message>
     <message>
         <location line="+1"/>
@@ -2505,12 +2522,11 @@
         <translation>Beløb &amp; Runder:</translation>
     </message>
     <message>
-        <location line="+7"/>
         <source>0 MAXIMUS / 0 Rounds</source>
-        <translation>0 MAXIMUS / 0 Rounds</translation>
+        <translation type="vanished">0 MAXIMUS / 0 Rounds</translation>
     </message>
     <message>
-        <location line="+7"/>
+        <location line="+14"/>
         <source>Submitted Denom:</source>
         <translation>Indsendt beløb:</translation>
     </message>
@@ -2530,7 +2546,12 @@
         <translation>Start/Stop Mixing</translation>
     </message>
     <message>
-        <location line="-41"/>
+        <location line="-55"/>
+        <source>0 MAXI / 0 Rounds</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+14"/>
         <source>The denominations you submitted to the Masternode.&lt;br&gt;To mix, other users must submit the exact same denominations.</source>
         <translation>De møntstørrelser, du indsendte til masternoden.&lt;br&gt;For at mixe skal andre brugere indsende nøjagtig de samme møntstørrelser.</translation>
     </message>
@@ -2907,39 +2928,32 @@
 <context>
     <name>PeerTableModel</name>
     <message>
-        <location filename="../peertablemodel.h" line="+86"/>
         <source>User Agent</source>
-        <translation>User Agent</translation>
+        <translation type="vanished">User Agent</translation>
     </message>
     <message>
-        <location line="+0"/>
         <source>Ping</source>
-        <translation>Ping</translation>
+        <translation type="vanished">Ping</translation>
     </message>
     <message>
-        <location line="+0"/>
         <source>Sent</source>
-        <translation>Sendt</translation>
+        <translation type="vanished">Sendt</translation>
     </message>
     <message>
-        <location line="+0"/>
         <source>Received</source>
-        <translation>Modtaget</translation>
+        <translation type="vanished">Modtaget</translation>
     </message>
     <message>
-        <location line="+0"/>
         <source>Peer Id</source>
-        <translation>Peer Id</translation>
+        <translation type="vanished">Peer Id</translation>
     </message>
     <message>
-        <location line="+0"/>
         <source>Address</source>
-        <translation>Adresse</translation>
+        <translation type="vanished">Adresse</translation>
     </message>
     <message>
-        <location line="+0"/>
         <source>Network</source>
-        <translation>Netværk</translation>
+        <translation type="vanished">Netværk</translation>
     </message>
 </context>
 <context>
@@ -3055,7 +3069,7 @@
     <message>
         <location line="+1"/>
         <source>Reset all settings changed in the GUI</source>
-        <translation>Nulstil alle indstillinger ændret i GUI'en</translation>
+        <translation>Nulstil alle indstillinger ændret i GUI&apos;en</translation>
     </message>
     <message>
         <location line="+1"/>
@@ -3123,7 +3137,7 @@
         <translation>Beløb</translation>
     </message>
     <message>
-        <location filename="../guiutil.cpp" line="+279"/>
+        <location filename="../guiutil.cpp" line="+281"/>
         <source>Enter a Maximus address (e.g. %1)</source>
         <translation>Indtast en Maximus-adresse (f.eks. %1)</translation>
     </message>
@@ -3143,7 +3157,7 @@
         <translation>Dette kan også justeres senere under fanen &quot;Udseende&quot; i indstillingerne.</translation>
     </message>
     <message>
-        <location line="+1346"/>
+        <location line="+1331"/>
         <source>Unroutable</source>
         <translation>Kan ikke routes</translation>
     </message>
@@ -3355,7 +3369,7 @@
         <location line="+26"/>
         <location line="+30"/>
         <location line="+23"/>
-        <location line="+23"/>
+        <location line="+24"/>
         <location line="+20"/>
         <location line="+27"/>
         <location line="+23"/>
@@ -3394,23 +3408,23 @@
         <translation>N/A</translation>
     </message>
     <message>
-        <location line="-1162"/>
+        <location line="-1163"/>
         <source>Number of connections</source>
         <translation>Antal forbindelser</translation>
     </message>
     <message>
-        <location line="+266"/>
+        <location line="+267"/>
         <source>&amp;Open</source>
         <translation>&amp;Åben</translation>
     </message>
     <message>
-        <location line="-319"/>
+        <location line="-320"/>
         <source>Startup time</source>
         <translation>Opstartstid</translation>
     </message>
     <message>
         <location line="+23"/>
-        <location line="+736"/>
+        <location line="+737"/>
         <source>Network</source>
         <translation>Netværk</translation>
     </message>
@@ -3425,12 +3439,12 @@
         <translation>Fejlsøgningslogfil</translation>
     </message>
     <message>
-        <location line="-416"/>
+        <location line="-417"/>
         <source>Client version</source>
         <translation>Klientversion</translation>
     </message>
     <message>
-        <location line="+223"/>
+        <location line="+224"/>
         <source>Block chain</source>
         <translation>Blockchain</translation>
     </message>
@@ -3450,22 +3464,22 @@
         <translation>Hukommelsesforbrug</translation>
     </message>
     <message>
-        <location line="-440"/>
+        <location line="-441"/>
         <source>&amp;Console</source>
         <translation>&amp;Konsol</translation>
     </message>
     <message>
-        <location line="+600"/>
+        <location line="+601"/>
         <source>Clear console</source>
         <translation>Ryd konsol</translation>
     </message>
     <message>
-        <location line="-590"/>
+        <location line="-591"/>
         <source>&amp;Network Traffic</source>
         <translation>&amp;Netværk Trafik</translation>
     </message>
     <message>
-        <location line="+1246"/>
+        <location line="+1247"/>
         <source>Received</source>
         <translation>Modtaget</translation>
     </message>
@@ -3475,12 +3489,17 @@
         <translation>Sendt</translation>
     </message>
     <message>
-        <location line="-1213"/>
+        <location line="-1214"/>
         <source>&amp;Peers</source>
         <translation>&amp;Peers</translation>
     </message>
     <message>
-        <location line="+534"/>
+        <location line="+228"/>
+        <source>Number of Masternodes</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+307"/>
         <source>Wallet:</source>
         <translation>Tegnebog:</translation>
     </message>
@@ -3557,13 +3576,13 @@
         <translation>-rescan=2: Genskan blockchainen for manglende tegnebogstransaktioner startende fra genesis-blokken.</translation>
     </message>
     <message>
-        <location line="-1400"/>
-        <location line="+935"/>
+        <location line="-1401"/>
+        <location line="+936"/>
         <source>User Agent</source>
         <translation>User Agent</translation>
     </message>
     <message>
-        <location line="-909"/>
+        <location line="-910"/>
         <source>Datadir</source>
         <translation>Datadir</translation>
     </message>
@@ -3583,12 +3602,11 @@
         <translation>For at angive en anden placering af blocks-biblioteket end standarden, skal du bruge &apos;%1&apos;indstillingen.</translation>
     </message>
     <message>
-        <location line="+95"/>
         <source>Number of regular Masternodes</source>
-        <translation>Antal almindelige Masternodes</translation>
+        <translation type="vanished">Antal almindelige Masternodes</translation>
     </message>
     <message>
-        <location line="+20"/>
+        <location line="+116"/>
         <source>Number of EvoNodes</source>
         <translation>Antal EvoNodes</translation>
     </message>
@@ -3713,12 +3731,12 @@
         <translation>Tidsforskydning</translation>
     </message>
     <message>
-        <location line="-1321"/>
+        <location line="-1322"/>
         <source>&amp;Wallet Repair</source>
         <translation>&amp;Reparation af Tegnebog</translation>
     </message>
     <message>
-        <location line="+1398"/>
+        <location line="+1399"/>
         <source>Wallet repair options.</source>
         <translation>Indstillinger for reparation af Tegnebog.</translation>
     </message>
@@ -4638,7 +4656,7 @@
     <message>
         <location line="+10"/>
         <source>A message that was attached to the maximus: URI which will be stored with the transaction for your reference. Note: This message will not be sent over the Maximus network.</source>
-        <translation>En besked, der var vedhæftet maximus:-URI'en, som vil blive gemt med transaktionen til din reference. Bemærk: Denne besked vil ikke blive sendt over Maximus-netværket.</translation>
+        <translation>En besked, der var vedhæftet maximus:-URI&apos;en, som vil blive gemt med transaktionen til din reference. Bemærk: Denne besked vil ikke blive sendt over Maximus-netværket.</translation>
     </message>
     <message>
         <location line="+433"/>
@@ -5591,7 +5609,7 @@
     <message>
         <location line="+1"/>
         <source>Closing the wallet for too long can result in having to resync the entire chain if pruning is enabled.</source>
-        <translation>Hvis tegnebogen er lukket i for lang tid, kan det resultere i, at hele kæden skal synkroniseres forfra, hvis "pruning" er aktiveret.</translation>
+        <translation>Hvis tegnebogen er lukket i for lang tid, kan det resultere i, at hele kæden skal synkroniseres forfra, hvis &quot;pruning&quot; er aktiveret.</translation>
     </message>
     <message>
         <location line="+13"/>
@@ -5895,12 +5913,12 @@ Gå til Fil &gt; Åbn tegnebog for at indlæse en tegnebog.
     <message>
         <location line="+7"/>
         <source>Invalid amount for -discardfee=&lt;amount&gt;: &apos;%s&apos;</source>
-        <translation>Ugyldigt beløb for -discardfee=&lt;amount&gt;: '%s'</translation>
+        <translation>Ugyldigt beløb for -discardfee=&lt;amount&gt;: &apos;%s&apos;</translation>
     </message>
     <message>
         <location line="+2"/>
         <source>Invalid amount for -paytxfee=&lt;amount&gt;: &apos;%s&apos; (must be at least %s)</source>
-        <translation>Ugyldigt beløb for -paytxfee=&lt;amount&gt;: '%s' (skal være mindst %s)</translation>
+        <translation>Ugyldigt beløb for -paytxfee=&lt;amount&gt;: &apos;%s&apos; (skal være mindst %s)</translation>
     </message>
     <message>
         <location line="+2"/>
@@ -6305,12 +6323,12 @@ Gå til Fil &gt; Åbn tegnebog for at indlæse en tegnebog.
     <message>
         <location line="+1"/>
         <source>Specified -walletdir &quot;%s&quot; is a relative path</source>
-        <translation>Angivet -walletdir "%s" er en relativ sti</translation>
+        <translation>Angivet -walletdir &quot;%s&quot; er en relativ sti</translation>
     </message>
     <message>
         <location line="+1"/>
         <source>Specified -walletdir &quot;%s&quot; is not a directory</source>
-        <translation>Angivet -walletdir "%s" er ikke en mappe</translation>
+        <translation>Angivet -walletdir &quot;%s&quot; er ikke en mappe</translation>
     </message>
     <message>
         <location line="+5"/>
