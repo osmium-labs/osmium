@@ -681,7 +681,7 @@ QToolBar / QToolButton
 ******************************************************/
 
 QToolBar {
-    background-color: #312C39;
+    background-color: transparent;
     border-color: rgba(255, 204, 97, 0.50);
 }
 

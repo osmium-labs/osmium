@@ -1103,6 +1103,11 @@
     </message>
     <message>
         <location line="+16"/>
+        <source>select smallest</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+16"/>
         <source>toggle lock state</source>
         <translation>toggle lock state</translation>
     </message>
@@ -1218,7 +1223,7 @@
         <translation>Copy change</translation>
     </message>
     <message>
-        <location line="+139"/>
+        <location line="+177"/>
         <source>Please switch to &quot;List mode&quot; to use this function.</source>
         <translation>Please switch to &quot;List mode&quot; to use this function.</translation>
     </message>
@@ -1545,12 +1550,11 @@
         <translation>As this is the first time the program is launched, you can choose where %1 will store its data.</translation>
     </message>
     <message>
-        <location line="+157"/>
         <source>When you click OK, %1 will begin to download and process the full %4 block chain (%2GB) starting with the earliest transactions in %3 when %4 initially launched.</source>
-        <translation>When you click OK, %1 will begin to download and process the full %4 block chain (%2GB) starting with the earliest transactions in %3 when %4 initially launched.</translation>
+        <translation type="vanished">When you click OK, %1 will begin to download and process the full %4 block chain (%2GB) starting with the earliest transactions in %3 when %4 initially launched.</translation>
     </message>
     <message>
-        <location line="+32"/>
+        <location line="+189"/>
         <source>Limit block chain storage to</source>
         <translation>Limit block chain storage to</translation>
     </message>
@@ -1570,7 +1574,12 @@
         <translation>This initial synchronisation is very demanding, and may expose hardware problems with your computer that had previously gone unnoticed. Each time you run %1, it will continue downloading where it left off.</translation>
     </message>
     <message>
-        <location line="+10"/>
+        <location line="-10"/>
+        <source>When you click OK, %1 will begin to download and process the full %4 block chain (%2 GB) starting with the earliest transactions in %3 when %4 initially launched.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+20"/>
         <source>If you have chosen to limit block chain storage (pruning), the historical data must still be downloaded and processed, but will be deleted afterward to keep your disk usage low.</source>
         <translation>If you have chosen to limit block chain storage (pruning), the historical data must still be downloaded and processed, but will be deleted afterward to keep your disk usage low.</translation>
     </message>
@@ -2157,7 +2166,13 @@
         <translation>Shows if the supplied default SOCKS5 proxy is used to reach peers via this network type.</translation>
     </message>
     <message>
-        <location line="+300"/>
+        <location line="+169"/>
+        <source>Language missing or translation incomplete? Help contributing translations here:
+https://explore.transifex.com/maximus/maximus/</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+131"/>
         <source>Options set in this dialog are overridden by the command line or in the configuration file:</source>
         <translation>Options set in this dialog are overridden by the command line or in the configuration file:</translation>
     </message>
@@ -2322,14 +2337,13 @@
         <translation>The user interface language can be set here. This setting will take effect after restarting %1.</translation>
     </message>
     <message>
-        <location line="+21"/>
         <source>Language missing or translation incomplete? Help contributing translations here:
 https://www.transifex.com/projects/p/maximus/</source>
-        <translation>Language missing or translation incomplete? Help contributing translations here:
+        <translation type="vanished">Language missing or translation incomplete? Help contributing translations here:
 https://www.transifex.com/projects/p/maximus/</translation>
     </message>
     <message>
-        <location line="+26"/>
+        <location line="+47"/>
         <source>&amp;Unit to show amounts in:</source>
         <translation>&amp;Unit to show amounts in:</translation>
     </message>
@@ -2510,12 +2524,11 @@ https://www.transifex.com/projects/p/maximus/</translation>
         <translation>Amount and Rounds:</translation>
     </message>
     <message>
-        <location line="+7"/>
         <source>0 MAXIMUS / 0 Rounds</source>
-        <translation>0 MAXIMUS / 0 Rounds</translation>
+        <translation type="vanished">0 MAXIMUS / 0 Rounds</translation>
     </message>
     <message>
-        <location line="+7"/>
+        <location line="+14"/>
         <source>Submitted Denom:</source>
         <translation>Submitted Denom:</translation>
     </message>
@@ -2535,7 +2548,12 @@ https://www.transifex.com/projects/p/maximus/</translation>
         <translation>Start/Stop Mixing</translation>
     </message>
     <message>
-        <location line="-41"/>
+        <location line="-55"/>
+        <source>0 MAXI / 0 Rounds</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+14"/>
         <source>The denominations you submitted to the Masternode.&lt;br&gt;To mix, other users must submit the exact same denominations.</source>
         <translation>The denominations you submitted to the Masternode.&lt;br&gt;To mix, other users must submit the exact same denominations.</translation>
     </message>
@@ -2912,39 +2930,32 @@ https://www.transifex.com/projects/p/maximus/</translation>
 <context>
     <name>PeerTableModel</name>
     <message>
-        <location filename="../peertablemodel.h" line="+86"/>
         <source>User Agent</source>
-        <translation>User Agent</translation>
+        <translation type="vanished">User Agent</translation>
     </message>
     <message>
-        <location line="+0"/>
         <source>Ping</source>
-        <translation>Ping</translation>
+        <translation type="vanished">Ping</translation>
     </message>
     <message>
-        <location line="+0"/>
         <source>Sent</source>
-        <translation>Sent</translation>
+        <translation type="vanished">Sent</translation>
     </message>
     <message>
-        <location line="+0"/>
         <source>Received</source>
-        <translation>Received</translation>
+        <translation type="vanished">Received</translation>
     </message>
     <message>
-        <location line="+0"/>
         <source>Peer Id</source>
-        <translation>Peer Id</translation>
+        <translation type="vanished">Peer Id</translation>
     </message>
     <message>
-        <location line="+0"/>
         <source>Address</source>
-        <translation>Address</translation>
+        <translation type="vanished">Address</translation>
     </message>
     <message>
-        <location line="+0"/>
         <source>Network</source>
-        <translation>Network</translation>
+        <translation type="vanished">Network</translation>
     </message>
 </context>
 <context>
@@ -3128,7 +3139,7 @@ https://www.transifex.com/projects/p/maximus/</translation>
         <translation>Amount</translation>
     </message>
     <message>
-        <location filename="../guiutil.cpp" line="+279"/>
+        <location filename="../guiutil.cpp" line="+281"/>
         <source>Enter a Maximus address (e.g. %1)</source>
         <translation>Enter a Maximus address (e.g. %1)</translation>
     </message>
@@ -3148,7 +3159,7 @@ https://www.transifex.com/projects/p/maximus/</translation>
         <translation>This can also be adjusted later in the &quot;Appearance&quot; tab of the preferences.</translation>
     </message>
     <message>
-        <location line="+1346"/>
+        <location line="+1331"/>
         <source>Unroutable</source>
         <translation>Unroutable</translation>
     </message>
@@ -3360,7 +3371,7 @@ https://www.transifex.com/projects/p/maximus/</translation>
         <location line="+26"/>
         <location line="+30"/>
         <location line="+23"/>
-        <location line="+23"/>
+        <location line="+24"/>
         <location line="+20"/>
         <location line="+27"/>
         <location line="+23"/>
@@ -3399,23 +3410,23 @@ https://www.transifex.com/projects/p/maximus/</translation>
         <translation>N/A</translation>
     </message>
     <message>
-        <location line="-1162"/>
+        <location line="-1163"/>
         <source>Number of connections</source>
         <translation>Number of connections</translation>
     </message>
     <message>
-        <location line="+266"/>
+        <location line="+267"/>
         <source>&amp;Open</source>
         <translation>&amp;Open</translation>
     </message>
     <message>
-        <location line="-319"/>
+        <location line="-320"/>
         <source>Startup time</source>
         <translation>Startup time</translation>
     </message>
     <message>
         <location line="+23"/>
-        <location line="+736"/>
+        <location line="+737"/>
         <source>Network</source>
         <translation>Network</translation>
     </message>
@@ -3430,12 +3441,12 @@ https://www.transifex.com/projects/p/maximus/</translation>
         <translation>Debug log file</translation>
     </message>
     <message>
-        <location line="-416"/>
+        <location line="-417"/>
         <source>Client version</source>
         <translation>Client version</translation>
     </message>
     <message>
-        <location line="+223"/>
+        <location line="+224"/>
         <source>Block chain</source>
         <translation>Block chain</translation>
     </message>
@@ -3455,22 +3466,22 @@ https://www.transifex.com/projects/p/maximus/</translation>
         <translation>Memory usage</translation>
     </message>
     <message>
-        <location line="-440"/>
+        <location line="-441"/>
         <source>&amp;Console</source>
         <translation>&amp;Console</translation>
     </message>
     <message>
-        <location line="+600"/>
+        <location line="+601"/>
         <source>Clear console</source>
         <translation>Clear console</translation>
     </message>
     <message>
-        <location line="-590"/>
+        <location line="-591"/>
         <source>&amp;Network Traffic</source>
         <translation>&amp;Network Traffic</translation>
     </message>
     <message>
-        <location line="+1246"/>
+        <location line="+1247"/>
         <source>Received</source>
         <translation>Received</translation>
     </message>
@@ -3480,12 +3491,17 @@ https://www.transifex.com/projects/p/maximus/</translation>
         <translation>Sent</translation>
     </message>
     <message>
-        <location line="-1213"/>
+        <location line="-1214"/>
         <source>&amp;Peers</source>
         <translation>&amp;Peers</translation>
     </message>
     <message>
-        <location line="+534"/>
+        <location line="+228"/>
+        <source>Number of Masternodes</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+307"/>
         <source>Wallet:</source>
         <translation>Wallet:</translation>
     </message>
@@ -3562,13 +3578,13 @@ https://www.transifex.com/projects/p/maximus/</translation>
         <translation>-rescan=2: Rescan the block chain for missing wallet transactions starting from genesis block.</translation>
     </message>
     <message>
-        <location line="-1400"/>
-        <location line="+935"/>
+        <location line="-1401"/>
+        <location line="+936"/>
         <source>User Agent</source>
         <translation>User Agent</translation>
     </message>
     <message>
-        <location line="-909"/>
+        <location line="-910"/>
         <source>Datadir</source>
         <translation>Datadir</translation>
     </message>
@@ -3588,12 +3604,11 @@ https://www.transifex.com/projects/p/maximus/</translation>
         <translation>To specify a non-default location of the blocks directory use the &apos;%1&apos; option.</translation>
     </message>
     <message>
-        <location line="+95"/>
         <source>Number of regular Masternodes</source>
-        <translation>Number of regular Masternodes</translation>
+        <translation type="vanished">Number of regular Masternodes</translation>
     </message>
     <message>
-        <location line="+20"/>
+        <location line="+116"/>
         <source>Number of EvoNodes</source>
         <translation>Number of EvoNodes</translation>
     </message>
@@ -3718,12 +3733,12 @@ https://www.transifex.com/projects/p/maximus/</translation>
         <translation>Time Offset</translation>
     </message>
     <message>
-        <location line="-1321"/>
+        <location line="-1322"/>
         <source>&amp;Wallet Repair</source>
         <translation>&amp;Wallet Repair</translation>
     </message>
     <message>
-        <location line="+1398"/>
+        <location line="+1399"/>
         <source>Wallet repair options.</source>
         <translation>Wallet repair options.</translation>
     </message>

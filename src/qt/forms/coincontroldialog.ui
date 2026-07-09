@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>954</width>
+    <width>1050</width>
     <height>500</height>
    </rect>
   </property>
@@ -306,7 +306,7 @@
            </sizepolicy>
           </property>
           <property name="text">
-           <string>select smallest (~650)</string>
+           <string>select smallest</string>
           </property>
           <property name="autoDefault">
            <bool>false</bool>

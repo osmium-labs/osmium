@@ -208,8 +208,11 @@ void CoinControlDialog::buttonSelectAllClicked()
 // consolidate many small inputs into one transaction (list-mode only)
 void CoinControlDialog::buttonSelectSmallestClicked()
 {
+    // Ensure we're in list mode; this triggers radioListMode() -> updateView()
+    // if we weren't already, so the tree is populated correctly before we
+    // read amounts from it below.
     if (!ui->radioListMode->isChecked())
-        return;
+        ui->radioListMode->setChecked(true);
 
     ui->treeWidget->setEnabled(false);
 
