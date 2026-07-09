@@ -108,6 +108,7 @@ private Q_SLOTS:
     void headerSectionClicked(int);
     void buttonBoxClicked(QAbstractButton*);
     void buttonSelectAllClicked();
+    void buttonSelectSmallestClicked();
     void buttonToggleLockClicked();
     void updateLabelLocked();
     void on_hideButton_clicked();
