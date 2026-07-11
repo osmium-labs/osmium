@@ -783,6 +783,10 @@
 <context>
     <name>CoinControlDialog</name>
     <message>
+        <source>select smallest</source>
+        <translation>최소값 선택</translation>
+    </message>
+    <message>
         <source>Quantity:</source>
         <translation>수량:</translation>
     </message>

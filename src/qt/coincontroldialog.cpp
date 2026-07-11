@@ -130,6 +130,7 @@ CoinControlDialog::CoinControlDialog(CCoinControl& coin_control, WalletModel* _m
 
     // (un)select all
     connect(ui->pushButtonSelectAll, &QPushButton::clicked, this, &CoinControlDialog::buttonSelectAllClicked);
+    connect(ui->pushButtonSelectSmallest, &QPushButton::clicked, this, &CoinControlDialog::buttonSelectSmallestClicked);
 
     // Toggle lock state
     connect(ui->pushButtonToggleLock, &QPushButton::clicked, this, &CoinControlDialog::buttonToggleLockClicked);
@@ -200,6 +201,43 @@ void CoinControlDialog::buttonSelectAllClicked()
     ui->treeWidget->setEnabled(true);
     if (state == Qt::Unchecked)
         m_coin_control.UnSelectAll(); // just to be sure
+    CoinControlDialog::updateLabels(m_coin_control, model, this);
+}
+
+// Select the smallest UTXOs first, up to a safe input-count budget, to help
+// consolidate many small inputs into one transaction (list-mode only)
+void CoinControlDialog::buttonSelectSmallestClicked()
+{
+    // Ensure we're in list mode; this triggers radioListMode() -> updateView()
+    // if we weren't already, so the tree is populated correctly before we
+    // read amounts from it below.
+    if (!ui->radioListMode->isChecked())
+        ui->radioListMode->setChecked(true);
+
+    ui->treeWidget->setEnabled(false);
+
+    for (int i = 0; i < ui->treeWidget->topLevelItemCount(); i++)
+        ui->treeWidget->topLevelItem(i)->setCheckState(COLUMN_CHECKBOX, Qt::Unchecked);
+
+    std::vector<std::pair<qint64, QTreeWidgetItem*>> items;
+    for (int i = 0; i < ui->treeWidget->topLevelItemCount(); i++) {
+        QTreeWidgetItem* item = ui->treeWidget->topLevelItem(i);
+        qint64 amount = item->data(COLUMN_AMOUNT, Qt::UserRole).toLongLong();
+        items.emplace_back(amount, item);
+    }
+
+    std::sort(items.begin(), items.end(),
+        [](const auto& a, const auto& b) { return a.first < b.first; });
+
+    const size_t MAX_INPUTS = 650;
+    size_t count = 0;
+    for (auto& [amount, item] : items) {
+        if (count >= MAX_INPUTS) break;
+        item->setCheckState(COLUMN_CHECKBOX, Qt::Checked);
+        count++;
+    }
+
+    ui->treeWidget->setEnabled(true);
     CoinControlDialog::updateLabels(m_coin_control, model, this);
 }
 

@@ -139,8 +139,7 @@ BOOST_FIXTURE_TEST_CASE(package_tests, TestChain100Setup)
     BOOST_CHECK_EQUAL(result_single_large.m_state.GetRejectReason(), "transaction failed");
     auto it_giant_tx = result_single_large.m_tx_results.find(giant_ptx->GetHash());
     BOOST_CHECK(it_giant_tx != result_single_large.m_tx_results.end());
-    BOOST_CHECK_EQUAL(it_giant_tx->second.m_state.GetRejectReason(), "tx-size");
-
+    BOOST_CHECK_EQUAL(it_giant_tx->second.m_state.GetRejectReason(), "bad-txns-oversize");
     // Check that mempool size hasn't changed.
     BOOST_CHECK_EQUAL(m_node.mempool->size(), initialPoolSize);
 }

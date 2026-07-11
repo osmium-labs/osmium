@@ -1,7 +1,8 @@
 QT_TS = \
   qt/locale/maximus_ar.ts \
   qt/locale/maximus_bg.ts \
-  qt/locale/maximus_de.ts \
+  qt/locale/maximus_da.ts \
+	qt/locale/maximus_de.ts \
   qt/locale/maximus_en.ts \
   qt/locale/maximus_es.ts \
   qt/locale/maximus_fi.ts \

@@ -530,20 +530,42 @@ void ArgsManager::ForceSetArg(const std::string& strArg, const std::string& strV
     m_settings.forced_settings[SettingName(strArg)] = strValue;
 }
 
+// ArgsManager::AddArg - "Option A": keep idempotent skip behaviour, but merge flags
+// so NETWORK_ONLY (or any flag) is never lost depending on registration order.
+//
+// Notes:
+//  - Keeps the FIRST registration's help text/param; merges flag bits from later ones.
+//    If you'd rather the latest help text win, overwrite ret.first->second instead.
+//  - m_flags assumes the standard Dash/Bitcoin Arg struct {m_help_param, m_help_text, m_flags};
+//    rename that one member if your fork differs.
+//  - Plain emplace() is used for maximum compiler compatibility (C++11+). On C++17 you can
+//    use try_emplace() to avoid constructing the throwaway Arg on the duplicate path.
+//  - This deliberately tolerates duplicate registrations. If a duplicate is actually an
+//    accidental double-registration, prefer finding and removing the second call.
+
 void ArgsManager::AddArg(const std::string& name, const std::string& help, unsigned int flags, const OptionsCategory& cat)
 {
-    // Split arg name from its help param
+    // Split the arg name from any inline parameter/help suffix, e.g. "-foo=<n>".
     size_t eq_index = name.find('=');
     if (eq_index == std::string::npos) {
         eq_index = name.size();
     }
-    std::string arg_name = name.substr(0, eq_index);
+    const std::string arg_name = name.substr(0, eq_index);
+    const std::string help_param = name.substr(eq_index, name.size() - eq_index);
 
     LOCK(cs_args);
     std::map<std::string, Arg>& arg_map = m_available_args[cat];
-    auto ret = arg_map.emplace(arg_name, Arg{name.substr(eq_index, name.size() - eq_index), help, flags});
-    assert(ret.second); // Make sure an insertion actually happened
 
+    // Idempotent registration. Unlike upstream (which asserts on a duplicate), an arg may be
+    // registered more than once here without crashing. We keep the first description but MERGE
+    // the flag bits, so no flag - in particular NETWORK_ONLY - is lost depending on which
+    // registration happened to carry it.
+    auto ret = arg_map.emplace(arg_name, Arg{help_param, help, flags});
+    if (!ret.second) {
+        ret.first->second.m_flags |= flags; // union flags onto the existing entry
+    }
+
+    // Keep the network-only index in sync whenever the flag appears on any registration.
     if (flags & ArgsManager::NETWORK_ONLY) {
         m_network_only_args.emplace(arg_name);
     }

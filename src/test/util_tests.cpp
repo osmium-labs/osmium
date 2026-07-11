@@ -1305,7 +1305,7 @@ BOOST_AUTO_TEST_CASE(util_ParseMoney)
 
     BOOST_CHECK_EQUAL(ParseMoney("12345.6789").value(), (COIN/10000)*123456789);
 
-    BOOST_CHECK_EQUAL(ParseMoney("10000000.00").value(), COIN*10000000);
+    BOOST_CHECK_EQUAL(ParseMoney("2000000.00").value(), COIN*2000000);
     BOOST_CHECK_EQUAL(ParseMoney("1000000.00").value(), COIN*1000000);
     BOOST_CHECK_EQUAL(ParseMoney("100000.00").value(), COIN*100000);
     BOOST_CHECK_EQUAL(ParseMoney("10000.00").value(), COIN*10000);
@@ -2577,43 +2577,43 @@ BOOST_AUTO_TEST_CASE(message_verify)
 
     BOOST_CHECK_EQUAL(
         MessageVerify(
-            "7iRPy8FEHBzbChrktsG85YbDZ3SuiCxsNq",
+            "3Hhm8vy4UCtxCwKodFbckAbZdVcXruM8a8",
             "signature should be irrelevant",
             "message too"),
         MessageVerificationResult::ERR_ADDRESS_NO_KEY);
 
     BOOST_CHECK_EQUAL(
         MessageVerify(
-            "XuXS24zs2xP1vPynvNt14kWLa64csH8Mur",
+            "MWzN53SwQyQhck8yFGnQKyxBjRea5xTYuv",
             "invalid signature, not in base64 encoding",
             "message should be irrelevant"),
         MessageVerificationResult::ERR_MALFORMED_SIGNATURE);
 
     BOOST_CHECK_EQUAL(
         MessageVerify(
-            "XuXS24zs2xP1vPynvNt14kWLa64csH8Mur",
+            "MWzN53SwQyQhck8yFGnQKyxBjRea5xTYuv",
             "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
             "message should be irrelevant"),
         MessageVerificationResult::ERR_PUBKEY_NOT_RECOVERED);
 
     BOOST_CHECK_EQUAL(
         MessageVerify(
-            "XetGnWHsPXV9VSkWzB6Wn2KhZLD24gqa5j",
-            "IPojfrX2dfPnH26UegfbGQQLrdK844DlHq5157/P6h57WyuS/Qsl+h/WSVGDF4MUi4rWSswW38oimDYfNNUBUOk=",
+            "MWzN53SwQyQhck8yFGnQKyxBjRea5xTYuv",
+            "IB/6Cld/D126sqPxr2i6Yzz/vD3QEQFuNcNOInF1JYTdBHE9Zk0T8NLG+j/+5rhFtvf5LX9GljQMCa2Jen38Yx0=",
             "I never signed this"),
         MessageVerificationResult::ERR_NOT_SIGNED);
 
     BOOST_CHECK_EQUAL(
         MessageVerify(
-            "XetGnWHsPXV9VSkWzB6Wn2KhZLD24gqa5j",
-            "IIOzMDkvw3GtLWXkeEYRRRH53MOLHM44sJ428Nu4NNacTPJTGcKesMJ+3s3OadYK34tpSQIhu922EviNNWTsiQg=",
+            "MWzN53SwQyQhck8yFGnQKyxBjRea5xTYuv",
+            "IB/6Cld/D126sqPxr2i6Yzz/vD3QEQFuNcNOInF1JYTdBHE9Zk0T8NLG+j/+5rhFtvf5LX9GljQMCa2Jen38Yx0=",
             "Trust no one"),
         MessageVerificationResult::OK);
 
     BOOST_CHECK_EQUAL(
         MessageVerify(
-            "XenV77v8QQ3rwjyCb3j2fCwfvgbkC4Vwaj",
-            "IOACalWiJTLJ2U7wTKICx5mQ2tOAJ3to8dko8FMb2XSYbmvL+yMWedyfSfaK6V8jwoociyYx628nkXXnrOhPFIY=",
+            "MWzN53SwQyQhck8yFGnQKyxBjRea5xTYuv",
+            "H2uixDZ4MiaC68EAQ39KeAAj3G8K9dBjLtHnG0imcJD+DowdFQw4ucQZZtaeLrKOmazDE4yyqHXCLjnMo3XGj0M=",
             "Trust me"),
         MessageVerificationResult::OK);
 }

@@ -47,10 +47,10 @@ information in the debug log about your I2P configuration and connections. Run
 `maximus-cli help logging` for more information.
 
 It is possible to restrict outgoing connections in the usual way with
-`onlynet=i2p`. I2P support was added to Maximus Core in version 20.0 (fall 2023)
-and there may be fewer I2P peers than Tor or IP ones. Therefore, using
+`onlynet=i2p`. I2P support was added to Bitcoin Core in version 22.0 (2021) and inherited into
+Maximus Core via Dash; there may be fewer I2P peers than Tor or IP ones. Therefore, using
 `onlynet=i2p` alone (without other `onlynet=`) may make a node more susceptible
-to [Sybil attacks](https://en.maximus.it/wiki/Weaknesses#Sybil_attack). Use
+to [Sybil attacks](https://en.bitcoin.it/wiki/Weaknesses#Sybil_attack). Use
 `maximus-cli -addrinfo` to see the number of I2P addresses known to your node.
 
 ## I2P related information in Maximus Core

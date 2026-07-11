@@ -6,6 +6,8 @@
 #include <chainparams.h>
 #include <consensus/validation.h>
 #include <evo/evodb.h>
+#include <evo/cbtx.h>
+#include <evo/specialtx.h>
 #include <governance/governance.h>
 #include <index/blockfilterindex.h>
 #include <llmq/blockprocessor.h>
@@ -79,10 +81,19 @@ CBlock BuildChainTestingSetup::CreateBlock(const CBlockIndex* prev,
     for (const CMutableTransaction& tx : txns) {
         block.vtx.push_back(MakeTransactionRef(tx));
     }
+    // Manually update CbTx height, as we chain blocks past the miner's tip here
+    if (block.vtx[0]->nType == TRANSACTION_COINBASE) {
+        auto cbTx = GetTxPayload<CCbTx>(*block.vtx[0]);
+        BOOST_ASSERT(cbTx.has_value());
+        cbTx->nHeight = prev->nHeight + 1;
+        CMutableTransaction tmpTx{*block.vtx[0]};
+        SetTxPayload(tmpTx, *cbTx);
+        block.vtx[0] = MakeTransactionRef(tmpTx);
+    }
+
     // IncrementExtraNonce creates a valid coinbase and merkleRoot
     unsigned int extraNonce = 0;
     IncrementExtraNonce(&block, prev, extraNonce);
-
     while (!CheckProofOfWork(block.GetHash(), block.nBits, chainparams.GetConsensus())) ++block.nNonce;
 
     return block;

@@ -1,6 +1,7 @@
 # Support for Output Descriptors in Maximus Core
 
-Since Maximus Core v0.17, there is support for Output Descriptors. This is a
+Since Bitcoin Core v0.17 (inherited into Maximus Core via Dash), there is
+support for Output Descriptors. This is a
 simple language which can be used to describe collections of output scripts.
 Supporting RPCs are:
 - `scantxoutset` takes as input descriptors to scan for, and also reports
@@ -73,8 +74,8 @@ Descriptors consist of several types of expressions. The top level expression is
 - Anywhere a `'` suffix is permitted to denote hardened derivation, the suffix `h` can be used instead.
 
 `ADDR` expressions are any type of supported address:
-- P2PKH addresses (base58, of the form `X...`). Note that P2PKH addresses in descriptors cannot be used for P2PK outputs (use the `pk` function instead).
-- P2SH addresses (base58, of the form `7...`, defined in [BIP 13](https://github.com/bitcoin/bips/blob/master/bip-0013.mediawiki)).
+- P2PKH addresses (base58, of the form `M...` on Maximus mainnet). Note that P2PKH addresses in descriptors cannot be used for P2PK outputs (use the `pk` function instead).
+- P2SH addresses (base58, of the form `3...` on Maximus mainnet, defined in [BIP 13](https://github.com/bitcoin/bips/blob/master/bip-0013.mediawiki)).
 
 ## Explanation
 

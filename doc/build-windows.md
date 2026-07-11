@@ -5,8 +5,8 @@ Below are some notes on how to build Maximus Core for Windows.
 
 The options known to work for building Maximus Core on Windows are:
 
-* On Linux, using the [Mingw-w64](https://mingw-w64.org/doku.php) cross compiler tool chain. Ubuntu Focal 20.04 is required
-and is the platform used to build the Maximus Core Windows release binaries.
+* On Linux, using the [Mingw-w64](https://mingw-w64.org/doku.php) cross compiler tool chain. Verified working on
+Ubuntu 20.04 and 22.04; 22.04 or later is recommended since 20.04 has passed standard support.
 * On Windows, using [Windows
 Subsystem for Linux (WSL)](https://docs.microsoft.com/windows/wsl/about) and the Mingw-w64 cross compiler tool chain.
 * On Windows, using a native compiler tool chain such as [Visual Studio](https://www.visualstudio.com).

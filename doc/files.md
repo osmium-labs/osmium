@@ -27,8 +27,8 @@ The data directory is the default location where the Maximus Core files are stor
 Platform | Data directory path
 ---------|--------------------
 Linux    | `$HOME/.maximuscore/`
-macOS    | `$HOME/Library/Application Support/Maximuscore/`
-Windows  | `%APPDATA%\Maximuscore\` <sup>[\[1\]](#note1)</sup>
+macOS    | `$HOME/Library/Application Support/MaximusCore/`
+Windows  | `%APPDATA%\MaximusCore\` <sup>[\[1\]](#note1)</sup>
 
 2. A custom data directory path can be specified with the `-datadir` option.
 
@@ -119,11 +119,11 @@ These subdirectories and files are no longer used by Maximus Core:
 Path           | Description | Repository notes
 ---------------|-------------|-----------------
 `banlist.dat`  | Stores the addresses/subnets of banned nodes; completely ignored and superseded by `banlist.json` in 20.0 | [PR #5574](https://github.com/dashpay/dash/pull/5574)
-`blktree/`     | Blockchain index; replaced by `blocks/index/` in [0.8.0](https://github.com/maximus/maximus/blob/master/doc/release-notes/release-notes-0.8.0.md#improvements) | [PR #2231](https://github.com/maximus/maximus/pull/2231), [`8fdc94cc`](https://github.com/maximus/maximus/commit/8fdc94cc8f0341e96b1edb3a5b56811c0b20bd15)
-`coins/`       | Unspent transaction output database; replaced by `chainstate/` in 0.8.0 | [PR #2231](https://github.com/maximus/maximus/pull/2231), [`8fdc94cc`](https://github.com/maximus/maximus/commit/8fdc94cc8f0341e96b1edb3a5b56811c0b20bd15)
-`blkindex.dat` | Blockchain index BDB database; replaced by {`chainstate/`, `blocks/index/`, `blocks/revNNNNN.dat`<sup>[\[2\]](#note2)</sup>} in 0.8.0 | [PR #1677](https://github.com/maximus/maximus/pull/1677)
-`blk000?.dat`  | Block data (custom format, 2 GiB per file); replaced by `blocks/blkNNNNN.dat`<sup>[\[2\]](#note2)</sup> in 0.8.0 | [PR #1677](https://github.com/maximus/maximus/pull/1677)
-`addr.dat`     | Peer IP address BDB database; replaced by `peers.dat` in [0.7.0](https://github.com/maximus/maximus/blob/master/doc/release-notes/release-notes-0.7.0.md) | [PR #1198](https://github.com/maximus/maximus/pull/1198), [`928d3a01`](https://github.com/maximus/maximus/commit/928d3a011cc66c7f907c4d053f674ea77dc611cc)
+`blktree/`     | Blockchain index; replaced by `blocks/index/` in Bitcoin Core 0.8.0 (inherited via Dash) | [Bitcoin PR #2231](https://github.com/bitcoin/bitcoin/pull/2231)
+`coins/`       | Unspent transaction output database; replaced by `chainstate/` in Bitcoin Core 0.8.0 (inherited via Dash) | [Bitcoin PR #2231](https://github.com/bitcoin/bitcoin/pull/2231)
+`blkindex.dat` | Blockchain index BDB database; replaced by {`chainstate/`, `blocks/index/`, `blocks/revNNNNN.dat`<sup>[\[2\]](#note2)</sup>} in Bitcoin Core 0.8.0 (inherited via Dash) | [Bitcoin PR #1677](https://github.com/bitcoin/bitcoin/pull/1677)
+`blk000?.dat`  | Block data (custom format, 2 GiB per file); replaced by `blocks/blkNNNNN.dat`<sup>[\[2\]](#note2)</sup> in Bitcoin Core 0.8.0 (inherited via Dash) | [Bitcoin PR #1677](https://github.com/bitcoin/bitcoin/pull/1677)
+`addr.dat`     | Peer IP address BDB database; replaced by `peers.dat` in Bitcoin Core 0.7.0 (inherited via Dash) | [Bitcoin PR #1198](https://github.com/bitcoin/bitcoin/pull/1198)
 
 ## Notes
 

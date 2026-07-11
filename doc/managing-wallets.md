@@ -4,7 +4,8 @@
 
 ### 1.1 Creating the Wallet
 
-Since version 0.21, Maximus Core no longer has a default wallet.
+Since Bitcoin Core version 0.21 (inherited into Maximus Core via Dash), there
+is no longer a default wallet.
 Wallets can be created with the `createwallet` RPC or with the `Create wallet` GUI menu item.
 
 In the GUI, the `Create a new wallet` button is displayed on the main screen when there is no wallet loaded. Alternatively, there is the option `File` ->`Create wallet`.
@@ -102,7 +103,7 @@ If both the wallet and all backups are lost for any reason, the coins related to
 
 The Maximus Core wallet is by default a collection of unrelated private keys. If a non-HD wallet had received funds to an address and then was restored from a backup made before the address was generated, then any funds sent to that address would have been lost because there was no deterministic mechanism to derive the address again.
 
-Maximus Core [version 0.12.2](https://github.com/dashpay/dash/blob/master/doc/release-notes/maximus/release-notes-0.12.2.md) introduced HD wallets with deterministic key derivation. With HD wallets, users no longer lose funds when restoring old backups because all addresses are derived from the HD wallet seed.
+Dash Core [version 0.12.2](release-notes/dash/release-notes-0.12.2.md) (inherited into Maximus Core) introduced HD wallets with deterministic key derivation. With HD wallets, users no longer lose funds when restoring old backups because all addresses are derived from the HD wallet seed.
 
 This means that a single backup is enough to recover the coins at any time. It is still recommended to make regular backups (once a week) or after a significant number of new transactions to maintain the metadata, such as labels. Metadata cannot be retrieved from a blockchain rescan, so if the backup is too old, the metadata will be lost forever.
 

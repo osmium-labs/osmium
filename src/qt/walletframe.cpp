@@ -28,7 +28,9 @@ WalletFrame::WalletFrame(BitcoinGUI* _gui)
     // Leave HBox hook for adding a list view later
     QHBoxLayout *walletFrameLayout = new QHBoxLayout(this);
     setContentsMargins(0,0,0,0);
+    setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     walletStack = new QStackedWidget(this);
+    walletStack->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     walletFrameLayout->setContentsMargins(0,0,0,0);
     walletFrameLayout->addWidget(walletStack);
 

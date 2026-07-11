@@ -86,7 +86,7 @@ QString BitcoinUnits::description(int unit)
     {
         switch(unit)
         {
-            case MAXIMUS: return QString("TestMaximuss");
+            case MAXIMUS: return QString("TestMaximus"); // FIXED: Was "TestMaximuss"
             case mMAXIMUS: return QString("Milli-TestMaximus (1 / 1" THIN_SP_UTF8 "000)");
             case uMAXIMUS: return QString("Micro-TestMaximus (1 / 1" THIN_SP_UTF8 "000" THIN_SP_UTF8 "000)");
             case muffs: return QString("Ten Nano-TestMaximus (1 / 100" THIN_SP_UTF8 "000" THIN_SP_UTF8 "000)");

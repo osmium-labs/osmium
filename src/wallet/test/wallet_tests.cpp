@@ -135,7 +135,7 @@ BOOST_FIXTURE_TEST_CASE(scan_for_wallet_transactions, TestChain100Setup)
         BOOST_CHECK(result.last_failed_block.IsNull());
         BOOST_CHECK_EQUAL(result.last_scanned_block, newTip->GetBlockHash());
         BOOST_CHECK_EQUAL(*result.last_scanned_height, newTip->nHeight);
-        BOOST_CHECK_EQUAL(wallet.GetBalance().m_mine_immature, 1000 * COIN);
+        BOOST_CHECK_EQUAL(wallet.GetBalance().m_mine_immature, 94117648);
     }
 
     // Prune the older block file.
@@ -161,7 +161,7 @@ BOOST_FIXTURE_TEST_CASE(scan_for_wallet_transactions, TestChain100Setup)
         BOOST_CHECK_EQUAL(result.last_failed_block, oldTip->GetBlockHash());
         BOOST_CHECK_EQUAL(result.last_scanned_block, newTip->GetBlockHash());
         BOOST_CHECK_EQUAL(*result.last_scanned_height, newTip->nHeight);
-        BOOST_CHECK_EQUAL(wallet.GetBalance().m_mine_immature, 500 * COIN);
+        BOOST_CHECK_EQUAL(wallet.GetBalance().m_mine_immature, 47058824);
     }
 
     // Prune the remaining block file.
@@ -421,7 +421,7 @@ BOOST_FIXTURE_TEST_CASE(coin_mark_dirty_immature_credit, TestChain100Setup)
     // credit amount is calculated.
     wtx.MarkDirty();
     BOOST_CHECK(spk_man->AddKeyPubKey(coinbaseKey, coinbaseKey.GetPubKey()));
-    BOOST_CHECK_EQUAL(wtx.GetImmatureCredit(), 500*COIN);
+    BOOST_CHECK_EQUAL(wtx.GetImmatureCredit(), 47058824);
 }
 
 static int64_t AddTx(ChainstateManager& chainman, CWallet& wallet, uint32_t lockTime, int64_t mockTime, int64_t blockTime)
@@ -644,7 +644,7 @@ BOOST_FIXTURE_TEST_CASE(ListCoins, ListCoinsTestingSetup)
     BOOST_CHECK_EQUAL(list.begin()->second.size(), 1U);
 
     // Check initial balance from one mature coinbase transaction.
-    BOOST_CHECK_EQUAL(500 * COIN, wallet->GetAvailableBalance());
+    BOOST_CHECK_EQUAL(600000000000, wallet->GetAvailableBalance());
 
     // Add a transaction creating a change address, and confirm ListCoins still
     // returns the coin associated with the change address underneath the
@@ -1133,15 +1133,14 @@ BOOST_FIXTURE_TEST_CASE(CreateTransactionTest, CreateTransactionTestSetup)
 BOOST_FIXTURE_TEST_CASE(select_coins_grouped_by_addresses, ListCoinsTestingSetup)
 {
     // Check initial balance from one mature coinbase transaction.
-    BOOST_CHECK_EQUAL(wallet->GetAvailableBalance(), 500 * COIN);
-
+        BOOST_CHECK_EQUAL(wallet->GetAvailableBalance(), 600000000000);
     {
         std::vector<CompactTallyItem> vecTally = wallet->SelectCoinsGroupedByAddresses(/*fSkipDenominated=*/false,
                 /*fAnonymizable=*/false,
                 /*fSkipUnconfirmed=*/false,
                 /*nMaxOupointsPerAddress=*/100);
         BOOST_CHECK_EQUAL(vecTally.size(), 1);
-        BOOST_CHECK_EQUAL(vecTally.at(0).nAmount, 500 * COIN);
+        BOOST_CHECK_EQUAL(vecTally.at(0).nAmount, 600000000000);
         BOOST_CHECK_EQUAL(vecTally.at(0).vecInputCoins.size(), 1);
     }
 
@@ -1186,8 +1185,8 @@ BOOST_FIXTURE_TEST_CASE(select_coins_grouped_by_addresses, ListCoinsTestingSetup
     BOOST_CHECK_EQUAL(vecTally.size(), 2);
     BOOST_CHECK_EQUAL(vecTally.at(0).vecInputCoins.size(), 1);
     BOOST_CHECK_EQUAL(vecTally.at(1).vecInputCoins.size(), 1);
-    BOOST_CHECK_EQUAL(vecTally.at(0).nAmount + vecTally.at(1).nAmount, (500 + 499) * COIN);
-    BOOST_CHECK_EQUAL(wallet->GetAvailableBalance(), (500 + 499) * COIN);
+    BOOST_CHECK_EQUAL(vecTally.at(0).nAmount + vecTally.at(1).nAmount, 599950000000);
+    BOOST_CHECK_EQUAL(wallet->GetAvailableBalance(), 599950000000);
 }
 
 BOOST_FIXTURE_TEST_CASE(wallet_disableprivkeys, TestChain100Setup)

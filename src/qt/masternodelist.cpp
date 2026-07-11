@@ -3,6 +3,7 @@
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #include <qt/masternodelist.h>
+#include <QHeaderView>
 #include <qt/forms/ui_masternodelist.h>
 
 #include <evo/deterministicmns.h>
@@ -48,16 +49,16 @@ MasternodeList::MasternodeList(QWidget* parent) :
 
     int columnAddressWidth = 200;
     int columnTypeWidth = 140;
-    int columnStatusWidth = 80;
-    int columnPoSeScoreWidth = 80;
-    int columnRegisteredWidth = 80;
-    int columnLastPaidWidth = 80;
-    int columnNextPaymentWidth = 100;
-    int columnPayeeWidth = 130;
-    int columnOperatorRewardWidth = 130;
-    int columnCollateralWidth = 130;
-    int columnOwnerWidth = 130;
-    int columnVotingWidth = 130;
+    int columnStatusWidth = 120;
+    int columnPoSeScoreWidth = 140;
+    int columnRegisteredWidth = 110;
+    int columnLastPaidWidth = 110;
+    int columnNextPaymentWidth = 130;
+    int columnPayeeWidth = 240;
+    int columnOperatorRewardWidth = 200;
+    int columnCollateralWidth = 240;
+    int columnOwnerWidth = 240;
+    int columnVotingWidth = 240;
 
     ui->tableWidgetMasternodesDIP3->setColumnWidth(COLUMN_SERVICE, columnAddressWidth);
     ui->tableWidgetMasternodesDIP3->setColumnWidth(COLUMN_TYPE, columnTypeWidth);
@@ -71,6 +72,9 @@ MasternodeList::MasternodeList(QWidget* parent) :
     ui->tableWidgetMasternodesDIP3->setColumnWidth(COLUMN_COLLATERAL_ADDRESS, columnCollateralWidth);
     ui->tableWidgetMasternodesDIP3->setColumnWidth(COLUMN_OWNER_ADDRESS, columnOwnerWidth);
     ui->tableWidgetMasternodesDIP3->setColumnWidth(COLUMN_VOTING_ADDRESS, columnVotingWidth);
+    ui->tableWidgetMasternodesDIP3->horizontalHeader()->setStretchLastSection(true);
+    ui->tableWidgetMasternodesDIP3->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+    ui->tableWidgetMasternodesDIP3->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
 
     // dummy column for proTxHash
     ui->tableWidgetMasternodesDIP3->insertColumn(COLUMN_PROTX_HASH);
@@ -248,6 +252,7 @@ void MasternodeList::updateDIP3List()
             payeeStr = QString::fromStdString(EncodeDestination(payeeDest));
         }
         QTableWidgetItem* payeeItem = new QTableWidgetItem(payeeStr);
+        payeeItem->setToolTip(payeeStr);
 
         QString operatorRewardStr = tr("NONE");
         if (dmn.nOperatorReward) {
@@ -272,12 +277,15 @@ void MasternodeList::updateDIP3List()
             collateralStr = QString::fromStdString(EncodeDestination(collateralDestIt->second));
         }
         QTableWidgetItem* collateralItem = new QTableWidgetItem(collateralStr);
+        collateralItem->setToolTip(collateralStr);
 
         QString ownerStr = QString::fromStdString(EncodeDestination(PKHash(dmn.pdmnState->keyIDOwner)));
         QTableWidgetItem* ownerItem = new QTableWidgetItem(ownerStr);
+        ownerItem->setToolTip(ownerStr);
 
         QString votingStr = QString::fromStdString(EncodeDestination(PKHash(dmn.pdmnState->keyIDVoting)));
         QTableWidgetItem* votingItem = new QTableWidgetItem(votingStr);
+        votingItem->setToolTip(votingStr);
 
         QTableWidgetItem* proTxHashItem = new QTableWidgetItem(QString::fromStdString(dmn.proTxHash.ToString()));
 

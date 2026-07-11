@@ -36,7 +36,7 @@ What is Maximus?
 Maximus was born from a very simple idea, to promote and reward talent in the blockchain space. It is our goal to drive innovation and to give back what we create to the entire crypto community. We shall create a unique ecosystem that will have the capability to identify and fund innovative projects that can help the entire blockchain space.
 
 
-For more information read the original Maximus whitepaper.
+For more information read the [Maximus whitepaper](https://maximuschain.com/#why_maxi).
 
 License
 -------
@@ -53,6 +53,9 @@ stable release versions of Maximus Core.
 
 The `develop` branch is regularly built (see doc/build-*.md for instructions) and tested, but is not guaranteed to be
 completely stable.
+
+The `Testnet` branch is where active day-to-day development currently takes place, including consensus,
+build system, and dependency work. Changes are tested here before being merged upstream.
 
 The contribution workflow is described in [CONTRIBUTING.md](CONTRIBUTING.md)
 and useful hints for developers can be found in [doc/developer-notes.md](doc/developer-notes.md).
@@ -76,7 +79,7 @@ There are also [regression and integration tests](/test), written
 in Python.
 These tests can be run (if the [test dependencies](/test) are installed) with: `test/functional/test_runner.py`
 
-The Travis CI system makes sure that every pull request is built for Windows, Linux, and macOS, and that unit/sanity tests are run automatically.
+GitHub Actions makes sure that every pull request is built for Windows, Linux, and macOS, and that unit/sanity tests are run automatically.
 
 ### Manual Quality Assurance (QA) Testing
 

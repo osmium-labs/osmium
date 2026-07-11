@@ -124,6 +124,7 @@ OverviewPage::OverviewPage(QWidget* parent) :
     txdelegate(new TxViewDelegate(this))
 {
     ui->setupUi(this);
+    setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
 
     GUIUtil::setFont({ui->label_4,
                       ui->label_5,
