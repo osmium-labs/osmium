@@ -85,7 +85,6 @@ SplashScreen::SplashScreen(const NetworkStyle *networkStyle) :
     pixPaint.fillRect(rect, GUIUtil::getThemedQColor(GUIUtil::ThemedColor::BACKGROUND_WIDGET));
 
     pixPaint.drawPixmap((width / 2) - (logoWidth / 2), (height / 2) - (logoHeight / 2) + 20, pixmapLogo.scaled(logoWidth * scale, logoHeight * scale, Qt::KeepAspectRatio, Qt::SmoothTransformation));
-    pixPaint.setPen(GUIUtil::getThemedQColor(GUIUtil::ThemedColor::DEFAULT));
 
     // check font size and drawing with
     fontBold.setPointSize(50 * fontFactor);
@@ -101,11 +100,20 @@ SplashScreen::SplashScreen(const NetworkStyle *networkStyle) :
     fm = pixPaint.fontMetrics();
     titleTextWidth  = GUIUtil::TextWidth(fm, titleText);
     int titleTextHeight = fm.height();
+    {
+        int titleTextX = (width / 2) - (titleTextWidth / 2);
+        QLinearGradient flameGradient(titleTextX, paddingTop, titleTextX, paddingTop + titleTextHeight);
+        flameGradient.setColorAt(0.0, QColor(255, 232, 150));
+        flameGradient.setColorAt(0.5, QColor(247, 185, 65));
+        flameGradient.setColorAt(1.0, QColor(205, 95, 20));
+        pixPaint.setPen(QPen(QBrush(flameGradient), 0));
+    }
     pixPaint.drawText((width / 2) - (titleTextWidth / 2), titleTextHeight + paddingTop, titleText);
 
     fontNormal.setPointSize(16 * fontFactor);
     pixPaint.setFont(fontNormal);
     fm = pixPaint.fontMetrics();
+    pixPaint.setPen(GUIUtil::getThemedQColor(GUIUtil::ThemedColor::DEFAULT));
     int versionTextWidth = GUIUtil::TextWidth(fm, versionText);
     pixPaint.drawText((width / 2) - (versionTextWidth / 2), titleTextHeight + paddingTop + titleVersionVSpace, versionText);
 

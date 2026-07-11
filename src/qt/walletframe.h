@@ -47,7 +47,7 @@ public:
 
     void showOutOfSyncWarning(bool fShow);
 
-    QSize sizeHint() const override { return m_size_hint; }
+    QSize sizeHint() const override { return QFrame::sizeHint(); }
 
 Q_SIGNALS:
     /** Notify that the user has requested more information about the out-of-sync warning */
