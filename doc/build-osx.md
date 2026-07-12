@@ -133,6 +133,16 @@ tail -f $HOME/Library/Application\ Support/MaximusCore/debug.log
 
 ## Notes
 
-* Tested on OS X 10.12 Sierra through macOS 10.15 Catalina on 64-bit Intel
-processors only.
+* The resulting binaries/app are not code-signed with an Apple Developer
+certificate or notarized. On first launch, macOS Gatekeeper will likely
+require the user to explicitly approve the app (System Settings ->
+Privacy & Security -> "Open Anyway") - this is expected, not a sign of a
+broken build.
+* Confirmed working: a `.dmg` produced via cross-compilation from Linux
+(see [depends/README.md](../depends/README.md) for the `HOST=arm64-apple-darwin`
+/ `HOST=x86_64-apple-darwin` cross-build process) launches successfully on
+macOS Sequoia 15.6.1, Apple Silicon (M1), after the Gatekeeper approval
+above. This document's native `brew`/`./configure` build flow (above) has
+not been independently re-verified against a current macOS version as of
+this note.
 * Building with downloaded Qt binaries is not officially supported. See the notes in [#7714](https://github.com/bitcoin/bitcoin/issues/7714).
