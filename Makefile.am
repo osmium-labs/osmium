@@ -134,7 +134,13 @@ $(OSX_DMG): $(OSX_TEMP_ISO)
 
 $(APP_DIST_DIR)/$(OSX_APP)/Contents/MacOS/Maximus-Qt: $(OSX_APP_BUILT) $(OSX_PACKAGING)
 	INSTALLNAMETOOL=$(INSTALLNAMETOOL) OTOOL=$(OTOOL) STRIP=$(STRIP) $(PYTHON) $(OSX_DEPLOY_SCRIPT) $(OSX_APP) $(OSX_VOLNAME) -translations-dir=$(QT_TRANSLATION_DIR)
-	codesign --force --deep --sign - "$(APP_DIST_DIR)/$(OSX_APP)"
+	if command -v codesign >/dev/null 2>&1; then \
+		codesign --force --deep --sign - "$(APP_DIST_DIR)/$(OSX_APP)"; \
+	elif command -v ldid >/dev/null 2>&1; then \
+		ldid -S "$(APP_DIST_DIR)/$(OSX_APP)/Contents/MacOS/Maximus-Qt"; \
+	else \
+		echo "Warning: neither codesign nor ldid found - .app will be unsigned"; \
+	fi
 
 deploydir: $(APP_DIST_DIR)/$(OSX_APP)/Contents/MacOS/Maximus-Qt
 endif !BUILD_DARWIN
