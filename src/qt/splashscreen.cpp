@@ -113,8 +113,17 @@ SplashScreen::SplashScreen(const NetworkStyle *networkStyle) :
     fontNormal.setPointSize(16 * fontFactor);
     pixPaint.setFont(fontNormal);
     fm = pixPaint.fontMetrics();
-    pixPaint.setPen(GUIUtil::getThemedQColor(GUIUtil::ThemedColor::DEFAULT));
     int versionTextWidth = GUIUtil::TextWidth(fm, versionText);
+    {
+        int versionTextX = (width / 2) - (versionTextWidth / 2);
+        int versionTextY = titleTextHeight + paddingTop + titleVersionVSpace;
+        int versionTextHeight = fm.height();
+        QLinearGradient versionGradient(versionTextX, versionTextY - versionTextHeight, versionTextX, versionTextY);
+        versionGradient.setColorAt(0.0, QColor(255, 232, 150));
+        versionGradient.setColorAt(0.5, QColor(247, 185, 65));
+        versionGradient.setColorAt(1.0, QColor(205, 95, 20));
+        pixPaint.setPen(QPen(QBrush(versionGradient), 0));
+    }
     pixPaint.drawText((width / 2) - (versionTextWidth / 2), titleTextHeight + paddingTop + titleVersionVSpace, versionText);
 
     // draw additional text if special network

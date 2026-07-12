@@ -134,6 +134,7 @@ $(OSX_DMG): $(OSX_TEMP_ISO)
 
 $(APP_DIST_DIR)/$(OSX_APP)/Contents/MacOS/Maximus-Qt: $(OSX_APP_BUILT) $(OSX_PACKAGING)
 	INSTALLNAMETOOL=$(INSTALLNAMETOOL) OTOOL=$(OTOOL) STRIP=$(STRIP) $(PYTHON) $(OSX_DEPLOY_SCRIPT) $(OSX_APP) $(OSX_VOLNAME) -translations-dir=$(QT_TRANSLATION_DIR)
+	codesign --force --deep --sign - "$(APP_DIST_DIR)/$(OSX_APP)"
 
 deploydir: $(APP_DIST_DIR)/$(OSX_APP)/Contents/MacOS/Maximus-Qt
 endif !BUILD_DARWIN

@@ -84,7 +84,13 @@ NetworkStyle::NetworkStyle(const QString &_appName, const int iconColorHueShift,
     }
 
     appIcon             = QIcon(appIconPixmap);
-    trayAndWindowIcon   = QIcon(appIconPixmap.scaled(QSize(256,256)));
+    // Build a genuine multi-resolution icon so Windows (and other OSes) can
+    // pick the ideal size for each context (taskbar, alt-tab, title bar)
+    // instead of always scaling down from one fixed-size pixmap.
+    trayAndWindowIcon = QIcon();
+    for (int size : {16, 24, 32, 48, 64, 128, 256}) {
+        trayAndWindowIcon.addPixmap(appIconPixmap.scaled(QSize(size, size), Qt::KeepAspectRatio, Qt::SmoothTransformation));
+    }
     splashImage         = QPixmap(":/images/splash");
 }
 
