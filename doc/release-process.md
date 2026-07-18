@@ -14,6 +14,83 @@ Release Process
 > belongs to an unrelated company/is parked). Those links have been corrected
 > below to `maximuschain.com`, the real site.
 
+## Current Actual Release Process (as practiced)
+
+This is the real, verified process the team has actually used to produce and
+distribute builds (e.g. the pre-release binaries for Testnet). Follow this
+section for a real release; treat everything below it as reference material
+for a possible future, more formal pipeline.
+
+### Windows (cross-compiled from Linux via mingw)
+
+```sh
+cd depends
+make HOST=x86_64-w64-mingw32 -j$(nproc)
+cd ..
+make clean
+./autogen.sh
+CONFIG_SITE=$PWD/depends/x86_64-w64-mingw32/share/config.site ./configure --prefix=/
+make -j$(nproc)
+x86_64-w64-mingw32-strip src/maximusd.exe src/maximus-cli.exe src/maximus-tx.exe src/maximus-wallet.exe src/qt/maximus-qt.exe
+```
+
+### Linux (native build - repeat on each Ubuntu version you want to support, e.g. 20.04 and 22.04)
+
+```sh
+cd ~/maximus
+./autogen.sh
+CONFIG_SITE=$PWD/depends/x86_64-pc-linux-gnu/share/config.site ./configure --prefix=/
+make -j$(nproc)
+strip src/maximusd src/maximus-cli src/maximus-tx src/maximus-wallet src/qt/maximus-qt
+```
+
+### macOS (cross-compiled from Linux; repeat for each of x86_64-apple-darwin and arm64-apple-darwin)
+
+```sh
+cd depends
+make HOST=arm64-apple-darwin -j$(nproc)   # or x86_64-apple-darwin for Intel
+cd ..
+make clean
+./autogen.sh
+CONFIG_SITE=$PWD/depends/arm64-apple-darwin/share/config.site ./configure --prefix=/
+make -j$(nproc)
+make deploy
+```
+
+**Mac code signing note:** Apple Silicon (ARM64) macOS refuses to run an
+unsigned executable at all - not just a bypassable Gatekeeper warning, an
+outright kill on launch. `make deploy` now signs the resulting `.app`
+automatically (see `Makefile.am`): it uses real `codesign` if building
+natively on a Mac, and falls back to `ldid` (a Linux-native ad-hoc signing
+tool) when cross-compiling from Linux, since `codesign` doesn't exist there.
+`ldid` isn't packaged for Ubuntu; build it from source if needed:
+
+```sh
+git clone --recursive https://github.com/ProcursusTeam/ldid.git
+cd ldid && make
+sudo cp ldid /usr/local/bin/ldid
+```
+
+Even with ad-hoc signing (not full Apple notarization), users will still see
+a one-time Gatekeeper prompt (System Settings -> Privacy & Security -> "Open
+Anyway") on first launch - this is expected, not a bug.
+
+### Packaging and distribution
+
+Binaries are stripped, zipped per-platform (`.dmg` on macOS is produced
+directly by `make deploy`), and uploaded to a GitHub pre-release using the
+`gh` CLI:
+
+```sh
+gh release upload <tag> path/to/file.zip --clobber   # --clobber replaces an existing asset of the same name
+```
+
+If `gh` isn't installed: `snap install gh --classic`, then `gh auth login`.
+Note: the `gh` snap requires a newer glibc than Ubuntu 20.04 ships with by
+default; if `gh` fails with a GLIBC version error on an older box, build/upload
+from a newer box (e.g. 22.04) instead.
+
+
 * [ ] Update translations, see [translation_process.md](https://github.com/dashpay/dash/blob/master/doc/translation_process.md#synchronising-translations).
 * [ ] Update manpages, see [gen-manpages.sh](https://github.com/maximus-chain/maximus/blob/master/contrib/devtools/README.md#gen-manpagessh).
 
