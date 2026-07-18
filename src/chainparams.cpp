@@ -210,10 +210,10 @@ public:
         consensus.vDeployments[Consensus::DEPLOYMENT_MN_RR].useEHF = true;
 
         // The best chain should have at least this much work.
-        consensus.nMinimumChainWork = uint256S("00000000000000000000000000000000000000000000029141f8537c534e2a97");
+        consensus.nMinimumChainWork = uint256S("0000000000000000000000000000000000000000000003bf3666e4f474c0e6d8");
 
         // By default assume that the signatures in ancestors of this block are valid.
-        consensus.defaultAssumeValid = uint256S("0x7ce8cc72253a317c2308ae9600d5e02d7a724c3e0d2f4c72e18f6ba16b8167d1"); // 265000
+        consensus.defaultAssumeValid = uint256S("0x832014163c094c90c0dc9ce80f6a9146134eb977a58d73442eb6013a73762512"); // 678298
 
         // AuxPoW parameters
         consensus.nAuxpowChainId = 0x0045;
@@ -385,10 +385,10 @@ public:
         consensus.vDeployments[Consensus::DEPLOYMENT_MN_RR].useEHF = true;
 
         // The best chain should have at least this much work.
-        consensus.nMinimumChainWork = uint256S("0x0000000000000000000000000000000000000000000000000000000000100010");
+        consensus.nMinimumChainWork = uint256S("0x000000000000000000000000000000000000000000000000000000013af825fd");
 
         // By default assume that the signatures in ancestors of this block are valid.
-        consensus.defaultAssumeValid = uint256S("0x000003cd91b4da9957b3411486acbfce64a1ed961188879a024b1ab2f12aac5a"); // Genesis block
+        consensus.defaultAssumeValid = uint256S("0x5e32a92042c6b135fffb91adfab43673c14b0f5636183dcb0e2c201dee735dad"); // 170000
 
         // AuxPoW parameters
         consensus.nAuxpowChainId = 0x0045;
