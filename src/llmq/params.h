@@ -139,7 +139,7 @@ namespace Consensus {
         .minSize = 2,
         .threshold = 2,
 
-        .dkgInterval = 24, // one DKG per hour
+        .dkgInterval = 24, // one DKG per 24 blocks (~29 min at mainnet's 72s spacing; faster on testnet/devnet)
         .dkgPhaseBlocks = 2,
         .dkgMiningWindowStart = 10, // dkgPhaseBlocks * 5 = after finalization
         .dkgMiningWindowEnd = 18,
@@ -165,7 +165,7 @@ namespace Consensus {
         .minSize = 2,
         .threshold = 2,
 
-        .dkgInterval = 24, // one DKG per hour
+        .dkgInterval = 24, // one DKG per 24 blocks (~29 min at mainnet's 72s spacing; faster on testnet/devnet)
         .dkgPhaseBlocks = 2,
         .dkgMiningWindowStart = 10, // dkgPhaseBlocks * 5 = after finalization
         .dkgMiningWindowEnd = 18,
@@ -191,7 +191,7 @@ namespace Consensus {
         .minSize = 2,
         .threshold = 2,
 
-        .dkgInterval = 24, // one DKG per hour
+        .dkgInterval = 24, // one DKG per 24 blocks (~29 min at mainnet's 72s spacing; faster on testnet/devnet)
         .dkgPhaseBlocks = 2,
         .dkgMiningWindowStart = 10, // dkgPhaseBlocks * 5 = after finalization
         .dkgMiningWindowEnd = 18,
@@ -269,7 +269,7 @@ namespace Consensus {
         .minSize = 7,
         .threshold = 6,
 
-        .dkgInterval = 24, // one DKG per hour
+        .dkgInterval = 24, // one DKG per 24 blocks (~29 min at mainnet's 72s spacing; faster on testnet/devnet)
         .dkgPhaseBlocks = 2,
         .dkgMiningWindowStart = 10, // dkgPhaseBlocks * 5 = after finalization
         .dkgMiningWindowEnd = 18,
@@ -321,7 +321,7 @@ namespace Consensus {
         .minSize = 9,
         .threshold = 8,
 
-        .dkgInterval = 24, // one DKG per hour
+        .dkgInterval = 24, // one DKG per 24 blocks (~29 min at mainnet's 72s spacing; faster on testnet/devnet)
         .dkgPhaseBlocks = 2,
         .dkgMiningWindowStart = 10, // dkgPhaseBlocks * 5 = after finalization
         .dkgMiningWindowEnd = 18,
@@ -348,7 +348,7 @@ namespace Consensus {
         .minSize = 40,
         .threshold = 30,
 
-        .dkgInterval = 24, // one DKG per hour
+        .dkgInterval = 24, // one DKG per 24 blocks (~29 min at mainnet's 72s spacing; faster on testnet/devnet)
         .dkgPhaseBlocks = 2,
         .dkgMiningWindowStart = 10, // dkgPhaseBlocks * 5 = after finalization
         .dkgMiningWindowEnd = 18,
@@ -374,7 +374,7 @@ namespace Consensus {
         .minSize = 8,
         .threshold = 7,
 
-        .dkgInterval = 24, // one DKG per hour
+        .dkgInterval = 24, // one DKG per 24 blocks (~29 min at mainnet's 72s spacing; faster on testnet/devnet)
         .dkgPhaseBlocks = 2,
         .dkgMiningWindowStart = 10, // dkgPhaseBlocks * 5 = after finalization
         .dkgMiningWindowEnd = 18,
@@ -630,7 +630,7 @@ namespace Consensus {
         .minSize = 80,
         .threshold = 67,
 
-        .dkgInterval = 24, // one DKG per hour
+        .dkgInterval = 24, // one DKG per 24 blocks (~29 min at mainnet's 72s spacing; faster on testnet/devnet)
         .dkgPhaseBlocks = 2,
         .dkgMiningWindowStart = 10, // dkgPhaseBlocks * 5 = after finalization
         .dkgMiningWindowEnd = 18,
