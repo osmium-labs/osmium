@@ -90,6 +90,52 @@ Note: the `gh` snap requires a newer glibc than Ubuntu 20.04 ships with by
 default; if `gh` fails with a GLIBC version error on an older box, build/upload
 from a newer box (e.g. 22.04) instead.
 
+### Release signing (current process)
+
+Releases are signed using individual team members' personal GPG keys, **not**
+the Guix multi-signer pipeline described later in this document (this project
+does not use that pipeline — see the note at the top of this file).
+
+Public keys for all current signers are committed to `contrib/release-keys/`.
+
+1. Tag the release with a signed git tag:
+```sh
+   git tag -s vX.Y.Z -m "Maximus Core vX.Y.Z"
+   git push origin vX.Y.Z
+```
+2. Build and package binaries per platform (see above).
+3. Generate a `SHA256SUMS` file covering every released artifact:
+```sh
+   sha256sum *.zip *.dmg > SHA256SUMS
+```
+4. The primary release engineer signs it:
+```sh
+   gpg --clearsign SHA256SUMS   # produces SHA256SUMS.asc
+```
+5. Each additional signer independently downloads and verifies the artifacts
+   (checks the hashes, ideally rebuilds from the tagged source), then adds a
+   detached signature over the same `SHA256SUMS`:
+```sh
+   gpg --detach-sign --armor -o SHA256SUMS.<name>.asc SHA256SUMS
+```
+6. Upload `SHA256SUMS`, every `SHA256SUMS.*.asc`, and each signer's public key
+   (from `contrib/release-keys/`) to the GitHub release, alongside the binaries.
+
+Verifying a release, for users:
+```sh
+gpg --import maximus-release-key.asc   # and any other signer's key
+gpg --verify SHA256SUMS.asc SHA256SUMS
+sha256sum -c SHA256SUMS
+```
+
+Current signers:
+- realgreenminer — `contrib/release-keys/realgreenminer.asc`
+- midefos — `contrib/release-keys/midefos.asc`
+
+To add a new signer: they generate their own key, export the public half into
+`contrib/release-keys/<name>.asc`, commit it, and from then on add a detached
+signature (step 5) to every release going forward.
+
 
 * [ ] Update translations, see [translation_process.md](https://github.com/dashpay/dash/blob/master/doc/translation_process.md#synchronising-translations).
 * [ ] Update manpages, see [gen-manpages.sh](https://github.com/maximus-chain/maximus/blob/master/contrib/devtools/README.md#gen-manpagessh).
