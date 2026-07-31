@@ -195,6 +195,14 @@ void CDKGDebugManager::UpdateLocalMemberStatus(Consensus::LLMQType llmqType, int
         return;
     }
 
+    // The debug session's member vector is sized from llmqParams.size, which can be
+    // smaller than the actual quorum member count when a LLMQType is mapped to params
+    // of a different size (e.g. LLMQ_400_60 -> llmq_20_60). This is debug-only
+    // bookkeeping, so skip rather than throw and take down the node.
+    if (memberIdx >= it->second.members.size()) {
+        return;
+    }
+
     if (func(it->second.members.at(memberIdx))) {
         localStatus.nTime = GetAdjustedTime();
     }
