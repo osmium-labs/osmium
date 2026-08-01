@@ -1419,14 +1419,13 @@ std::string CopyrightHolders(const std::string& strPrefix, unsigned int nStartYe
     const auto copyright_devs = strprintf(_(COPYRIGHT_HOLDERS).translated, COPYRIGHT_HOLDERS_SUBSTITUTION);
     std::string strCopyrightHolders = strPrefix + strprintf(" %u-%u ", nStartYear, nEndYear) + copyright_devs;
 
-    // Check for untranslated substitution to make sure Maximus Core copyright is not removed by accident
-    if (copyright_devs.find("Maximus Core") == std::string::npos) {
-        strCopyrightHolders += "\n" + strPrefix + strprintf(" %u-%u ", 2014, nEndYear) + "The Dash Core developers";
-    }
-    // Check for untranslated substitution to make sure Bitcoin Core copyright is not removed by accident
-    if (copyright_devs.find("Bitcoin Core") == std::string::npos) {
-        strCopyrightHolders += "\n" + strPrefix + strprintf(" %u-%u ", 2009, nEndYear) + "The Bitcoin Core developers";
-    }
+    // Maximus is forked via Osmium from Dash, which is forked from Bitcoin. The
+    // COPYRIGHT_HOLDERS_SUBSTITUTION is always "Maximus Core" for this project,
+    // so a dynamic npos check here would never fire - always include the full
+    // upstream lineage explicitly instead.
+    strCopyrightHolders += "\n" + strPrefix + strprintf(" %u-%u ", 2024, nEndYear) + "The Osmium Core developers";
+    strCopyrightHolders += "\n" + strPrefix + strprintf(" %u-%u ", 2014, nEndYear) + "The Dash Core developers";
+    strCopyrightHolders += "\n" + strPrefix + strprintf(" %u-%u ", 2009, nEndYear) + "The Bitcoin Core developers";
     return strCopyrightHolders;
 }
 
