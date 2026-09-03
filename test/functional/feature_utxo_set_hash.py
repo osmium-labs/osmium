@@ -28,7 +28,10 @@ class UTXOSetHashTest(BitcoinTestFramework):
         self.log.info("Test deterministic UTXO set hash results")
 
         # These depend on the setup_clean_chain option, the chain loaded from the cache
-        assert_equal(self.nodes[0].gettxoutsetinfo()['hash_serialized_2'], "b61ee2cb582d2f4f94493f3d480e9a59d064706e98a12be0f335a3eeadd5678a")
+        # hash_serialized_2 commits to the best block hash, so Osmium's genesis gives a different
+        # value than Dash's. The UTXO set itself is empty at this point (a genesis coinbase is not
+        # spendable and is not in the set), which is why the muhash is unchanged.
+        assert_equal(self.nodes[0].gettxoutsetinfo()['hash_serialized_2'], "6ea958e4dfa98085637941ccf8e71c5a64d7f1bb21507697c14152d8bac4a675")
         assert_equal(self.nodes[0].gettxoutsetinfo("muhash")['muhash'], "dd5ad2a105c2d29495f577245c357409002329b9f4d6182c0af3dc2f462555c8")
 
     def test_muhash_implementation(self):
@@ -62,9 +65,10 @@ class UTXOSetHashTest(BitcoinTestFramework):
                 for n, tx_out in enumerate(tx.vout):
                     coinbase = 1 if not tx.vin[0].prevout.hash else 0
 
-                    # Skip witness commitment
-                    if (coinbase and n > 0):
-                        continue
+                    # Bitcoin skipped the coinbase's witness commitment here. Osmium has no
+                    # segwit, and every coinbase past the devfee start height carries a second,
+                    # real output paying the devfee -- which is in the UTXO set like any other.
+                    # Skipping n > 0 would leave those out of the reconstructed hash.
 
                     data = COutPoint(int(tx.rehash(), 16), n).serialize()
                     data += struct.pack("<i", height * 2 + coinbase)

@@ -475,7 +475,7 @@ class ImportMultiTest(BitcoinTestFramework):
 
         # Test importing a descriptor containing a WIF private key
         wif_priv = "cTT3BvHnd51YJf8fkdr2XvZTQRRUZruWhRvRyQY1raVFg5Lvam2A"
-        address = "ySWABbcNKyHUgBb1ffhpuETuis9jsdR3aq"
+        address = "sQS7Qy93gGLLQgViJNi3dMP7HJHbCLguRH"
         desc = "sh(pkh(" + wif_priv + "))"
         self.log.info("Should import a descriptor with a WIF private key as spendable")
         self.test_importmulti({"desc": descsum_create(desc),
@@ -696,11 +696,11 @@ class ImportMultiTest(BitcoinTestFramework):
         assert_equal(wrpc.getwalletinfo()["private_keys_enabled"], False)
         xpub = "tpubDAXcJ7s7ZwicqjprRaEWdPoHKrCS215qxGYxpusRLLmJuT69ZSicuGdSfyvyKpvUNYBW1s2U3NSrT6vrCYB9e6nZUEvrqnwXPF8ArTCRXMY"
         addresses = [
-            'yUxX4qnzWntXhEGrYB92v7ez4EZBnUjB1y', # m/0'/0'/0
-            'yRhTPsPd2qYgYbFFCqY2nuPHJQBjTnMQxg', # m/0'/0'/1
-            'yUyn3UV9rBdWfw6yJJ6eAoKuzDJ8RVLP1o', # m/0'/0'/2
-            'yi8GEkfLBgK85wGmBFsMFdSbEvPPNCSnVx', # m/0'/0'/3
-            'yYB4whdY8APWoCez6ryNdMBrrDjwzFbqMi', # m/0'/0'/4
+            'sStUJDKfs5wPRjBZAt9FeEaBcfh38mbQ4M', # m/0'/0'/0
+            'sPdQdEvJP8bYH69wqYYFX2JUrqKahxddUb', # m/0'/0'/1
+            'sSujGr1qCUgNQS1fw16rtvF7YeRyiGbkY7', # m/0'/0'/2
+            'sg4DU8C1XyMypSBToxsZykMnoMXEfB5RfU', # m/0'/0'/3
+            'sW72B5ADUTSNXhZgjZybMU74QesoMDEZps', # m/0'/0'/4
         ]
         result = wrpc.importmulti(
             [{

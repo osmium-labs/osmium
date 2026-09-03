@@ -132,8 +132,12 @@ class RPCPackagesTest(BitcoinTestFramework):
 
         self.log.info("Check testmempoolaccept reports txns in packages that exceed max feerate")
         coin = self.coins.pop()
+        # Dash's coinbase outputs were 500 each, so a flat 0.999 fee was both affordable and far
+        # above the default -maxfeerate. Osmium's are a fraction of a coin, so pay half the input
+        # as fee instead -- still orders of magnitude over the rate limit for a ~200 byte tx.
+        high_fee_value = (coin["amount"] / 2).quantize(Decimal("0.00000001"))
         tx_high_fee_raw = node.createrawtransaction([{"txid": coin["txid"], "vout": 0}],
-                                           {self.address : coin["amount"] - Decimal("0.999")})
+                                           {self.address : high_fee_value})
         tx_high_fee_signed = node.signrawtransactionwithkey(hexstring=tx_high_fee_raw, privkeys=self.privkeys)
         assert tx_high_fee_signed["complete"]
         tx_high_fee = FromHex(CTransaction(), tx_high_fee_signed["hex"])
@@ -186,7 +190,10 @@ class RPCPackagesTest(BitcoinTestFramework):
 
         self.log.info("Testmempoolaccept a package in which a transaction has two children within the package")
         first_coin = self.coins.pop()
-        value = (first_coin["amount"] - Decimal("0.0002")) / 2 # Deduct reasonable fee and make 2 outputs
+        # Deduct reasonable fee and make 2 outputs. Osmium's coinbase amounts are not round --
+        # part of the subsidy goes to the devfee -- so halving one leaves more than 8 decimals,
+        # which createrawtransaction rejects as an invalid amount.
+        value = ((first_coin["amount"] - Decimal("0.0002")) / 2).quantize(Decimal("0.00000001"))
         inputs = [{"txid": first_coin["txid"], "vout": 0}]
         outputs = [{self.address : value}, {ADDRESS_BCRT1_P2SH_OP_TRUE : value}]
         rawtx = node.createrawtransaction(inputs, outputs)
@@ -276,8 +283,10 @@ class RPCPackagesTest(BitcoinTestFramework):
         node = self.nodes[0]
         prevtx = self.coins.pop()
         inputs = [{"txid": prevtx["txid"], "vout": 0}]
-        output1 = {node.get_deterministic_priv_key().address: 500 - 0.00125}
-        output2 = {ADDRESS_BCRT1_P2SH_OP_TRUE: 500 - 0.00125}
+        # Dash's coinbase paid a flat 500; take the fee off whatever this coinbase actually holds.
+        conflict_value = prevtx["amount"] - Decimal("0.00125")
+        output1 = {node.get_deterministic_priv_key().address: conflict_value}
+        output2 = {ADDRESS_BCRT1_P2SH_OP_TRUE: conflict_value}
 
         # tx1 and tx2 share the same inputs
         rawtx1 = node.createrawtransaction(inputs, output1)

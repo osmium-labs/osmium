@@ -4,6 +4,7 @@
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 """Test orphaned block rewards in the wallet."""
 
+from test_framework.blocktools import COIN, get_miner_reward
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import assert_equal
 from decimal import Decimal
@@ -32,8 +33,15 @@ class OrphanedBlockRewardTest(BitcoinTestFramework):
         # Let the block reward mature and send coins including both
         # the existing balance and the block reward.
         self.nodes[0].generate(150)
-        assert_equal(self.nodes[1].getbalance(), Decimal("474.28571429"))
-        txid = self.nodes[1].sendtoaddress(self.nodes[0].getnewaddress(), 30)
+        # 10 received above plus the reward of the block node1 mined. Dash's was ~464 at this
+        # height; Osmium's is the subsidy less the devfee and far smaller.
+        blk_reward = Decimal(get_miner_reward(self.nodes[1].getblock(blk)['height'])) / COIN
+        assert_equal(self.nodes[1].getbalance(), Decimal(10) + blk_reward)
+        # Spend out of the reward coin only, leaving the separate 10-coin output untouched --
+        # that is what Dash's 30 did against a ~464 reward, and the assertions below depend on the
+        # 10 still being there once the reward is orphaned.
+        txid = self.nodes[1].sendtoaddress(self.nodes[0].getnewaddress(),
+                                           (blk_reward / 2).quantize(Decimal('0.00000001')))
 
         # Orphan the block reward and make sure that the original coins
         # from the wallet can still be spent.

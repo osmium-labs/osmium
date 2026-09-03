@@ -36,7 +36,9 @@ class HelpRpcTest(BitcoinTestFramework):
         # command titles
         titles = [line[3:-3] for line in node.help().splitlines() if line.startswith('==')]
 
-        components = ['Addressindex', 'Blockchain', 'Control', 'Osmium', 'Evo', 'Generating', 'Mining', 'Network', 'Rawtransactions', 'Util']
+        # Alphabetical, as the node emits them: 'Osmium' sorts after 'Network', not after
+        # 'Control' -- the rename from Dash moved its position.
+        components = ['Addressindex', 'Blockchain', 'Control', 'Evo', 'Generating', 'Mining', 'Network', 'Osmium', 'Rawtransactions', 'Util']
 
         if self.is_wallet_compiled():
             components.append('Wallet')

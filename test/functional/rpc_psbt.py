@@ -42,12 +42,16 @@ class PSBTTest(BitcoinTestFramework):
 
         # Manually selected inputs can be locked:
         assert_equal(len(self.nodes[0].listlockunspent()), 0)
-        utxo1 = self.nodes[0].listunspent()[0]
-        psbtx1 = self.nodes[0].walletcreatefundedpsbt([{"txid": utxo1['txid'], "vout": utxo1['vout']}], {self.nodes[2].getnewaddress():1}, 0,{"lockUnspents": True})["psbt"]
+        # Largest output: Osmium's ordinary regtest outputs are ~0.1, so funding 1 coin from an
+        # arbitrary one pulls in a dozen inputs and locks them all, where Dash needed just one.
+        utxo1 = sorted(self.nodes[0].listunspent(), key=lambda u: u['amount'], reverse=True)[0]
+        # Send less than that single output is worth, so exactly one input is selected and locked.
+        utxo1_send = (utxo1['amount'] / 2).quantize(Decimal('0.00000001'))
+        psbtx1 = self.nodes[0].walletcreatefundedpsbt([{"txid": utxo1['txid'], "vout": utxo1['vout']}], {self.nodes[2].getnewaddress(): utxo1_send}, 0,{"lockUnspents": True})["psbt"]
         assert_equal(len(self.nodes[0].listlockunspent()), 1)
 
         # Locks are ignored for manually selected inputs
-        self.nodes[0].walletcreatefundedpsbt([{"txid": utxo1['txid'], "vout": utxo1['vout']}], {self.nodes[2].getnewaddress():1}, 0)
+        self.nodes[0].walletcreatefundedpsbt([{"txid": utxo1['txid'], "vout": utxo1['vout']}], {self.nodes[2].getnewaddress(): utxo1_send}, 0)
 
         # Create p2sh and p2pkh addresses
         pubkey0 = self.nodes[0].getaddressinfo(self.nodes[0].getnewaddress())['pubkey']
@@ -85,8 +89,12 @@ class PSBTTest(BitcoinTestFramework):
         assert_equal(walletprocesspsbt_out['complete'], True)
         self.nodes[1].sendrawtransaction(self.nodes[1].finalizepsbt(walletprocesspsbt_out['psbt'])['hex'])
 
+        # 20 rather than 29.99: the three inputs total 30, and leaving only 0.01 for the fee made
+        # the wallet pull in extra inputs, inflating the transaction. It also has to leave enough
+        # headroom for the feeRate=10 case below to reach the -maxtxfee check instead of simply
+        # running out of funds -- on Osmium node1 has no other large outputs to fall back on.
         # feeRate of 0.1 OSMIUM / KB produces a total fee slightly below -maxtxfee (~0.06650000):
-        res = self.nodes[1].walletcreatefundedpsbt([{"txid":txid,"vout":p2pkh_pos},{"txid":txid,"vout":p2sh_pos},{"txid":txid,"vout":p2pkh_pos}], {self.nodes[1].getnewaddress():29.99}, 0, {"feeRate": 0.1}, False)
+        res = self.nodes[1].walletcreatefundedpsbt([{"txid":txid,"vout":p2pkh_pos},{"txid":txid,"vout":p2sh_pos},{"txid":txid,"vout":p2pkh_pos}], {self.nodes[1].getnewaddress():20}, 0, {"feeRate": 0.1}, False)
         assert_greater_than(res["fee"], 0.06)
         assert_greater_than(0.07, res["fee"])
         decoded_psbt = self.nodes[0].decodepsbt(res['psbt'])
@@ -95,7 +103,7 @@ class PSBTTest(BitcoinTestFramework):
 
         # feeRate of 10 OSMIUM / KB produces a total fee well above -maxtxfee
         # previously this was silently capped at -maxtxfee
-        assert_raises_rpc_error(-4, "Fee exceeds maximum configured by user (e.g. -maxtxfee, maxfeerate)", self.nodes[1].walletcreatefundedpsbt, [{"txid":txid,"vout":p2pkh_pos},{"txid":txid,"vout":p2sh_pos},{"txid":txid,"vout":p2pkh_pos}], {self.nodes[1].getnewaddress():29.99}, 0, {"feeRate": 10})
+        assert_raises_rpc_error(-4, "Fee exceeds maximum configured by user (e.g. -maxtxfee, maxfeerate)", self.nodes[1].walletcreatefundedpsbt, [{"txid":txid,"vout":p2pkh_pos},{"txid":txid,"vout":p2sh_pos},{"txid":txid,"vout":p2pkh_pos}], {self.nodes[1].getnewaddress():20}, 0, {"feeRate": 10})
 
         # partially sign multisig things with node 1
         psbtx = self.nodes[1].walletcreatefundedpsbt([{"txid":txid,"vout":p2sh_pos}], {self.nodes[1].getnewaddress():9.99})['psbt']

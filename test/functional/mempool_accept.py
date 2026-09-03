@@ -63,6 +63,10 @@ class MempoolAcceptanceTest(BitcoinTestFramework):
         assert_equal(node.getblockcount(), 200)
         assert_equal(node.getmempoolinfo()['size'], self.mempool_size)
         coins = node.listunspent()
+        # Dash's outputs were a uniform 500, so any coin covered the amounts spent below. Osmium's
+        # are the height-1 premine plus a tail of small subsidies, so sort and take from the top:
+        # the first spend needs 49.3 and the second only 0.025.
+        coins.sort(key=lambda c: c['amount'])
 
         self.log.info('Should not accept garbage to testmempoolaccept')
         assert_raises_rpc_error(-3, 'Expected type array, got string', lambda: node.testmempoolaccept(rawtxs='ff00baar'))
@@ -107,7 +111,8 @@ class MempoolAcceptanceTest(BitcoinTestFramework):
             locktime=node.getblockcount() + 2000,  # Can be anything
         ))['hex']
         tx.deserialize(BytesIO(hex_str_to_bytes(raw_tx_final)))
-        fee_expected = int(coin['amount']) - output_amount
+        # int() here assumed Dash's whole-number 500 coinbase; Osmium's are fractional.
+        fee_expected = coin['amount'] - Decimal(str(output_amount))
         self.check_mempool_result(
             result_expected=[{'txid': tx.rehash(), 'allowed': True, 'vsize': tx.get_vsize(), 'fees': {'base': Decimal(str(fee_expected))}}],
             rawtxs=[tx.serialize().hex()],

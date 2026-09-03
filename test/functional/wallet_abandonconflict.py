@@ -32,9 +32,26 @@ class AbandonConflictTest(BitcoinTestFramework):
         self.nodes[1].generate(COINBASE_MATURITY)
         self.sync_blocks()
         balance = self.nodes[0].getbalance()
-        txA = self.nodes[0].sendtoaddress(self.nodes[0].getnewaddress(), Decimal("10"))
-        txB = self.nodes[0].sendtoaddress(self.nodes[0].getnewaddress(), Decimal("10"))
-        txC = self.nodes[0].sendtoaddress(self.nodes[0].getnewaddress(), Decimal("10"))
+        # Lock each 10-coin output as it is created. These pay back into node0's own wallet, and
+        # on Osmium they are comparable in size to its other outputs, so the next sendtoaddress
+        # happily selects one as an input and spends it -- leaving the explicit spends further
+        # down referring to outputs that no longer exist. Dash's wallet held 500-coin outputs and
+        # never picked these. Locking only affects automatic selection, so the explicit
+        # createrawtransaction spends below still work.
+        locked_ten = []
+
+        def _send_and_lock_ten():
+            _txid = self.nodes[0].sendtoaddress(self.nodes[0].getnewaddress(), Decimal("10"))
+            for _d in self.nodes[0].gettransaction(_txid)["details"]:
+                if _d["amount"] == Decimal("10"):
+                    _op = {"txid": _txid, "vout": _d["vout"]}
+                    self.nodes[0].lockunspent(False, [_op])
+                    locked_ten.append(_op)
+            return _txid
+
+        txA = _send_and_lock_ten()
+        txB = _send_and_lock_ten()
+        txC = _send_and_lock_ten()
         self.sync_mempools()
         self.nodes[1].generate(1)
 
@@ -64,6 +81,10 @@ class AbandonConflictTest(BitcoinTestFramework):
 
         outputs[self.nodes[0].getnewaddress()] = Decimal("14.99998")
         outputs[self.nodes[1].getnewaddress()] = Decimal("5")
+        # The locks have done their job (keeping these outputs unspent until now); release them
+        # before spending so they do not affect the balances asserted below.
+        if locked_ten:
+            self.nodes[0].lockunspent(True, locked_ten)
         signed = self.nodes[0].signrawtransactionwithwallet(self.nodes[0].createrawtransaction(inputs, outputs))
         txAB1 = self.nodes[0].sendrawtransaction(signed["hex"])
 
@@ -115,6 +136,18 @@ class AbandonConflictTest(BitcoinTestFramework):
 
         # Abandon original transaction and verify inputs are available again
         # including that the child tx was also abandoned
+        #
+        # KNOWN BUG (inherited from Dash, not upstream Bitcoin): abandoning a transaction does
+        # not put its inputs back into CWallet::setWalletUTXO. AddToSpends() erases the outpoint
+        # from that set when the spend is recorded, and AbandonTransaction() never re-inserts it
+        # -- it only clears the mapTxSpends-based IsSpent() verdict. AvailableCoins()/GetBalance()
+        # iterate GetSpendableTXs(), which is built from setWalletUTXO, so a parent transaction
+        # with no *other* unspent output disappears from the wallet's view entirely and its
+        # abandoned output never comes back (short of a wallet reload, which rebuilds the set).
+        # Here txA and txB each have their change spent by the next send, so only txC -- which
+        # still holds its change -- gets its 10-coin output back, and the balance rises by 10
+        # instead of 30. Dash's own suite hides this: its wallet holds 25 equal 500-coin coinbase
+        # outputs, so the three sends never chain their change and every parent stays in the set.
         self.nodes[0].abandontransaction(txAB1)
         newbalance = self.nodes[0].getbalance()
         assert_equal(newbalance, balance + Decimal("30"))

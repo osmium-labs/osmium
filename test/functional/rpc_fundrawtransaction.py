@@ -5,6 +5,7 @@
 """Test the fundrawtransaction RPC."""
 
 from decimal import Decimal
+from test_framework.blocktools import COIN, COINBASE_MATURITY, get_miner_reward
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import (
     assert_equal,
@@ -63,9 +64,15 @@ class RawTransactionsTest(BitcoinTestFramework):
         #            = 2 bytes * minRelayTxFeePerByte
         self.fee_tolerance = 2 * self.min_relay_tx_fee / 1000
 
+        # Osmium mints almost the entire regtest supply as the height-1 premine (~8000 of a ~8670
+        # ceiling), so whoever mines block 1 holds essentially everything. This test needs node0
+        # funded, so give node0 the premine and node2 a single ordinary block for the exact-match
+        # case below. Dash could mine in either order because every block paid the same 500.
+        self.nodes[0].generate(1)
+        self.sync_all()
         self.nodes[2].generate(1)
         self.sync_all()
-        self.nodes[0].generate(121)
+        self.nodes[0].generate(120)
         self.sync_all()
 
         self.test_change_position()
@@ -100,7 +107,10 @@ class RawTransactionsTest(BitcoinTestFramework):
     def test_change_position(self):
         """Ensure setting changePosition in fundraw with an exact match is handled properly."""
         self.log.info("Test fundrawtxn changePosition option")
-        rawmatch = self.nodes[2].createrawtransaction([], {self.nodes[2].getnewaddress():500})
+        # Exact match means funding precisely one of node2's outputs; that is its block reward,
+        # which is not Dash's 500 here.
+        exact = self.nodes[2].listunspent()[0]['amount']
+        rawmatch = self.nodes[2].createrawtransaction([], {self.nodes[2].getnewaddress(): exact})
         rawmatch = self.nodes[2].fundrawtransaction(rawmatch, {"changePosition":1, "subtractFeeFromOutputs":[0]})
         assert_equal(rawmatch["changepos"], -1)
 
@@ -527,7 +537,9 @@ class RawTransactionsTest(BitcoinTestFramework):
         self.sync_all()
 
         # Make sure funds are received at node1.
-        assert_equal(oldBalance+Decimal('511.0000000'), self.nodes[0].getbalance())
+        # 500 of this was Dash's flat block reward; here it is whatever matured for node0.
+        matured = Decimal(get_miner_reward(self.nodes[0].getblockcount() - COINBASE_MATURITY)) / COIN
+        assert_equal(oldBalance + Decimal('11') + matured, self.nodes[0].getbalance())
 
     def test_many_inputs_fee(self):
         """Multiple (~19) inputs tx test | Compare fee."""
@@ -582,7 +594,9 @@ class RawTransactionsTest(BitcoinTestFramework):
         self.nodes[1].sendrawtransaction(fundedAndSignedTx['hex'])
         self.nodes[1].generate(1)
         self.sync_all()
-        assert_equal(oldBalance+Decimal('500.19000000'), self.nodes[0].getbalance()) #0.19+block reward
+        # 0.19 + block reward, the reward being the subsidy less the devfee at the matured height.
+        matured = Decimal(get_miner_reward(self.nodes[0].getblockcount() - COINBASE_MATURITY)) / COIN
+        assert_equal(oldBalance + Decimal('0.19') + matured, self.nodes[0].getbalance())
 
     def test_op_return(self):
         self.log.info("Test fundrawtxn with OP_RETURN and no vin")

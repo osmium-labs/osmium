@@ -1007,8 +1007,42 @@ class BitcoinTestFramework(metaclass=BitcoinTestMetaClass):
         """Checks whether the wallet module was compiled with BDB support."""
         return self.config["components"].getboolean("USE_BDB")
 
-MASTERNODE_COLLATERAL = 1000
-EVONODE_COLLATERAL = 4000
+# Osmium's collateral amounts (src/evo/dmn_types.h), not Dash's 1000/4000. Osmium also renamed
+# Dash's "Evo" tier to "Super": MnType::Evo is disabled here (collat_amount = MAX_MONEY) and
+# MnType::Super is the real second tier, so the "evo" paths below drive protx *_super.
+MASTERNODE_COLLATERAL = 500
+EVONODE_COLLATERAL = 2000
+
+
+def generate_until_balance(node, target, log=None, batch=10):
+    """Mine until `node` holds `target`, or fail once mining stops paying.
+
+    Osmium's regtest subsidy decays by 1/7 every nSubsidyHalvingInterval (150) blocks and is
+    effectively zero by height ~10000, so the chain can only ever produce about 8670 coins --
+    nearly all of it the height-1 premine. A target above that can never be reached, and the
+    inherited `while getbalance() < target: generate(10)` loops simply spun forever (measured:
+    24000+ blocks in one test). Stop when the balance stops moving and say why.
+    """
+    stalled = 0
+    balance = node.getbalance()
+    while balance < target:
+        node.generate(batch)
+        new_balance = node.getbalance()
+        if new_balance == balance:
+            stalled += 1
+            # Several batches with no reward at all means the subsidy is exhausted.
+            if stalled >= 20:
+                raise AssertionError(
+                    "cannot fund %s: balance stuck at %s after mining to height %d. Osmium's "
+                    "regtest subsidy decays to zero (~8670 coins total, mostly the premine), so "
+                    "this target is unreachable -- lower it rather than mining longer."
+                    % (target, new_balance, node.getblockcount()))
+        else:
+            stalled = 0
+        balance = new_balance
+    if log is not None:
+        log.info("funded: %s (target %s)" % (balance, target))
+    return balance
 
 class MasternodeInfo:
     def __init__(self, proTxHash, ownerAddr, votingAddr, rewards_address, operator_reward, pubKeyOperator, keyOperator, collateral_address, collateral_txid, collateral_vout, addr, evo=False):
@@ -1182,8 +1216,10 @@ class OsmiumTestFramework(BitcoinTestFramework):
         try:
             created_mn_info = self.dynamically_prepare_masternode(mn_idx, node_p2p_port, evo, rnd)
             protx_success = True
-        except:
-            self.log.info("dynamically_prepare_masternode failed")
+        except Exception as e:
+            # Log why: a bare "failed" hides whether the node rejected the protx or the test just
+            # could not fund it.
+            self.log.info("dynamically_prepare_masternode failed: %s: %s" % (type(e).__name__, e))
 
         assert_equal(protx_success, not should_be_rejected)
 
@@ -1244,7 +1280,7 @@ class OsmiumTestFramework(BitcoinTestFramework):
 
         protx_result = None
         if evo:
-            protx_result = self.nodes[0].protx("register_evo", collateral_txid, collateral_vout, ipAndPort, owner_address, bls['public'], voting_address, operatorReward, reward_address, platform_node_id, platform_p2p_port, platform_http_port, funds_address, True)
+            protx_result = self.nodes[0].protx("register_super", collateral_txid, collateral_vout, ipAndPort, owner_address, bls['public'], voting_address, operatorReward, reward_address, funds_address, True)
         else:
             protx_result = self.nodes[0].protx("register", collateral_txid, collateral_vout, ipAndPort, owner_address, bls['public'], voting_address, operatorReward, reward_address, funds_address, True)
 
@@ -1278,12 +1314,12 @@ class OsmiumTestFramework(BitcoinTestFramework):
 
         protx_success = False
         try:
-            protx_result = self.nodes[0].protx('update_service_evo', evo_info.proTxHash, evo_info.addr, evo_info.keyOperator, platform_node_id, platform_p2p_port, platform_http_port, operator_reward_address, funds_address)
+            protx_result = self.nodes[0].protx('update_service_super', evo_info.proTxHash, evo_info.addr, evo_info.keyOperator, operator_reward_address, funds_address)
             self.wait_for_instantlock(protx_result, self.nodes[0])
             tip = self.nodes[0].generate(1)[0]
             assert_equal(self.nodes[0].getrawtransaction(protx_result, 1, tip)['confirmations'], 1)
             self.sync_all(self.nodes)
-            self.log.info("Updated EvoNode %s: platformNodeID=%s, platformP2PPort=%s, platformHTTPPort=%s" % (evo_info.proTxHash, platform_node_id, platform_p2p_port, platform_http_port))
+            self.log.info("Updated Supernode %s" % evo_info.proTxHash)
             protx_success = True
         except:
             self.log.info("protx_evo rejected")
@@ -1350,7 +1386,12 @@ class OsmiumTestFramework(BitcoinTestFramework):
 
     def remove_masternode(self, idx):
         mn = self.mninfo[idx]
-        rawtx = self.nodes[0].createrawtransaction([{"txid": mn.collateral_txid, "vout": mn.collateral_vout}], {self.nodes[0].getnewaddress(): 999.9999})
+        # Spend whatever the collateral is actually worth, less a fee. Dash hardcoded 999.9999
+        # against a 1000-coin collateral; Osmium's Regular is 500 and Super is 2000.
+        collateral_out = self.nodes[0].gettxout(mn.collateral_txid, mn.collateral_vout)
+        assert collateral_out is not None, "collateral %s:%d already spent" % (mn.collateral_txid, mn.collateral_vout)
+        spend_value = Decimal(str(collateral_out['value'])) - Decimal('0.0001')
+        rawtx = self.nodes[0].createrawtransaction([{"txid": mn.collateral_txid, "vout": mn.collateral_vout}], {self.nodes[0].getnewaddress(): spend_value})
         rawtx = self.nodes[0].signrawtransactionwithwallet(rawtx)
         self.nodes[0].sendrawtransaction(rawtx["hex"])
         self.nodes[0].generate(1)
@@ -1435,9 +1476,8 @@ class OsmiumTestFramework(BitcoinTestFramework):
         required_balance = EVONODE_COLLATERAL * self.evo_count
         required_balance += MASTERNODE_COLLATERAL * (self.mn_count - self.evo_count) + 100
         self.log.info("Generating %d coins" % required_balance)
-        while self.nodes[0].getbalance() < required_balance:
-            self.bump_mocktime(1)
-            self.nodes[0].generate(10)
+        self.bump_mocktime(1)
+        generate_until_balance(self.nodes[0], required_balance, self.log)
 
         self.log.info("Activating DIP3")
         if not self.fast_dip3_enforcement:

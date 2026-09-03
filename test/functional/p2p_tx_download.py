@@ -23,6 +23,8 @@ from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import (
     assert_equal,
 )
+from decimal import Decimal
+
 from test_framework.address import ADDRESS_BCRT1_UNSPENDABLE
 
 
@@ -81,12 +83,15 @@ class TxDownloadTest(BitcoinTestFramework):
 
     def test_inv_block(self):
         self.log.info("Generate a transaction on node 0")
+        # Dash's block-1 coinbase paid a flat 500; Osmium's pays the premine, so a fixed 500 output
+        # would leave thousands of coins as fee and sendrawtransaction would refuse the tx.
+        coinbase = self.nodes[0].getblock(self.nodes[0].getblockhash(1), 2)['tx'][0]
         tx = self.nodes[0].createrawtransaction(
             inputs=[{  # coinbase
-                "txid": self.nodes[0].getblock(self.nodes[0].getblockhash(1))['tx'][0],
+                "txid": coinbase['txid'],
                 "vout": 0
             }],
-            outputs={ADDRESS_BCRT1_UNSPENDABLE: 500 - 0.00025},
+            outputs={ADDRESS_BCRT1_UNSPENDABLE: coinbase['vout'][0]['value'] - Decimal("0.00025")},
         )
         tx = self.nodes[0].signrawtransactionwithkey(
             hexstring=tx,

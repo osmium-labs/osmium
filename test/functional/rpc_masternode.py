@@ -2,7 +2,7 @@
 # Copyright (c) 2020-2023 The Dash Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
-from test_framework.test_framework import OsmiumTestFramework
+from test_framework.test_framework import MASTERNODE_COLLATERAL, OsmiumTestFramework
 from test_framework.util import assert_equal
 
 '''
@@ -89,7 +89,9 @@ class RPCMasternodeTest(OsmiumTestFramework):
         self.log.info("test that `masternode outputs` show correct list")
         addr1 = self.nodes[0].getnewaddress()
         addr2 = self.nodes[0].getnewaddress()
-        self.nodes[0].sendmany('', {addr1: 1000, addr2: 1000})
+        # `masternode outputs` only lists collateral-sized outputs, and Osmium's collateral is
+        # MASTERNODE_COLLATERAL, not Dash's 1000.
+        self.nodes[0].sendmany('', {addr1: MASTERNODE_COLLATERAL, addr2: MASTERNODE_COLLATERAL})
         self.nodes[0].generate(1)
         # we have 3 masternodes that are running already and 2 new outputs we just created
         assert_equal(len(self.nodes[0].masternode("outputs")), 5)

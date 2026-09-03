@@ -13,6 +13,7 @@ import struct
 
 from decimal import Decimal
 
+from test_framework.blocktools import COIN, get_block_subsidy as framework_block_subsidy, get_miner_reward as framework_miner_reward, get_devfee as framework_devfee
 from test_framework.blocktools import (
     create_block,
     create_coinbase,
@@ -55,15 +56,11 @@ class CoinStatsIndexTest(BitcoinTestFramework):
         self._test_reorg_index()
         self._test_index_rejects_hash_serialized()
 
-    def block_subsidy(self, prev_bits):
-        # Subsidy calculations valid till block 4500
-        diff = 0x0000ffff / (prev_bits & 0x00ffffff)
-        subsidy = (1111.0 / (pow((diff+1.0),2.0)))
-        return min(500, max(1, subsidy))
-
     def get_block_subsidy(self, prev_height):
-        prev_block = self.nodes[0].getblockheader(self.nodes[0].getblockhash(prev_height), True)
-        return self.block_subsidy(struct.unpack('!I', bytes.fromhex(prev_block['bits']))[0])
+        # Osmium's subsidy is height-based (src/validation.cpp GetBlockSubsidyHelper), not derived
+        # from difficulty the way Dash's was, so use the framework helper for the block that
+        # follows prev_height.
+        return Decimal(framework_block_subsidy(prev_height + 1)) / COIN
 
     def block_sanity_check(self, block_info, prev_height):
         if prev_height != -1:
@@ -130,14 +127,17 @@ class CoinStatsIndexTest(BitcoinTestFramework):
         for hash_option in index_hash_options:
             # Genesis block is unspendable
             res4 = index_node.gettxoutsetinfo(hash_option, 0)
-            assert_equal(res4['total_unspendable_amount'], 50)
+            # The unspendable genesis amount is Osmium's genesis coinbase, not Dash's 50.
+            genesis_cb = sum(Decimal(str(o['value']))
+                             for o in index_node.getblock(index_node.getblockhash(0), 2)['tx'][0]['vout'])
+            assert_equal(res4['total_unspendable_amount'], genesis_cb)
             assert_equal(res4['block_info'], {
-                'unspendable': 50,
+                'unspendable': genesis_cb,
                 'prevout_spent': 0,
                 'new_outputs_ex_coinbase': 0,
                 'coinbase': 0,
                 'unspendables': {
-                    'genesis_block': 50,
+                    'genesis_block': genesis_cb,
                     'bip30': 0,
                     'scripts': 0,
                     'unclaimed_rewards': 0
@@ -147,12 +147,17 @@ class CoinStatsIndexTest(BitcoinTestFramework):
 
             # Test an older block height that included a normal tx
             res5 = index_node.gettxoutsetinfo(hash_option, 102)
-            assert_equal(res5['total_unspendable_amount'], 50)
+            # The spent prevout is the coinbase the wallet drew on -- Osmium's height-1 premine,
+            # not Dash's flat 500 -- and the block's own coinbase is its subsidy plus the fee.
+            spent = Decimal(framework_miner_reward(1)) / COIN
+            tx_fee = Decimal('0.00000225')
+            subsidy_102 = Decimal(framework_block_subsidy(102)) / COIN
+            assert_equal(res5['total_unspendable_amount'], genesis_cb)
             assert_equal(res5['block_info'], {
                 'unspendable': 0,
-                'prevout_spent': 500,
-                'new_outputs_ex_coinbase': Decimal('499.99999775'),
-                'coinbase': Decimal('500.00000225'),
+                'prevout_spent': spent,
+                'new_outputs_ex_coinbase': spent - tx_fee,
+                'coinbase': subsidy_102 + tx_fee,
                 'unspendables': {
                     'genesis_block': 0,
                     'bip30': 0,
@@ -190,12 +195,18 @@ class CoinStatsIndexTest(BitcoinTestFramework):
         for hash_option in index_hash_options:
             # Check all amounts were registered correctly
             res6 = index_node.gettxoutsetinfo(hash_option, 108)
-            assert_equal(res6['total_unspendable_amount'], Decimal('70.98999999'))
+            # As above: the spent prevouts are Osmium's premine plus the 11 moved earlier, and the
+            # coinbase is this block's subsidy plus the fees, rather than Dash's flat 500.
+            spent_108 = Decimal(framework_miner_reward(1)) / COIN + Decimal('11')
+            fees_108 = Decimal('0.01000260')
+            unspendable_108 = Decimal('20.98999999')
+            subsidy_108 = Decimal(framework_block_subsidy(108)) / COIN
+            assert_equal(res6['total_unspendable_amount'], genesis_cb + unspendable_108)
             assert_equal(res6['block_info'], {
-                'unspendable': Decimal('20.98999999'),
-                'prevout_spent': 511,
-                'new_outputs_ex_coinbase': Decimal('489.99999741'),
-                'coinbase': Decimal('500.01000260'),
+                'unspendable': unspendable_108,
+                'prevout_spent': spent_108,
+                'new_outputs_ex_coinbase': spent_108 - unspendable_108 - fees_108,
+                'coinbase': subsidy_108 + fees_108,
                 'unspendables': {
                     'genesis_block': 0,
                     'bip30': 0,
@@ -207,8 +218,15 @@ class CoinStatsIndexTest(BitcoinTestFramework):
 
         # Create a coinbase that does not claim full subsidy and also
         # has two outputs
-        cb = create_coinbase(109, nValue=35)
-        cb.vout.append(CTxOut(5 * COIN, CScript([OP_FALSE])))
+        # Dash's subsidy was 500 so claiming 35 + 5 left 460 unclaimed. Osmium's is a fraction of
+        # a coin, so claim fractions of the real subsidy instead -- claiming 40 would simply make
+        # the block invalid. create_coinbase() also adds the devfee output, which counts as claimed.
+        subsidy_109 = Decimal(framework_block_subsidy(109)) / COIN
+        devfee_109 = Decimal(framework_devfee(109)) / COIN
+        claim_main = (subsidy_109 * Decimal('0.35')).quantize(Decimal('0.00000001'))
+        claim_extra = (subsidy_109 * Decimal('0.05')).quantize(Decimal('0.00000001'))
+        cb = create_coinbase(109, nValue=claim_main)
+        cb.vout.append(CTxOut(int(claim_extra * COIN), CScript([OP_FALSE])))
         cb.rehash()
 
         # Generate a block that includes previous coinbase
@@ -221,17 +239,20 @@ class CoinStatsIndexTest(BitcoinTestFramework):
 
         for hash_option in index_hash_options:
             res7 = index_node.gettxoutsetinfo(hash_option, 109)
-            assert_equal(res7['total_unspendable_amount'], Decimal('530.98999999'))
+            claimed_109 = claim_main + claim_extra + devfee_109
+            unclaimed_109 = subsidy_109 - claimed_109
+            assert_equal(res7['total_unspendable_amount'],
+                         genesis_cb + Decimal('20.98999999') + unclaimed_109)
             assert_equal(res7['block_info'], {
-                'unspendable': 460,
+                'unspendable': unclaimed_109,
                 'prevout_spent': 0,
                 'new_outputs_ex_coinbase': 0,
-                'coinbase': 40,
+                'coinbase': claimed_109,
                 'unspendables': {
                     'genesis_block': 0,
                     'bip30': 0,
                     'scripts': 0,
-                    'unclaimed_rewards': 460
+                    'unclaimed_rewards': unclaimed_109
                 }
             })
             self.block_sanity_check(res7['block_info'], 108)

@@ -6,6 +6,7 @@
 """
 
 from test_framework.blocktools import COINBASE_MATURITY
+from decimal import Decimal
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import (
     assert_equal,
@@ -41,13 +42,17 @@ class CreateWalletWatchonlyTest(BitcoinTestFramework):
         node.generatetoaddress(COINBASE_MATURITY + 1, a1)
 
         # send 1 btc to our watch-only address
-        txid = def_wallet.sendtoaddress(wo_addr, 1)
+        # Dash's single matured block was 500, so sending 1 was trivial. Osmium's is ~0.1, so
+        # send a fraction of whatever actually matured.
+        wo_amount = (def_wallet.getbalance() / 4).quantize(Decimal('0.00000001'))
+        assert wo_amount > 0, "def_wallet holds nothing to send"
+        txid = def_wallet.sendtoaddress(wo_addr, wo_amount)
         self.nodes[0].generate(1)
 
         # getbalance
         self.log.info('include_watchonly should default to true for watch-only wallets')
         self.log.info('Testing getbalance watch-only defaults')
-        assert_equal(wo_wallet.getbalance(), 1)
+        assert_equal(wo_wallet.getbalance(), wo_amount)
         assert_equal(len(wo_wallet.listtransactions()), 1)
         assert_equal(wo_wallet.getbalance(include_watchonly=False), 0)
 
@@ -87,7 +92,9 @@ class CreateWalletWatchonlyTest(BitcoinTestFramework):
 
         self.log.info('Testing walletcreatefundedpsbt watch-only defaults')
         inputs = []
-        outputs = [{a1: 0.5}]
+        # Sized against wo_amount above: the watch-only wallet holds a fraction of one Osmium
+        # regtest reward, not the 500 Dash's version could assume.
+        outputs = [{a1: (wo_amount / 2).quantize(Decimal('0.00000001'))}]
         options = {'changeAddress': wo_change}
         no_wo_options = {'changeAddress': wo_change, 'includeWatching': False}
 

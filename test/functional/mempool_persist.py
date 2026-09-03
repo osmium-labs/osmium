@@ -58,7 +58,10 @@ class MempoolPersistTest(BitcoinTestFramework):
         self.log.debug("Send 5 transactions from node2 (to its own address)")
         tx_creation_time_lower = self.mocktime
         for _ in range(5):
-            last_txid = self.nodes[2].sendtoaddress(self.nodes[2].getnewaddress(), Decimal("10"))
+            # 10 apiece assumed Dash's 500-per-block wallets; size these to node2's real balance.
+            send_each = (self.nodes[2].getbalance() / 10).quantize(Decimal('0.00000001'))
+            assert send_each > 0, "node2 holds nothing to send"
+            last_txid = self.nodes[2].sendtoaddress(self.nodes[2].getnewaddress(), send_each)
         node2_balance = self.nodes[2].getbalance()
         self.sync_all()
         tx_creation_time_higher = self.mocktime

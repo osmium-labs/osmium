@@ -4,6 +4,7 @@
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 """Test multisig RPCs"""
 
+from test_framework.blocktools import COIN, get_miner_reward
 from test_framework.descriptors import descsum_create, drop_origins
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import (
@@ -101,7 +102,11 @@ class RpcCreateMultiSigTest(BitcoinTestFramework):
 
         height = node0.getblockchaininfo()["blocks"]
         assert 150 < height < 350
-        total = (height - 99 - 1) * 500 - decimal.Decimal("0.00001223") * 4
+        # Dash minted a flat 500 per block to the miner. Osmium's subsidy varies with height and
+        # part of it goes to the devfee address, which is not in any of these wallets, so sum the
+        # actual matured miner rewards instead.
+        matured = sum(get_miner_reward(h) for h in range(1, height - 99))
+        total = decimal.Decimal(matured) / COIN - decimal.Decimal("0.00001223") * 4
         assert bal1 == 0
         assert bal2 == self.moved
 

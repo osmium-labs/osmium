@@ -31,6 +31,7 @@ Start three nodes:
 """
 
 from test_framework.blocktools import (
+    BASE_BLOCK_VERSION,
     COINBASE_MATURITY,
     create_block,
     create_coinbase,
@@ -56,6 +57,10 @@ class BaseNode(P2PInterface):
         headers_message = msg_headers()
         headers_message.headers = [CBlockHeader(b) for b in new_blocks]
         self.send_message(headers_message)
+
+
+# 14 days of equivalent proof-of-work at regtest's 90-second target spacing, rounded up.
+BURY_BLOCKS = 13500
 
 
 class AssumeValidTest(BitcoinTestFramework):
@@ -134,10 +139,15 @@ class AssumeValidTest(BitcoinTestFramework):
         self.block_time += 1
         height += 1
 
-        # Bury the assumed valid block 8400 deep (Osmium needs 4x as much blocks to allow -assumevalid to work)
-        for _ in range(8400):
+        # Bury the assumed valid block deep enough that ConnectBlock() skips script checks.
+        # validation.cpp:2071 skips them only when GetBlockProofEquivalentTime() between the block
+        # and the best header exceeds two weeks; on a constant-difficulty regtest chain that works
+        # out to 14*24*3600 / nPowTargetSpacing blocks. Bitcoin's 600s spacing needed 2100 and
+        # Dash's 156s needed ~7754, but Osmium's regtest spacing is 90s, so it takes 13440. Round
+        # up for headroom.
+        for _ in range(BURY_BLOCKS):
             block = create_block(self.tip, create_coinbase(height), self.block_time)
-            block.nVersion = 4
+            block.nVersion = BASE_BLOCK_VERSION | 4
             block.solve()
             self.blocks.append(block)
             self.tip = block.sha256
@@ -163,12 +173,19 @@ class AssumeValidTest(BitcoinTestFramework):
         # node1 must receive all headers as otherwise assumevalid is ignored in ConnectBlock
         # node2 should NOT receive all headers to force skipping of the assumevalid check in ConnectBlock
         p2p0.send_header_for_blocks(self.blocks[0:2000])
-        p2p1.send_header_for_blocks(self.blocks[0:2000])
-        p2p1.send_header_for_blocks(self.blocks[2000:4000])
-        p2p1.send_header_for_blocks(self.blocks[4000:6000])
-        p2p1.send_header_for_blocks(self.blocks[6000:8000])
-        p2p1.send_header_for_blocks(self.blocks[8000:])
+        # A headers message carries at most MAX_HEADERS_RESULTS (2000) entries, so chunk rather
+        # than hardcoding the ranges -- the chain is far longer than Dash's here.
+        for start in range(0, len(self.blocks), 2000):
+            p2p1.send_header_for_blocks(self.blocks[start:start + 2000])
         p2p2.send_header_for_blocks(self.blocks[0:200])
+
+        # -assumevalid only skips script checks for a block that is an ancestor of
+        # pindexBestHeader, so node1 has to finish processing every header we just queued before we
+        # start sending blocks. Osmium's chain here is ~8500 headers (four times Dash's burial
+        # depth) and the sends above do not block, so without this wait node1 is still only a few
+        # thousand headers in, block 102 is not yet covered by the assumed-valid chain, and its
+        # deliberately invalid signature gets the peer disconnected.
+        self.wait_until(lambda: self.nodes[1].getblockchaininfo()['headers'] >= len(self.blocks), timeout=120)
 
         # Send blocks to node0. Block 102 will be rejected.
         self.send_blocks_until_disconnected(p2p0)

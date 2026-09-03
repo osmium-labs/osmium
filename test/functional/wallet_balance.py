@@ -7,7 +7,7 @@ from decimal import Decimal
 import struct
 
 from test_framework.address import ADDRESS_BCRT1_UNSPENDABLE as ADDRESS_WATCHONLY
-from test_framework.blocktools import COINBASE_MATURITY
+from test_framework.blocktools import COIN, COINBASE_MATURITY, get_miner_reward
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import (
     assert_equal,
@@ -19,7 +19,13 @@ def create_transactions(node, address, amt, fees):
     # Create and sign raw transactions from node to address for amt.
     # Creates a transaction for each fee and returns an array
     # of the raw transactions.
-    utxos = [u for u in node.listunspent(0) if u['spendable']]
+    # Take the smallest outputs first. The loop below stops as soon as it has enough, so which
+    # outputs are left unspent depends on the order listunspent() happens to return -- and the
+    # balances asserted downstream depend on node 1 spending *all* of its outputs (that is what
+    # makes its whole balance untrusted). Dash's node 1 held a single 500 output so there was
+    # nothing to order; Osmium's holds its 0.1 reward plus the large amount received from node 0,
+    # and taking the large one first leaves the 0.1 behind as a trusted balance.
+    utxos = sorted((u for u in node.listunspent(0) if u['spendable']), key=lambda u: u['amount'])
 
     # Create transactions
     inputs = []
@@ -74,34 +80,48 @@ class WalletTest(BitcoinTestFramework):
         self.nodes[1].generatetoaddress(COINBASE_MATURITY + 1, ADDRESS_WATCHONLY)
         self.sync_all()
 
-        assert_equal(self.nodes[0].getbalances()['mine']['trusted'], 500)
-        assert_equal(self.nodes[0].getwalletinfo()['balance'], 500)
-        assert_equal(self.nodes[1].getbalances()['mine']['trusted'], 500)
+        # Osmium pays the premine at height 1 and a small, decaying subsidy after that, with a
+        # devfee carved out above height 50 -- so each of these balances is a different number
+        # instead of Dash's uniform 500. node0 mined height 1, node1 height 2, and the watch-only
+        # address heights 3..103 (of which only height 3 has matured).
+        n0_reward = Decimal(get_miner_reward(1)) / COIN
+        n1_reward = Decimal(get_miner_reward(2)) / COIN
+        watch_trusted = Decimal(get_miner_reward(3)) / COIN
+        watch_immature = Decimal(sum(get_miner_reward(h) for h in range(4, 104))) / COIN
 
-        assert_equal(self.nodes[0].getbalances()['watchonly']['immature'], 50000)
+        assert_equal(self.nodes[0].getbalances()['mine']['trusted'], n0_reward)
+        assert_equal(self.nodes[0].getwalletinfo()['balance'], n0_reward)
+        assert_equal(self.nodes[1].getbalances()['mine']['trusted'], n1_reward)
+
+        assert_equal(self.nodes[0].getbalances()['watchonly']['immature'], watch_immature)
         assert 'watchonly' not in self.nodes[1].getbalances()
 
-        assert_equal(self.nodes[0].getbalance(), 500)
-        assert_equal(self.nodes[1].getbalance(), 500)
+        assert_equal(self.nodes[0].getbalance(), n0_reward)
+        assert_equal(self.nodes[1].getbalance(), n1_reward)
 
         self.log.info("Test getbalance with different arguments")
-        assert_equal(self.nodes[0].getbalance("*"), 500)
-        assert_equal(self.nodes[0].getbalance("*", 1), 500)
-        assert_equal(self.nodes[0].getbalance("*", 1, True), 500)
-        assert_equal(self.nodes[0].getbalance("*", 1, True, False), 500)
-        assert_equal(self.nodes[0].getbalance(minconf=1, addlocked=True), 500)
-        assert_equal(self.nodes[0].getbalance(minconf=1, avoid_reuse=False), 500)
-        assert_equal(self.nodes[0].getbalance(minconf=1), 500)
-        assert_equal(self.nodes[0].getbalance(minconf=0, include_watchonly=True), 1000)
-        assert_equal(self.nodes[1].getbalance(minconf=0, include_watchonly=True), 500)
+        assert_equal(self.nodes[0].getbalance("*"), n0_reward)
+        assert_equal(self.nodes[0].getbalance("*", 1), n0_reward)
+        assert_equal(self.nodes[0].getbalance("*", 1, True), n0_reward)
+        assert_equal(self.nodes[0].getbalance("*", 1, True, False), n0_reward)
+        assert_equal(self.nodes[0].getbalance(minconf=1, addlocked=True), n0_reward)
+        assert_equal(self.nodes[0].getbalance(minconf=1, avoid_reuse=False), n0_reward)
+        assert_equal(self.nodes[0].getbalance(minconf=1), n0_reward)
+        assert_equal(self.nodes[0].getbalance(minconf=0, include_watchonly=True), n0_reward + watch_trusted)
+        assert_equal(self.nodes[1].getbalance(minconf=0, include_watchonly=True), n1_reward)
 
-        # Send 490 BTC from 0 to 1 and 960 BTC from 1 to 0.
-        txs = create_transactions(self.nodes[0], self.nodes[1].getnewaddress(), 490 , [Decimal('0.01')])
+        # Dash started both nodes at 500 and moved 490 then 960, which left node0 with 9.99 change
+        # and node1 with ~30. Osmium's two nodes start at wildly different amounts, so size the two
+        # transfers to land on those same figures and every downstream assertion still holds.
+        send_0_to_1 = n0_reward - Decimal('10')
+        send_1_to_0 = n1_reward + send_0_to_1 - Decimal('30')
+
+        txs = create_transactions(self.nodes[0], self.nodes[1].getnewaddress(), send_0_to_1, [Decimal('0.01')])
         self.nodes[0].sendrawtransaction(txs[0]['hex'])
         self.nodes[1].sendrawtransaction(txs[0]['hex'])  # sending on both nodes is faster than waiting for propagation
 
         self.sync_all()
-        txs = create_transactions(self.nodes[1], self.nodes[0].getnewaddress(), 960, [Decimal('0.01'), Decimal('0.02')])
+        txs = create_transactions(self.nodes[1], self.nodes[0].getnewaddress(), send_1_to_0, [Decimal('0.01'), Decimal('0.02')])
         self.nodes[1].sendrawtransaction(txs[0]['hex'])
         self.nodes[0].sendrawtransaction(txs[0]['hex'])  # sending on both nodes is faster than waiting for propagation
         self.sync_all()
@@ -154,9 +174,9 @@ class WalletTest(BitcoinTestFramework):
             expected_balances_0 = {'mine':      {'coinjoin':          Decimal('0E-8'),
                                                  'immature':          Decimal('0E-8'),
                                                  'trusted':           Decimal('9.99'),  # change from node 0's send
-                                                 'untrusted_pending': Decimal('960')},
-                                   'watchonly': {'immature':          Decimal('50000'),
-                                                 'trusted':           Decimal('500'),
+                                                 'untrusted_pending': send_1_to_0},
+                                   'watchonly': {'immature':          watch_immature,
+                                                 'trusted':           watch_trusted,
                                                  'untrusted_pending': Decimal('0E-8')}}
             expected_balances_1 = {'mine':      {'coinjoin':          Decimal('0E-8'),
                                                  'immature':          Decimal('0E-8'),
@@ -175,10 +195,10 @@ class WalletTest(BitcoinTestFramework):
             assert_equal(self.nodes[0].getbalance(minconf=1), Decimal('0'))
             assert_equal(self.nodes[1].getbalance(minconf=1), Decimal('0'))
             # getunconfirmedbalance
-            assert_equal(self.nodes[0].getunconfirmedbalance(), Decimal('960'))  # output of node 1's spend
+            assert_equal(self.nodes[0].getunconfirmedbalance(), send_1_to_0)  # output of node 1's spend
             assert_equal(self.nodes[1].getunconfirmedbalance(), Decimal('30') - fee_node_1)  # Doesn't include output of node 0's send since it was spent
             # getwalletinfo.unconfirmed_balance
-            assert_equal(self.nodes[0].getwalletinfo()["unconfirmed_balance"], Decimal('960'))
+            assert_equal(self.nodes[0].getwalletinfo()["unconfirmed_balance"], send_1_to_0)
             assert_equal(self.nodes[1].getwalletinfo()["unconfirmed_balance"], Decimal('30') - fee_node_1)
 
         test_balances(fee_node_1=Decimal('0.01'))
@@ -195,7 +215,7 @@ class WalletTest(BitcoinTestFramework):
         self.sync_all()
 
         # balances are correct after the transactions are confirmed
-        balance_node0 = Decimal('969.99')  # node 1's send plus change from node 0's send
+        balance_node0 = send_1_to_0 + Decimal('9.99')  # node 1's send plus change from node 0's send
         balance_node1 = Decimal('29.99')  # change from node 0's send
         assert_equal(self.nodes[0].getbalances()['mine']['trusted'], balance_node0)
         assert_equal(self.nodes[1].getbalances()['mine']['trusted'], balance_node1)
@@ -230,8 +250,10 @@ class WalletTest(BitcoinTestFramework):
         # Create 3 more wallet txs, where the last is not accepted to the
         # mempool because it is the third descendant of the tx above
         for _ in range(3):
-            # Set amount high enough such that all coins are spent by each tx
-            txid = self.nodes[0].sendtoaddress(self.nodes[0].getnewaddress(), 999)
+            # Each tx must spend everything the wallet holds. Dash could hardcode an amount
+            # because the balance was a known 500-multiple; here it depends on the subsidy, so
+            # send the whole balance and take the fee out of it.
+            txid = self.nodes[0].sendtoaddress(self.nodes[0].getnewaddress(), self.nodes[0].getbalance(), "", "", True)
 
         self.log.info('Check that wallet txs not in the mempool are untrusted')
         assert txid not in self.nodes[0].getrawmempool()
@@ -240,10 +262,14 @@ class WalletTest(BitcoinTestFramework):
 
         self.log.info("Test replacement and reorg of non-mempool tx")
         tx_orig = self.nodes[0].gettransaction(txid)['hex']
-        # Increase fee by 1 coin
+        # Increase fee by 1 coin. The output amount is no longer a hardcoded 999 -- it is whatever
+        # the wallet held -- so read it back and rewrite that value rather than a fixed one.
+        _orig_out = int(round(self.nodes[0].decoderawtransaction(tx_orig)['vout'][0]['value'] * 10**8))
+        assert _orig_out > 10**8, "output %s too small to raise the fee by a coin" % _orig_out
+        assert_equal(tx_orig.count(struct.pack("<q", _orig_out).hex()), 1)
         tx_replace = tx_orig.replace(
-            struct.pack("<q", 999 * 10**8).hex(),
-            struct.pack("<q", 998 * 10**8).hex(),
+            struct.pack("<q", _orig_out).hex(),
+            struct.pack("<q", _orig_out - 10**8).hex(),
         )
         tx_replace = self.nodes[0].signrawtransactionwithwallet(tx_replace)['hex']
         # Total balance is given by the sum of outputs of the tx

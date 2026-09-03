@@ -41,7 +41,7 @@ from decimal import Decimal
 from itertools import product
 from io import BytesIO
 
-from test_framework.blocktools import create_coinbase, create_block, create_transaction, TIME_GENESIS_BLOCK
+from test_framework.blocktools import BASE_BLOCK_VERSION, create_coinbase, create_block, create_transaction, TIME_GENESIS_BLOCK
 from test_framework.messages import ToHex, CTransaction
 from test_framework.p2p import P2PDataStore
 from test_framework.script import (
@@ -90,22 +90,38 @@ def sign_transaction(node, unsignedtx):
     tx.deserialize(f)
     return tx
 
+def vout0_value(node, txid):
+    """Value of txid's first output -- create_transaction() always spends vout 0.
+
+    Dash's regtest coinbase was a flat 500, so these spends could hardcode 499.98. Osmium's
+    subsidy is smaller, shrinks with height and is split with the devfee, so the amounts have
+    to follow whatever the input actually holds.
+    """
+    return Decimal(str(node.getrawtransaction(txid, 1)['vout'][0]['value']))
+
+
 def create_bip112special(node, input, txversion, address):
-    tx = create_transaction(node, input, address, amount=Decimal("499.98"))
+    tx = create_transaction(node, input, address, amount=vout0_value(node, input) - Decimal("0.01"))
     tx.nVersion = txversion
     signtx = sign_transaction(node, tx)
     signtx.vin[0].scriptSig = CScript([-1, OP_CHECKSEQUENCEVERIFY, OP_DROP] + list(CScript(signtx.vin[0].scriptSig)))
     return signtx
 
 def create_bip112emptystack(node, input, txversion, address):
-    tx = create_transaction(node, input, address, amount=Decimal("499.98"))
+    tx = create_transaction(node, input, address, amount=vout0_value(node, input) - Decimal("0.01"))
     tx.nVersion = txversion
     signtx = sign_transaction(node, tx)
     signtx.vin[0].scriptSig = CScript([OP_CHECKSEQUENCEVERIFY] + list(CScript(signtx.vin[0].scriptSig)))
     return signtx
 
 def send_generic_input_tx(node, coinbases, address):
-    return node.sendrawtransaction(ToHex(sign_transaction(node, create_transaction(node, node.getblock(coinbases.pop())['tx'][0], address, amount=Decimal("499.99")))))
+    # Dash's regtest coinbase is a flat 500 so this could hardcode 499.99. Osmium's is the subsidy
+    # less the devfee and shrinks with height, so spend what the coinbase is actually worth.
+    txid = node.getblock(coinbases.pop())['tx'][0]
+    cb_value = Decimal(str(node.gettransaction(txid)['details'][0]['amount']))
+    amount = cb_value - Decimal('0.01')
+    assert amount > 0, "coinbase %s too small to spend" % cb_value
+    return node.sendrawtransaction(ToHex(sign_transaction(node, create_transaction(node, txid, address, amount=amount))))
 
 def create_bip68txs(node, bip68inputs, txversion, address, locktime_delta=0):
     """Returns a list of bip68 transactions with different bits set."""
@@ -113,7 +129,7 @@ def create_bip68txs(node, bip68inputs, txversion, address, locktime_delta=0):
     assert len(bip68inputs) >= 16
     for i, (sdf, srhb, stf, srlb) in enumerate(product(*[[True, False]] * 4)):
         locktime = relative_locktime(sdf, srhb, stf, srlb)
-        tx = create_transaction(node, bip68inputs[i], address, amount=Decimal("499.98"))
+        tx = create_transaction(node, bip68inputs[i], address, amount=vout0_value(node, bip68inputs[i]) - Decimal("0.01"))
         tx.nVersion = txversion
         tx.vin[0].nSequence = locktime + locktime_delta
         tx = sign_transaction(node, tx)
@@ -128,7 +144,7 @@ def create_bip112txs(node, bip112inputs, varyOP_CSV, txversion, address, locktim
     assert len(bip112inputs) >= 16
     for i, (sdf, srhb, stf, srlb) in enumerate(product(*[[True, False]] * 4)):
         locktime = relative_locktime(sdf, srhb, stf, srlb)
-        tx = create_transaction(node, bip112inputs[i], address, amount=Decimal("499.98"))
+        tx = create_transaction(node, bip112inputs[i], address, amount=vout0_value(node, bip112inputs[i]) - Decimal("0.01"))
         if (varyOP_CSV):  # if varying OP_CSV, nSequence is fixed
             tx.vin[0].nSequence = BASE_RELATIVE_LOCKTIME + locktime_delta
         else:  # vary nSequence instead, OP_CSV is fixed
@@ -174,7 +190,10 @@ class BIP68_112_113Test(BitcoinTestFramework):
 
     def create_test_block(self, txs):
         block = create_block(self.tip, create_coinbase(self.tipheight + 1), self.last_block_time + 600)
-        block.nVersion = 4
+        # Dash used a bare version 4 here. On Osmium the top 16 bits of nVersion carry the auxpow
+        # chain ID, and CheckProofOfWork() (validation.cpp:3716) rejects a block whose chain ID
+        # does not match -- so the base version has to be OR'd into BASE_BLOCK_VERSION.
+        block.nVersion = BASE_BLOCK_VERSION
         block.vtx.extend(txs)
         block.hashMerkleRoot = block.calc_merkle_root()
         block.rehash()
@@ -257,10 +276,10 @@ class BIP68_112_113Test(BitcoinTestFramework):
 
         # Test both version 1 and version 2 transactions for all tests
         # BIP113 test transaction will be modified before each use to put in appropriate block time
-        bip113tx_v1 = create_transaction(self.nodes[0], bip113input, self.nodeaddress, amount=Decimal("499.98"))
+        bip113tx_v1 = create_transaction(self.nodes[0], bip113input, self.nodeaddress, amount=vout0_value(self.nodes[0], bip113input) - Decimal("0.01"))
         bip113tx_v1.vin[0].nSequence = 0xFFFFFFFE
         bip113tx_v1.nVersion = 1
-        bip113tx_v2 = create_transaction(self.nodes[0], bip113input, self.nodeaddress, amount=Decimal("499.98"))
+        bip113tx_v2 = create_transaction(self.nodes[0], bip113input, self.nodeaddress, amount=vout0_value(self.nodes[0], bip113input) - Decimal("0.01"))
         bip113tx_v2.vin[0].nSequence = 0xFFFFFFFE
         bip113tx_v2.nVersion = 2
 

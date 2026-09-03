@@ -12,8 +12,8 @@ from test_framework.util import (
 )
 
 
-BASE58_VALID = 'yjQ5gLvGRtmq1cwc4kePLCrzQ8GVCh9Gaz'
-BASE58_INVALID_PREFIX = 'XpG61qAVhdyN7AqVZQsHfJL7AEk4dPVinc'
+BASE58_VALID = 'shL2uiSwnBpgk7rJhTec4KnBxZQLXZbE2V'
+BASE58_INVALID_PREFIX = 'SasFDRHkUHwyUY2NExY9MfnsygPoPRTzVT'
 
 INVALID_ADDRESS = 'asfah14i8fajz0123f'
 

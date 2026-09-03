@@ -14,6 +14,7 @@ from struct import pack, unpack
 import http.client
 import urllib.parse
 
+from test_framework.blocktools import COIN, get_miner_reward
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import (
     assert_equal,
@@ -22,7 +23,8 @@ from test_framework.util import (
     hex_str_to_bytes,
 )
 
-from test_framework.messages import BLOCK_HEADER_SIZE
+from io import BytesIO
+from test_framework.messages import BLOCK_HEADER_SIZE, CBlockHeader
 
 INVALID_PARAM = "abc"
 UNKNOWN_PARAM = "0000000000000000000000000000000000000000000000000000000000000000"
@@ -84,14 +86,15 @@ class RESTTest (BitcoinTestFramework):
         self.log.info("Mine blocks and send Osmium to node 1")
 
         # Random address so node1's balance doesn't increase
-        not_related_address = "yj949n1UH6fDhw6HtVE5VMj2iSTaSWBMcW"
+        not_related_address = "sh51P9Y9dPi5SRzzXCEJDUeEGsbRpSZmoL"
 
         self.nodes[0].generate(1)
         self.sync_all()
         self.nodes[1].generatetoaddress(100, not_related_address)
         self.sync_all()
 
-        assert_equal(self.nodes[0].getbalance(), 500)
+        # Osmium's height-1 block mints the premine rather than Dash's flat 500.
+        assert_equal(self.nodes[0].getbalance(), Decimal(get_miner_reward(1)) / COIN)
 
         txid = self.nodes[0].sendtoaddress(self.nodes[1].getnewaddress(), 0.1)
         self.sync_all()
@@ -238,9 +241,16 @@ class RESTTest (BitcoinTestFramework):
 
         # Compare with block header
         response_header = self.test_rest_request("/headers/1/{}".format(bb_hash), req_type=ReqType.BIN, ret_type=RetType.OBJ)
-        assert_equal(int(response_header.getheader('content-length')), BLOCK_HEADER_SIZE)
         response_header_bytes = response_header.read()
-        assert_equal(response_bytes[:BLOCK_HEADER_SIZE], response_header_bytes)
+        # Osmium's blocks are merge-mined, so a serialized header is the 80-byte header plus an
+        # auxpow payload and is not a fixed BLOCK_HEADER_SIZE. Check the node and the framework
+        # agree on the encoding instead, and that the block starts with exactly this header.
+        parsed_header = CBlockHeader()
+        parsed_header.deserialize(BytesIO(response_header_bytes))
+        assert_equal(parsed_header.serialize(), response_header_bytes)
+        assert_greater_than_or_equal(len(response_header_bytes), BLOCK_HEADER_SIZE)
+        assert_equal(int(response_header.getheader('content-length')), len(response_header_bytes))
+        assert_equal(response_bytes[:len(response_header_bytes)], response_header_bytes)
 
         # Check block hex format
         response_hex = self.test_rest_request("/block/{}".format(bb_hash), req_type=ReqType.HEX, ret_type=RetType.OBJ)

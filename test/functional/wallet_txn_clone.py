@@ -5,6 +5,8 @@
 """Test the wallet accounts properly when there are cloned transactions with malleated scriptsigs."""
 
 import io
+from decimal import Decimal
+from test_framework.blocktools import COIN, COINBASE_MATURITY, get_miner_reward
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import (
     assert_equal,
@@ -29,20 +31,29 @@ class TxnMallTest(BitcoinTestFramework):
         self.disconnect_nodes(1, 2)
 
     def run_test(self):
-        # All nodes should start with 12,500 OSMI:
-        starting_balance = 12500
+        # The cached chain does not hand the four nodes equal balances on Osmium the way it does
+        # on Dash (12500 each): the height-1 premine dominates, so whichever node mined it holds
+        # nearly everything. Work from node0's real balance instead of a fixed figure.
+        starting_balance = self.nodes[0].getbalance()
+        assert starting_balance > 100, "node0 holds %s, too little to run this test" % starting_balance
+        # Keep the test's proportions -- it was written against a 12500 balance -- by scaling every
+        # amount by what node0 actually has.
+        scale = starting_balance / Decimal('12500')
+        def amt(x):
+            return (Decimal(x) * scale).quantize(Decimal('0.00000001'))
+        send_self_1, send_self_2 = amt(12190), amt(290)
+        send_1, send_2 = amt(400), amt(200)
         for i in range(4):
-            assert_equal(self.nodes[i].getbalance(), starting_balance)
             self.nodes[i].getnewaddress()  # bug workaround, coins generated assigned to first getnewaddress!
 
         self.nodes[0].settxfee(.001)
 
         node0_address1 = self.nodes[0].getnewaddress()
-        node0_txid1 = self.nodes[0].sendtoaddress(node0_address1, 12190)
+        node0_txid1 = self.nodes[0].sendtoaddress(node0_address1, send_self_1)
         node0_tx1 = self.nodes[0].gettransaction(node0_txid1)
 
         node0_address2 = self.nodes[0].getnewaddress()
-        node0_txid2 = self.nodes[0].sendtoaddress(node0_address2, 290)
+        node0_txid2 = self.nodes[0].sendtoaddress(node0_address2, send_self_2)
         node0_tx2 = self.nodes[0].gettransaction(node0_txid2)
 
         assert_equal(self.nodes[0].getbalance(),
@@ -52,8 +63,8 @@ class TxnMallTest(BitcoinTestFramework):
         node1_address = self.nodes[1].getnewaddress()
 
         # Send tx1, and another transaction tx2 that won't be cloned
-        txid1 = self.nodes[0].sendtoaddress(node1_address, 400)
-        txid2 = self.nodes[0].sendtoaddress(node1_address, 200)
+        txid1 = self.nodes[0].sendtoaddress(node1_address, send_1)
+        txid2 = self.nodes[0].sendtoaddress(node1_address, send_2)
 
         # Construct a clone of tx1, to be malleated
         rawtx1 = self.nodes[0].getrawtransaction(txid1, 1)
@@ -66,7 +77,7 @@ class TxnMallTest(BitcoinTestFramework):
         # createrawtransaction randomizes the order of its outputs, so swap them if necessary.
         clone_tx = CTransaction()
         clone_tx.deserialize(io.BytesIO(bytes.fromhex(clone_raw)))
-        if (rawtx1["vout"][0]["value"] == 400 and clone_tx.vout[0].nValue != 400*COIN or rawtx1["vout"][0]["value"] != 400 and clone_tx.vout[0].nValue == 400*COIN):
+        if (rawtx1["vout"][0]["value"] == send_1 and clone_tx.vout[0].nValue != int(send_1*COIN) or rawtx1["vout"][0]["value"] != send_1 and clone_tx.vout[0].nValue == int(send_1*COIN)):
             (clone_tx.vout[0], clone_tx.vout[1]) = (clone_tx.vout[1], clone_tx.vout[0])
 
         # Use a different signature hash type to sign.  This creates an equivalent but malleated clone.
@@ -86,7 +97,9 @@ class TxnMallTest(BitcoinTestFramework):
         # matured block, minus tx1 and tx2 amounts, and minus transaction fees:
         expected = starting_balance + node0_tx1["fee"] + node0_tx2["fee"]
         if self.options.mine_block:
-            expected += 500
+            # A block matured when node0 mined; its reward is the subsidy less the devfee, not
+            # Dash's flat 500.
+            expected += Decimal(get_miner_reward(self.nodes[0].getblockcount() - COINBASE_MATURITY)) / COIN
         expected += tx1["amount"] + tx1["fee"]
         expected += tx2["amount"] + tx2["fee"]
         assert_equal(self.nodes[0].getbalance(), expected)
@@ -121,11 +134,24 @@ class TxnMallTest(BitcoinTestFramework):
         assert_equal(tx1_clone["confirmations"], 2)
         assert_equal(tx2["confirmations"], 1)
 
-        # Check node0's total balance; should be same as before the clone, + 1000 OSMI for 2 matured,
-        # less possible orphaned matured subsidy
-        expected += 1000
+        # Check node0's total balance; same as before the clone plus whatever matured while node2
+        # mined, less any orphaned matured subsidy. Dash could write 1000/500 because every block
+        # paid 500; here the amount depends on the height and on which node's address the maturing
+        # coinbase paid, so read it off the chain.
+        def matured_to_node0(height):
+            blk = self.nodes[0].getblock(self.nodes[0].getblockhash(height), 2)
+            total = Decimal(0)
+            for out in blk['tx'][0]['vout']:
+                addr = out['scriptPubKey'].get('address') or (out['scriptPubKey'].get('addresses') or [None])[0]
+                if addr and self.nodes[0].getaddressinfo(addr)['ismine']:
+                    total += Decimal(str(out['value']))
+            return total
+
+        tip = self.nodes[0].getblockcount()
+        expected += matured_to_node0(tip - COINBASE_MATURITY)
+        expected += matured_to_node0(tip - COINBASE_MATURITY + 1)
         if (self.options.mine_block):
-            expected -= 500
+            expected -= matured_to_node0(tip - COINBASE_MATURITY + 2)
         assert_equal(self.nodes[0].getbalance(), expected)
 
 if __name__ == '__main__':

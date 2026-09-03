@@ -10,6 +10,8 @@
 import binascii
 
 from test_framework.messages import COIN, COutPoint, CTransaction, CTxIn, CTxOut
+from test_framework.blocktools import get_miner_reward
+from decimal import Decimal
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.test_node import ErrorMatch
 from test_framework.script import CScript, OP_CHECKSIG, OP_DUP, OP_EQUAL, OP_EQUALVERIFY, OP_HASH160
@@ -63,43 +65,46 @@ class AddressIndexTest(BitcoinTestFramework):
         assert_equal(self.nodes[2].getbalance(), 0)
 
         # Check that balances are correct
-        balance0 = self.nodes[1].getaddressbalance("93bVhahvUKmQu8gu9g3QnPPa2cxFK98pMB")
+        balance0 = self.nodes[1].getaddressbalance("6EEGopcuW4XHB6iHyjiBPWV4d69eJAG1tx")
         balance_mining = self.nodes[1].getaddressbalance(mining_address)
         assert_equal(balance0["balance"], 0)
-        assert_equal(balance_mining["balance"], 105 * 500 * COIN)
-        assert_equal(balance_mining["balance_immature"], 100 * 500 * COIN)
-        assert_equal(balance_mining["balance_spendable"], 5 * 500 * COIN)
+        # Osmium's reward varies by height (premine at 1, then a decaying subsidy less the
+        # devfee), so sum the actual rewards instead of multiplying by Dash's flat 500. At height
+        # 105 only blocks 1..5 have matured.
+        assert_equal(balance_mining["balance"], sum(get_miner_reward(h) for h in range(1, 106)))
+        assert_equal(balance_mining["balance_immature"], sum(get_miner_reward(h) for h in range(6, 106)))
+        assert_equal(balance_mining["balance_spendable"], sum(get_miner_reward(h) for h in range(1, 6)))
 
         # Check p2pkh and p2sh address indexes
         self.log.info("Testing p2pkh and p2sh address index...")
 
-        txid0 = self.nodes[0].sendtoaddress("yMNJePdcKvXtWWQnFYHNeJ5u8TF2v1dfK4", 10)
+        txid0 = self.nodes[0].sendtoaddress("sKJFsmAHgDakF1KUtFHbNR16gtNtGahb7G", 10)
         self.nodes[0].generate(1)
 
-        txidb0 = self.nodes[0].sendtoaddress("93bVhahvUKmQu8gu9g3QnPPa2cxFK98pMB", 10)
+        txidb0 = self.nodes[0].sendtoaddress("6EEGopcuW4XHB6iHyjiBPWV4d69eJAG1tx", 10)
         self.nodes[0].generate(1)
 
-        txid1 = self.nodes[0].sendtoaddress("yMNJePdcKvXtWWQnFYHNeJ5u8TF2v1dfK4", 15)
+        txid1 = self.nodes[0].sendtoaddress("sKJFsmAHgDakF1KUtFHbNR16gtNtGahb7G", 15)
         self.nodes[0].generate(1)
 
-        txidb1 = self.nodes[0].sendtoaddress("93bVhahvUKmQu8gu9g3QnPPa2cxFK98pMB", 15)
+        txidb1 = self.nodes[0].sendtoaddress("6EEGopcuW4XHB6iHyjiBPWV4d69eJAG1tx", 15)
         self.nodes[0].generate(1)
 
-        txid2 = self.nodes[0].sendtoaddress("yMNJePdcKvXtWWQnFYHNeJ5u8TF2v1dfK4", 20)
+        txid2 = self.nodes[0].sendtoaddress("sKJFsmAHgDakF1KUtFHbNR16gtNtGahb7G", 20)
         self.nodes[0].generate(1)
 
-        txidb2 = self.nodes[0].sendtoaddress("93bVhahvUKmQu8gu9g3QnPPa2cxFK98pMB", 20)
+        txidb2 = self.nodes[0].sendtoaddress("6EEGopcuW4XHB6iHyjiBPWV4d69eJAG1tx", 20)
         self.nodes[0].generate(1)
 
         self.sync_all()
 
-        txids = self.nodes[1].getaddresstxids("yMNJePdcKvXtWWQnFYHNeJ5u8TF2v1dfK4")
+        txids = self.nodes[1].getaddresstxids("sKJFsmAHgDakF1KUtFHbNR16gtNtGahb7G")
         assert_equal(len(txids), 3)
         assert_equal(txids[0], txid0)
         assert_equal(txids[1], txid1)
         assert_equal(txids[2], txid2)
 
-        txidsb = self.nodes[1].getaddresstxids("93bVhahvUKmQu8gu9g3QnPPa2cxFK98pMB")
+        txidsb = self.nodes[1].getaddresstxids("6EEGopcuW4XHB6iHyjiBPWV4d69eJAG1tx")
         assert_equal(len(txidsb), 3)
         assert_equal(txidsb[0], txidb0)
         assert_equal(txidsb[1], txidb1)
@@ -108,7 +113,7 @@ class AddressIndexTest(BitcoinTestFramework):
         # Check that limiting by height works
         self.log.info("Testing querying txids by range of block heights..")
         height_txids = self.nodes[1].getaddresstxids({
-            "addresses": ["93bVhahvUKmQu8gu9g3QnPPa2cxFK98pMB"],
+            "addresses": ["6EEGopcuW4XHB6iHyjiBPWV4d69eJAG1tx"],
             "start": 105,
             "end": 110
         })
@@ -117,7 +122,7 @@ class AddressIndexTest(BitcoinTestFramework):
         assert_equal(height_txids[1], txidb1)
 
         # Check that multiple addresses works
-        multitxids = self.nodes[1].getaddresstxids({"addresses": ["93bVhahvUKmQu8gu9g3QnPPa2cxFK98pMB", "yMNJePdcKvXtWWQnFYHNeJ5u8TF2v1dfK4"]})
+        multitxids = self.nodes[1].getaddresstxids({"addresses": ["6EEGopcuW4XHB6iHyjiBPWV4d69eJAG1tx", "sKJFsmAHgDakF1KUtFHbNR16gtNtGahb7G"]})
         assert_equal(len(multitxids), 6)
         assert_equal(multitxids[0], txid0)
         assert_equal(multitxids[1], txidb0)
@@ -127,17 +132,26 @@ class AddressIndexTest(BitcoinTestFramework):
         assert_equal(multitxids[5], txidb2)
 
         # Check that balances are correct
-        balance0 = self.nodes[1].getaddressbalance("93bVhahvUKmQu8gu9g3QnPPa2cxFK98pMB")
+        balance0 = self.nodes[1].getaddressbalance("6EEGopcuW4XHB6iHyjiBPWV4d69eJAG1tx")
         assert_equal(balance0["balance"], 45 * 100000000)
 
         # Check that outputs with the same address will only return one txid
         self.log.info("Testing for txid uniqueness...")
         addressHash = binascii.unhexlify("FE30B718DCF0BF8A2A686BF1820C073F8B2C3B37")
         scriptPubKey = CScript([OP_HASH160, addressHash, OP_EQUAL])
-        unspent = self.nodes[0].listunspent()
+        # Split a SMALL output rather than spending a fixed 21 coins. Osmium's ordinary regtest
+        # outputs are a fraction of a coin (Dash's were 500), and this transaction burns most of
+        # its input as fee, so take the smallest usable one and leave the premine for the steps
+        # further down which need a large input.
+        unspent = sorted((u for u in self.nodes[0].listunspent() if u['amount'] > Decimal('0.001')),
+                         key=lambda u: u['amount'])
+        in_value = int(unspent[0]["amount"] * COIN)
+        out_a = in_value * 2 // 5
+        out_b = in_value * 2 // 5
+        assert out_a > 0 and out_a + out_b < in_value, "input %s too small to split" % in_value
         tx = CTransaction()
         tx.vin = [CTxIn(COutPoint(int(unspent[0]["txid"], 16), unspent[0]["vout"]))]
-        tx.vout = [CTxOut(10 * COIN, scriptPubKey), CTxOut(11 * COIN, scriptPubKey)]
+        tx.vout = [CTxOut(out_a, scriptPubKey), CTxOut(out_b, scriptPubKey)]
         tx.rehash()
 
         signed_tx = self.nodes[0].signrawtransactionwithwallet(tx.serialize().hex())
@@ -146,24 +160,26 @@ class AddressIndexTest(BitcoinTestFramework):
         self.nodes[0].generate(1)
         self.sync_all()
 
-        txidsmany = self.nodes[1].getaddresstxids("93bVhahvUKmQu8gu9g3QnPPa2cxFK98pMB")
+        txidsmany = self.nodes[1].getaddresstxids("6EEGopcuW4XHB6iHyjiBPWV4d69eJAG1tx")
         assert_equal(len(txidsmany), 4)
         assert_equal(txidsmany[3], sent_txid)
 
         # Check that balances are correct
         self.log.info("Testing balances...")
-        balance0 = self.nodes[1].getaddressbalance("93bVhahvUKmQu8gu9g3QnPPa2cxFK98pMB")
-        assert_equal(balance0["balance"], (45 + 21) * 100000000)
+        balance0 = self.nodes[1].getaddressbalance("6EEGopcuW4XHB6iHyjiBPWV4d69eJAG1tx")
+        # 45 from the earlier sends plus the two outputs of the uniqueness transaction, which are
+        # now sized from the input rather than a fixed 10 + 11.
+        assert_equal(balance0["balance"], 45 * 100000000 + out_a + out_b)
 
         # Check that balances are correct after spending
         self.log.info("Testing balances after spending...")
         privkey2 = "cU4zhap7nPJAWeMFu4j6jLrfPmqakDAzy8zn8Fhb3oEevdm4e5Lc"
-        address2 = "yeMpGzMj3rhtnz48XsfpB8itPHhHtgxLc3"
+        address2 = "scHmWMtQQ9kkXUxqAag2uFe5wiq9EWGU8n"
         addressHash2 = binascii.unhexlify("C5E4FB9171C22409809A3E8047A29C83886E325D")
         scriptPubKey2 = CScript([OP_DUP, OP_HASH160, addressHash2, OP_EQUALVERIFY, OP_CHECKSIG])
         self.nodes[0].importprivkey(privkey2)
 
-        unspent = self.nodes[0].listunspent()
+        unspent = sorted(self.nodes[0].listunspent(), key=lambda u: u['amount'], reverse=True)
         tx = CTransaction()
         tx_fee_sat = 1000
         tx.vin = [CTxIn(COutPoint(int(unspent[0]["txid"], 16), unspent[0]["vout"]))]
@@ -237,9 +253,13 @@ class AddressIndexTest(BitcoinTestFramework):
         # Check sorting of utxos
         self.nodes[2].generate(150)
 
-        self.nodes[2].sendtoaddress(address2, 50)
+        # 50 apiece assumed Dash's 500-per-block wallet; size these to what node2 actually holds.
+        # Only the utxo count and heights are asserted below, not these amounts.
+        send2 = (self.nodes[2].getbalance() / 4).quantize(Decimal('0.00000001'))
+        assert send2 > 0, "node2 holds nothing to send"
+        self.nodes[2].sendtoaddress(address2, send2)
         self.nodes[2].generate(1)
-        self.nodes[2].sendtoaddress(address2, 50)
+        self.nodes[2].sendtoaddress(address2, send2)
         self.nodes[2].generate(1)
         self.sync_all()
 
@@ -253,7 +273,7 @@ class AddressIndexTest(BitcoinTestFramework):
         self.log.info("Testing mempool indexing...")
 
         privKey3 = "cRyrMvvqi1dmpiCmjmmATqjAwo6Wu7QTjKu1ABMYW5aFG4VXW99K"
-        address3 = "yWB15aAdpeKuSaQHFVJpBDPbNSLZJSnDLA"
+        address3 = "sU6xJwhKAwNmB5JytCK2uLJnvsUQYhETzD"
         addressHash3 = binascii.unhexlify("6C186B3A308A77C779A9BB71C3B5A7EC28232A13")
         scriptPubKey3 = CScript([OP_DUP, OP_HASH160, addressHash3, OP_EQUALVERIFY, OP_CHECKSIG])
         # address4 = "2N8oFVB2vThAKury4vnLquW2zVjsYjjAkYQ"
@@ -319,7 +339,7 @@ class AddressIndexTest(BitcoinTestFramework):
 
         # sending and receiving to the same address
         privkey1 = "cMvZn1pVWntTEcsK36ZteGQXRAcZ8CoTbMXF1QasxBLdnTwyVQCc"
-        address1 = "yM9Eed1bxjy7tYxD3yZDHxjcVT48WdRoB1"
+        address1 = "sK5BszYHK31yd3ruggZS25ep3tBymfFK2Q"
         address1hash = binascii.unhexlify("0909C84A817651502E020AAD0FBCAE5F656E7D8A")
         address1script = CScript([OP_DUP, OP_HASH160, address1hash, OP_EQUALVERIFY, OP_CHECKSIG])
 

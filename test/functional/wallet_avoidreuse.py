@@ -62,6 +62,22 @@ def assert_balances(node, mine, margin=0.001):
     for k,v in mine.items():
         assert_approx(got[k], v, margin)
 
+def fund_repeatedly(node, address, count):
+    """Send `count` payments of 1 to `address`, confirming as we go.
+
+    Dash's node0 held ~110 mature coinbase outputs of 500 each, so every send could pick a fresh
+    confirmed input. Osmium's regtest wallet is one large premine output plus a tail of ~0.1
+    outputs, so each send has to spend the previous send's change and the chain of unconfirmed
+    ancestors hits the mempool limit after ~25 -- at which point the wallet reports "Insufficient
+    funds" because nothing is eligible any more. Confirming periodically keeps the chain short;
+    the payments themselves are identical either way.
+    """
+    for i in range(count):
+        node.sendtoaddress(address, 1)
+        if (i + 1) % 20 == 0:
+            node.generate(1)
+
+
 class AvoidReuseTest(BitcoinTestFramework):
 
     def set_test_params(self):
@@ -283,8 +299,7 @@ class AvoidReuseTest(BitcoinTestFramework):
         ret_addr = self.nodes[0].getnewaddress()
 
         # send multiple transactions, reusing one address
-        for _ in range(101):
-            self.nodes[0].sendtoaddress(new_addr, 1)
+        fund_repeatedly(self.nodes[0], new_addr, 101)
 
         self.nodes[0].generate(1)
         self.sync_all()
@@ -315,8 +330,7 @@ class AvoidReuseTest(BitcoinTestFramework):
         ret_addr = self.nodes[0].getnewaddress()
 
         # Send 101 outputs of 1 BTC to the same, reused address in the wallet
-        for _ in range(101):
-            self.nodes[0].sendtoaddress(new_addr, 1)
+        fund_repeatedly(self.nodes[0], new_addr, 101)
 
         self.nodes[0].generate(1)
         self.sync_all()
@@ -344,8 +358,7 @@ class AvoidReuseTest(BitcoinTestFramework):
         ret_addr = self.nodes[0].getnewaddress()
 
         # Send 202 outputs of 1 BTC to the same, reused address in the wallet
-        for _ in range(202):
-            self.nodes[0].sendtoaddress(new_addr, 1)
+        fund_repeatedly(self.nodes[0], new_addr, 202)
 
         self.nodes[0].generate(1)
         self.sync_all()

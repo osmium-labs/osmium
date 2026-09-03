@@ -187,7 +187,11 @@ class ListSinceBlockTest(BitcoinTestFramework):
 
         # share utxo between nodes[1] and nodes[2]
         utxos = self.nodes[2].listunspent()
-        utxo = utxos[0]
+        # Dash's outputs were a uniform 500 each, so any of them covered the 1.0003 spent below.
+        # On Osmium the miner's outputs are the height-1 premine plus a tail of ~0.1 subsidies, and
+        # listunspent's first entry is usually one of the small ones -- which would make the change
+        # below negative. Take the largest instead.
+        utxo = max(utxos, key=lambda u: u['amount'])
         privkey = self.nodes[2].dumpprivkey(utxo['address'])
         self.nodes[1].importprivkey(privkey)
 
@@ -267,7 +271,11 @@ class ListSinceBlockTest(BitcoinTestFramework):
 
         # create and sign a transaction
         utxos = self.nodes[2].listunspent()
-        utxo = utxos[0]
+        # Dash's outputs were a uniform 500 each, so any of them covered the 1.0003 spent below.
+        # On Osmium the miner's outputs are the height-1 premine plus a tail of ~0.1 subsidies, and
+        # listunspent's first entry is usually one of the small ones -- which would make the change
+        # below negative. Take the largest instead.
+        utxo = max(utxos, key=lambda u: u['amount'])
         change = '%.8f' % (float(utxo['amount']) - 1.0003)
         recipient_dict = {
             self.nodes[0].getnewaddress(): 1,

@@ -11,7 +11,8 @@ RPCs tested are:
 """
 from collections import defaultdict
 
-from test_framework.blocktools import COINBASE_MATURITY
+from decimal import Decimal
+from test_framework.blocktools import COIN, COINBASE_MATURITY, get_block_subsidy
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import assert_equal, assert_raises_rpc_error
 from test_framework.wallet_util import test_address
@@ -34,7 +35,11 @@ class WalletLabelsTest(BitcoinTestFramework):
         # the same address, so we call twice to get two addresses w/500 each
         node.generatetoaddress(nblocks=1, address=node.getnewaddress(label='coinbase'))
         node.generatetoaddress(nblocks=COINBASE_MATURITY + 1, address=node.getnewaddress(label='coinbase'))
-        assert_equal(node.getbalance(), 1000)
+        # Osmium's rewards are not Dash's flat 500: the first block mints the premine and the
+        # second pays the ordinary regtest subsidy, so the two groups hold different amounts.
+        first_reward = Decimal(get_block_subsidy(1)) / COIN
+        second_reward = Decimal(get_block_subsidy(2)) / COIN
+        assert_equal(node.getbalance(), first_reward + second_reward)
 
         # there should be 2 address groups
         # each with 1 address with a balance of 500 Osmium
@@ -46,14 +51,14 @@ class WalletLabelsTest(BitcoinTestFramework):
         for address_group in address_groups:
             assert_equal(len(address_group), 1)
             assert_equal(len(address_group[0]), 3)
-            assert_equal(address_group[0][1], 500)
+            assert address_group[0][1] in (first_reward, second_reward), address_group[0][1]
             assert_equal(address_group[0][2], 'coinbase')
             linked_addresses.add(address_group[0][0])
 
         # send 500 from each address to a third address not in this wallet
-        common_address = "yd5KMREs3GLMe6mTJYr3YrH1juwNwrFCfB"
+        common_address = "sb1GanmYPZPDNbg9wFrGGyCDJM5EF35NCC"
         node.sendmany(
-            amounts={common_address: 1000},
+            amounts={common_address: first_reward + second_reward},
             minconf=1,
             addlocked=False,
             comment="",
@@ -72,7 +77,9 @@ class WalletLabelsTest(BitcoinTestFramework):
         # we want to reset so that the "" label has what's expected.
         # otherwise we're off by exactly the fee amount as that's mined
         # and matures in the next 100 blocks
-        amount_to_send = 1.0
+        # Dash left 500 in the wallet at this point; Osmium's matured block is ~0.1, so the
+        # per-label amount has to come down or every send fails with Insufficient funds.
+        amount_to_send = Decimal('0.01')
 
         # Create labels and make sure subsequent label API calls
         # recognize the label/address associations.
@@ -86,6 +93,8 @@ class WalletLabelsTest(BitcoinTestFramework):
         assert_equal(node.listlabels(), sorted(['coinbase'] + [label.name for label in labels]))
 
         # Send a transaction to each label.
+        assert node.getbalance() > amount_to_send * len(labels), \
+            "wallet holds %s, not enough to fund %d labels" % (node.getbalance(), len(labels))
         for label in labels:
             node.sendtoaddress(label.addresses[0], amount_to_send)
             label.verify(node)
@@ -105,7 +114,7 @@ class WalletLabelsTest(BitcoinTestFramework):
             address = node.getnewaddress(label.name)
             label.add_receive_address(address)
             label.verify(node)
-            assert_equal(node.getreceivedbylabel(label.name), 2)
+            assert_equal(node.getreceivedbylabel(label.name), 2 * amount_to_send)
             label.verify(node)
         node.generate(COINBASE_MATURITY + 1)
 

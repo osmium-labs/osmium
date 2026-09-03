@@ -31,23 +31,30 @@ class ScantxoutsetTest(BitcoinTestFramework):
         pubk2 = self.nodes[0].getaddressinfo(addr2)['pubkey']
         addr3 = self.nodes[0].getnewaddress("")
         pubk3 = self.nodes[0].getaddressinfo(addr3)['pubkey']
-        self.nodes[0].sendtoaddress(addr1, 0.001)
-        self.nodes[0].sendtoaddress(addr2, 0.002)
-        self.nodes[0].sendtoaddress(addr3, 0.004)
+        # Lock these three outputs. They belong to this wallet, and on Osmium they are comparable
+        # in size to the wallet's other outputs, so the sends below happily select them as inputs
+        # and spend them again before the scan runs. Dash's wallet held 500-coin outputs and never
+        # picked these.
+        for _addr, _amt in ((addr1, 0.001), (addr2, 0.002), (addr3, 0.004)):
+            _txid = self.nodes[0].sendtoaddress(_addr, _amt)
+            _tx = self.nodes[0].gettransaction(_txid)['details']
+            for _d in _tx:
+                if _d['category'] == 'receive' and _d['address'] == _addr:
+                    self.nodes[0].lockunspent(False, [{"txid": _txid, "vout": _d['vout']}])
 
         #send to child keys of tprv8ZgxMBicQKsPd7Uf69XL1XwhmjHopUGep8GuEiJDZmbQz6o58LninorQAfcKZWARbtRtfnLcJ5MQ2AtHcQJCCRUcMRvmDUjyEmNUWwx8UbK
-        self.nodes[0].sendtoaddress("yR5yZLjevw5kX3UxGiQN1g96LXGJni2wSS", 0.008) # (m/0'/0'/0')
-        self.nodes[0].sendtoaddress("yPcxzaQekxTjaJVSaZ58r22o37H8moWPK2", 0.016) # (m/0'/0'/1')
-        self.nodes[0].sendtoaddress("yhv7iRHSx4SgyvCPmkm6Js8gTuJTtJH9ec", 0.032) # (m/0'/0'/1500')
-        self.nodes[0].sendtoaddress("yWEdyyKVNbmaiXHkg3LVPqgoXpMA3S6Xt7", 0.064) # (m/0'/0'/0)
-        self.nodes[0].sendtoaddress("yTGAdq8sSHJ1QrcqSUaMHs8RMj3Bqz3bkb", 0.128) # (m/0'/0'/1)
-        self.nodes[0].sendtoaddress("yRTNkmjXjhatND4Dv3V4GwBzYJQ4o9ukQr", 0.256) # (m/0'/0'/1500)
-        self.nodes[0].sendtoaddress("yPwUp9Vwmr4zE6rSuZg3TBxeyRerdRAbNd", 0.512) # (m/1/1/0')
-        self.nodes[0].sendtoaddress("yLapNU3bG8E8JNGXRhZbRHHDifrqTucGcg", 1.024) # (m/1/1/1')
-        self.nodes[0].sendtoaddress("yUhbAKf7AcTC5sPXb2dkABKm3FYENqdzv2", 2.048) # (m/1/1/1500')
-        self.nodes[0].sendtoaddress("yZTyMdEJjZWJi6CwY6g3WurLESH3UsWrrM", 4.096) # (m/1/1/0)
-        self.nodes[0].sendtoaddress("ydccVGNV2EcEouAxbbgdu8pi8gkdaqkiav", 8.192) # (m/1/1/1)
-        self.nodes[0].sendtoaddress("yVCdQxPXJ3SrtTLv8FuLXDNaynz6kmjPNq", 16.384) # (m/1/1/1500)
+        self.nodes[0].sendtoaddress("sP1vniGLHE8cFYPeuRQajo4HtxQA75B6VW", 0.008) # (m/0'/0'/0')
+        self.nodes[0].sendtoaddress("sMYvDwwL7FWbJoQ9DG5Ma8wzbYQz41mgLA", 0.016) # (m/0'/0'/1')
+        self.nodes[0].sendtoaddress("sfr4wnp8JMVYiR76QTmK2z3t2LSKA6162j", 0.032) # (m/0'/0'/1500')
+        self.nodes[0].sendtoaddress("sUAbDLrAitpST2CTJkLi7xc16FV1PJSUgD", 0.064) # (m/0'/0'/0)
+        self.nodes[0].sendtoaddress("sRC7sCfYnaLs9MXY5Baa1z3cvAB39B2E6b", 0.128) # (m/0'/0'/1)
+        self.nodes[0].sendtoaddress("sPPKz9GD5zdk6hxvYkVH147C6jXv8PZXhw", 0.256) # (m/0'/0'/1500)
+        self.nodes[0].sendtoaddress("sMsS3X2d897qxbm9YGgGBJsrXrni1BYofa", 0.512) # (m/1/1/0')
+        self.nodes[0].sendtoaddress("sJWmbqaGcRGz2sBE4QZp9QCRH6zgmdw2dg", 1.024) # (m/1/1/1')
+        self.nodes[0].sendtoaddress("sSdYPhBnWuW3pNJEDjdxtJExbgg5gX3qRt", 2.048) # (m/1/1/1500')
+        self.nodes[0].sendtoaddress("sXPvazkz5rZASb7eAogGF2mXnsQtrVyGaX", 4.096) # (m/1/1/0)
+        self.nodes[0].sendtoaddress("sbYZiduANXf6YQ5fEJgrdFjuh7tUwZDXQc", 8.192) # (m/1/1/1)
+        self.nodes[0].sendtoaddress("sT8aeKvCeLVicxFckxuZFLHnYE7x9Vrp5c", 16.384) # (m/1/1/1500)
 
 
         self.nodes[0].generate(1)

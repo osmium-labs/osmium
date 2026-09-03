@@ -15,6 +15,8 @@ Therefore, this test is limited to the remaining protection criteria.
 
 import time
 
+from decimal import Decimal
+
 from test_framework.blocktools import COINBASE_MATURITY, create_block, create_coinbase
 from test_framework.messages import CTransaction, FromHex, msg_pong, msg_tx
 from test_framework.p2p import P2PDataStore, P2PInterface
@@ -74,7 +76,10 @@ class P2PEvict(BitcoinTestFramework):
             prevtx = node.getblock(node.getblockhash(i + 1), 2)['tx'][0]
             rawtx = node.createrawtransaction(
                 inputs=[{'txid': prevtx['txid'], 'vout': 0}],
-                outputs=[{node.get_deterministic_priv_key().address: 50 - 0.00125}],
+                # Dash's coinbases paid a flat 500, so 50 was always spendable. Osmium's early
+                # blocks pay the premine and then ~0.1, so the flat 50 made three of these four
+                # transactions invalid and left their peers unprotected from eviction.
+                outputs=[{node.get_deterministic_priv_key().address: prevtx['vout'][0]['value'] - Decimal("0.00125")}],
             )
             sigtx = node.signrawtransactionwithkey(
                 hexstring=rawtx,

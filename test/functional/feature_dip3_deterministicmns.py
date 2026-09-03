@@ -11,7 +11,7 @@ from decimal import Decimal
 
 from test_framework.blocktools import create_block_with_mnpayments
 from test_framework.messages import CTransaction, FromHex, ToHex
-from test_framework.test_framework import BitcoinTestFramework
+from test_framework.test_framework import BitcoinTestFramework, MASTERNODE_COLLATERAL, generate_until_balance
 from test_framework.util import assert_equal, force_finish_mnsync, p2p_port
 
 class Masternode(object):
@@ -47,8 +47,9 @@ class DIP3Test(BitcoinTestFramework):
 
     def run_test(self):
         self.log.info("funding controller node")
-        while self.nodes[0].getbalance() < (self.num_initial_mn + 3) * 1000:
-            self.nodes[0].generate(10) # generate enough for collaterals
+        # Osmium's collateral is 500, not Dash's 1000. At 1000 this asked for 14000 coins, more
+        # than the regtest chain can ever mint (~8670), so the loop never terminated.
+        generate_until_balance(self.nodes[0], (self.num_initial_mn + 3) * MASTERNODE_COLLATERAL, self.log)
         self.log.info("controller node has {} osmium".format(self.nodes[0].getbalance()))
 
         # Make sure we're below block 135 (which activates dip3)
@@ -242,20 +243,20 @@ class DIP3Test(BitcoinTestFramework):
 
     def create_mn_collateral(self, node, mn):
         mn.collateral_address = node.getnewaddress()
-        mn.collateral_txid = node.sendtoaddress(mn.collateral_address, 1000)
+        mn.collateral_txid = node.sendtoaddress(mn.collateral_address, MASTERNODE_COLLATERAL)
         mn.collateral_vout = None
         node.generate(1)
 
         rawtx = node.getrawtransaction(mn.collateral_txid, 1)
         for txout in rawtx['vout']:
-            if txout['value'] == Decimal(1000):
+            if txout['value'] == Decimal(MASTERNODE_COLLATERAL):
                 mn.collateral_vout = txout['n']
                 break
         assert mn.collateral_vout is not None
 
     # register a protx MN and also fund it (using collateral inside ProRegTx)
     def register_fund_mn(self, node, mn):
-        node.sendtoaddress(mn.fundsAddr, 1000.001)
+        node.sendtoaddress(mn.fundsAddr, MASTERNODE_COLLATERAL + Decimal('0.001'))
         mn.collateral_address = node.getnewaddress()
         mn.rewards_address = node.getnewaddress()
 
@@ -265,7 +266,7 @@ class DIP3Test(BitcoinTestFramework):
 
         rawtx = node.getrawtransaction(mn.collateral_txid, 1)
         for txout in rawtx['vout']:
-            if txout['value'] == Decimal(1000):
+            if txout['value'] == Decimal(MASTERNODE_COLLATERAL):
                 mn.collateral_vout = txout['n']
                 break
         assert mn.collateral_vout is not None
@@ -289,7 +290,7 @@ class DIP3Test(BitcoinTestFramework):
         self.sync_all()
 
     def spend_mn_collateral(self, mn, with_dummy_input_output=False):
-        return self.spend_input(mn.collateral_txid, mn.collateral_vout, 1000, with_dummy_input_output)
+        return self.spend_input(mn.collateral_txid, mn.collateral_vout, MASTERNODE_COLLATERAL, with_dummy_input_output)
 
     def update_mn_payee(self, mn, payee):
         self.nodes[0].sendtoaddress(mn.fundsAddr, 0.001)
@@ -350,13 +351,18 @@ class DIP3Test(BitcoinTestFramework):
         dummy_txin = None
         if with_dummy_input_output:
             dummyaddress = self.nodes[0].getnewaddress()
-            unspent = self.nodes[0].listunspent(110)
-            for u in unspent:
-                if u['amount'] > Decimal(1):
-                    dummy_txin = {'txid': u['txid'], 'vout': u['vout']}
-                    txins.append(dummy_txin)
-                    targets[dummyaddress] = float(u['amount'] - Decimal(0.0001))
-                    break
+            # Take the largest mature output rather than the first one over 1 coin. Dash pays 500
+            # per regtest block so anything qualified; Osmium pays at most 1 (and ~0.07 early), so
+            # the old filter matched nothing once the premine had been spent into collaterals, and
+            # the None was appended and only blew up later as a TypeError in mine_double_spend.
+            unspent = sorted(self.nodes[0].listunspent(110), key=lambda u: u['amount'], reverse=True)
+            assert len(unspent) > 0, "no mature outputs available for the dummy input"
+            u = unspent[0]
+            assert u['amount'] > Decimal('0.001'), \
+                "largest mature output is only %s, too small for the dummy input" % u['amount']
+            dummy_txin = {'txid': u['txid'], 'vout': u['vout']}
+            txins.append(dummy_txin)
+            targets[dummyaddress] = float(u['amount'] - Decimal('0.0001'))
 
         rawtx = self.nodes[0].createrawtransaction(txins, targets)
         rawtx = self.nodes[0].fundrawtransaction(rawtx)['hex']

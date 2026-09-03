@@ -22,11 +22,18 @@ from .messages import (
     FromHex,
     uint256_to_string,
 )
-from .script import CScript, CScriptNum, CScriptOp, OP_TRUE, OP_CHECKSIG
+from .script import CScript, CScriptNum, CScriptOp, OP_DUP, OP_EQUALVERIFY, OP_HASH160, OP_TRUE, OP_CHECKSIG
 from .util import assert_equal, hex_str_to_bytes
 from io import BytesIO
 
 MAX_BLOCK_SIGOPS = 20000
+
+# Osmium is always-auxpow: the chain ID occupies the top 16 bits of nVersion, and validation
+# rejects a block whose version is 1 as "late-legacy-block" above height 1 (validation.cpp:3887)
+# and anything carrying a different chain ID outright (validation.cpp:3723). Dash's framework
+# defaulted to version 1, so every block the framework built was refused.
+AUXPOW_CHAIN_ID = 0x0062  # regtest nAuxpowChainId, src/chainparams.cpp
+BASE_BLOCK_VERSION = (AUXPOW_CHAIN_ID << 16) | 4
 
 # Genesis block time (regtest)
 TIME_GENESIS_BLOCK = 1417713337
@@ -41,7 +48,7 @@ def create_block(hashprev=None, coinbase=None, ntime=None, *, version=None, tmpl
     block = CBlock()
     if tmpl is None:
         tmpl = {}
-    block.nVersion = version or tmpl.get('version') or 1
+    block.nVersion = version or tmpl.get('version') or BASE_BLOCK_VERSION
     block.nTime = ntime or tmpl.get('curtime') or int(time.time() + 600)
     block.hashPrevBlock = hashprev or int(tmpl['previousblockhash'], 0x10)
     if tmpl and not tmpl.get('bits') is None:
@@ -114,10 +121,22 @@ def create_block_with_mnpayments(mninfo, node, vtx=None, mn_payee=None, mn_amoun
         mn_amount_total = get_masternode_payment(height, coinbasevalue, v20_info['active'])
         mn_operator_amount = mn_amount_total * operator_reward // 100
         mn_amount = mn_amount_total - mn_operator_amount
-    miner_amount = coinbasevalue - mn_amount - mn_operator_amount
+    # Osmium's coinbase must also pay the devfee once past nDevfeePayment.getStartBlock(), or the
+    # block is rejected as bad-cb-devfee-payment-not-found. getblocktemplate's coinbasevalue
+    # already includes it (devfee_payment.cpp appends the output to the template's coinbase), so
+    # take it out of the miner's share rather than adding it on top.
+    devfee = bt.get('devfee') or {}
+    devfee_amount = devfee.get('amount', 0)
+    devfee_payee = devfee.get('payee')
+
+    miner_amount = coinbasevalue - mn_amount - mn_operator_amount - devfee_amount
 
     miner_address = node.get_deterministic_priv_key().address
     outputs = {miner_address: str(Decimal(miner_amount) / COIN)}
+    if devfee_amount > 0:
+        assert devfee_payee is not None, "block template reports a devfee amount but no payee"
+        assert devfee_payee != miner_address, "devfee payee collides with the miner address"
+        outputs[devfee_payee] = str(Decimal(devfee_amount) / COIN)
     if mn_amount > 0:
         outputs[mn_payee] = str(Decimal(mn_amount) / COIN)
     if mn_operator_amount > 0:
@@ -161,23 +180,44 @@ def script_BIP34_coinbase_height(height):
     return CScript([CScriptNum(height)])
 
 
-def create_coinbase(height, pubkey=None, dip4_activated=False, v20_activated=False, nValue=500):
+# Regtest devfee payee, src/chainparams.cpp (CRegTestParams nDevfeePayment).
+DEVFEE_ADDRESS = "sZmtmzxjw7cfsy7SC5CmUHKREH2UYnYnuu"
+
+
+def devfee_script():
+    """scriptPubKey the coinbase must pay the devfee to on regtest."""
+    from .address import base58_to_byte
+    payload = base58_to_byte(DEVFEE_ADDRESS)[0]
+    return CScript([OP_DUP, OP_HASH160, payload, OP_EQUALVERIFY, OP_CHECKSIG])
+
+
+def create_coinbase(height, pubkey=None, dip4_activated=False, v20_activated=False, nValue=None):
     """Create a coinbase transaction, assuming no miner fees.
 
     If pubkey is passed in, the coinbase output will be a P2PK output;
-    otherwise an anyone-can-spend output."""
+    otherwise an anyone-can-spend output.
+
+    Osmium does not pay Dash's flat 500 with bit-shift halvings, and above
+    nDevfeePayment.getStartBlock() the coinbase must also carry the devfee output or the block is
+    rejected as bad-cb-devfee-payment-not-found. Pass nValue to override the miner's share (for
+    tests that deliberately build an invalid amount); the devfee is still added, because it is
+    required independently of what the miner pays itself.
+    """
     coinbase = CTransaction()
     coinbase.vin.append(CTxIn(COutPoint(0, 0xffffffff), script_BIP34_coinbase_height(height), 0xffffffff))
     coinbaseoutput = CTxOut()
-    coinbaseoutput.nValue = nValue * COIN
-    if nValue == 500:
-        halvings = int(height / 150)  # regtest
-        coinbaseoutput.nValue >>= halvings
+    devfee = get_devfee(height)
+    if nValue is None:
+        coinbaseoutput.nValue = get_block_subsidy(height) - devfee
+    else:
+        coinbaseoutput.nValue = int(nValue * COIN)
     if (pubkey is not None):
         coinbaseoutput.scriptPubKey = CScript([pubkey, OP_CHECKSIG])
     else:
         coinbaseoutput.scriptPubKey = CScript([OP_TRUE])
     coinbase.vout = [coinbaseoutput]
+    if devfee > 0:
+        coinbase.vout.append(CTxOut(devfee, devfee_script()))
     if dip4_activated:
         coinbase.nVersion = 3
         coinbase.nType = 5
@@ -238,80 +278,71 @@ def get_legacy_sigopcount_tx(tx, accurate=True):
     return count
 
 # Identical to GetMasternodePayment in C++ code
-def get_masternode_payment(nHeight, blockValue, fV20Active):
-    ret = int(blockValue / 5)
+def get_block_subsidy(nHeight, nSubsidyHalvingInterval=150, nSuperblockStartBlock=1500):
+    """Block subsidy in muffs at `nHeight`, per src/validation.cpp GetBlockSubsidyHelper.
 
+    Osmium does not pay Dash's flat 500 per regtest block. Height 1 mints an 8000-coin premine,
+    heights 2..500 pay 0.1, and later blocks pay 1 -- then every nSubsidyHalvingInterval blocks
+    the subsidy is reduced by 1/7 (the C++ `reductionRatio` is 1210000/172800, which is integer
+    division and therefore exactly 7). Superblock share is carved out above nSuperblockStartBlock.
+
+    Defaults are the regtest values from src/chainparams.cpp (CRegTestParams).
+    """
+    nPrevHeight = nHeight - 1
+    if nPrevHeight == 0:
+        base = 8000
+    elif nPrevHeight <= 500:
+        base = 0.1
+    else:
+        base = 1
+    nSubsidy = int(base * COIN)
+
+    # The C++ does this in floating point -- `reductionRatio` is a double (1210000/172800, an
+    # integer division that yields exactly 7.0) and `nSubsidy -= nSubsidy / reductionRatio`
+    # truncates back to CAmount. Integer division here is off by a few muffs per halving.
+    i = nSubsidyHalvingInterval
+    while i <= nPrevHeight:
+        nSubsidy = int(nSubsidy - nSubsidy / 7.0)
+        i += nSubsidyHalvingInterval
+
+    nSuperblockPart = nSubsidy // 20 if nPrevHeight > nSuperblockStartBlock else 0
+    return nSubsidy - nSuperblockPart
+
+
+def get_devfee(nHeight, start_block=50, divisor=19):
+    """Devfee carved out of the coinbase at `nHeight` (src/devfee_payment.cpp).
+
+    Zero at or below nDevfeePayment.getStartBlock(); otherwise blockSubsidy / rewardDivisor,
+    integer division as in the C++. Defaults are the regtest values from src/chainparams.cpp.
+    """
+    if nHeight <= start_block:
+        return 0
+    return get_block_subsidy(nHeight) // divisor
+
+
+def get_miner_reward(nHeight):
+    """What the miner actually receives at `nHeight`: the subsidy less the devfee."""
+    return get_block_subsidy(nHeight) - get_devfee(nHeight)
+
+
+def get_masternode_payment(nHeight, blockValue, fV20Active=None):
+    """Osmium's masternode share of the block value.
+
+    Osmium replaced Dash's gradual MN_RR reallocation with a fixed, height-stepped split
+    (src/validation.cpp GetMasternodePayment): 9/19 of the block value, rising at
+    nMasternodePaymentsIncreaseBlock and again at nMasternodePaymentsIncreaseBlock2. There is no
+    reallocation schedule and no superblock-cycle interpolation here, and fV20Active is ignored by
+    the node -- it is accepted only so callers can keep passing it.
+
+    The divisions truncate exactly as the C++ integer arithmetic does (multiply, then divide).
+    """
+    # Regtest values from src/chainparams.cpp (CRegTestParams).
     nMNPIBlock = 350
-    nMNPIPeriod = 10
-    nReallocActivationHeight = 2500
+    nMNPIBlock2 = 650
 
-    if nHeight > nMNPIBlock:
-        ret += int(blockValue / 20)
-    if nHeight > nMNPIBlock+(nMNPIPeriod* 1):
-        ret += int(blockValue / 20)
-    if nHeight > nMNPIBlock+(nMNPIPeriod* 2):
-        ret += int(blockValue / 20)
-    if nHeight > nMNPIBlock+(nMNPIPeriod* 3):
-        ret += int(blockValue / 40)
-    if nHeight > nMNPIBlock+(nMNPIPeriod* 4):
-        ret += int(blockValue / 40)
-    if nHeight > nMNPIBlock+(nMNPIPeriod* 5):
-        ret += int(blockValue / 40)
-    if nHeight > nMNPIBlock+(nMNPIPeriod* 6):
-        ret += int(blockValue / 40)
-    if nHeight > nMNPIBlock+(nMNPIPeriod* 7):
-        ret += int(blockValue / 40)
-    if nHeight > nMNPIBlock+(nMNPIPeriod* 9):
-        ret += int(blockValue / 40)
-
-    if nHeight < nReallocActivationHeight:
-        # Block Reward Realocation is not activated yet, nothing to do
-        return ret
-
-    nSuperblockCycle = 10
-    # Actual realocation starts in the cycle next to one activation happens in
-    nReallocStart = nReallocActivationHeight - nReallocActivationHeight % nSuperblockCycle + nSuperblockCycle
-
-    if nHeight < nReallocStart:
-        # Activated but we have to wait for the next cycle to start realocation, nothing to do
-        return ret
-
-    if fV20Active:
-        # Once MNRewardReallocated activates, block reward is 80% of block subsidy (+ tx fees) since treasury is 20%
-        # Since the MN reward needs to be equal to 60% of the block subsidy (according to the proposal), MN reward is set to 75% of the block reward.
-        # Previous reallocation periods are dropped.
-        return blockValue * 3 // 4
-
-    # Periods used to reallocate the masternode reward from 50% to 60%
-    vecPeriods = [
-        513, # Period 1:  51.3%
-        526, # Period 2:  52.6%
-        533, # Period 3:  53.3%
-        540, # Period 4:  54%
-        546, # Period 5:  54.6%
-        552, # Period 6:  55.2%
-        557, # Period 7:  55.7%
-        562, # Period 8:  56.2%
-        567, # Period 9:  56.7%
-        572, # Period 10: 57.2%
-        577, # Period 11: 57.7%
-        582, # Period 12: 58.2%
-        585, # Period 13: 58.5%
-        588, # Period 14: 58.8%
-        591, # Period 15: 59.1%
-        594, # Period 16: 59.4%
-        597, # Period 17: 59.7%
-        599, # Period 18: 59.9%
-        600  # Period 19: 60%
-    ]
-
-    nReallocCycle = nSuperblockCycle * 3
-    nCurrentPeriod = min(int((nHeight - nReallocStart) / nReallocCycle), len(vecPeriods) - 1)
-
-    return int(blockValue * vecPeriods[nCurrentPeriod] / 1000)
-
-class TestFrameworkBlockTools(unittest.TestCase):
-    def test_create_coinbase(self):
-        height = 20
-        coinbase_tx = create_coinbase(height=height)
-        assert_equal(CScriptNum.decode(coinbase_tx.vin[0].scriptSig), height)
+    ret = blockValue * 9 // 19
+    if nHeight >= nMNPIBlock:
+        ret = blockValue * 72 // 95
+    if nHeight >= nMNPIBlock2:
+        ret = blockValue * 72 // 85
+    return ret

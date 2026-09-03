@@ -42,7 +42,7 @@ MAX_BLOOM_FILTER_SIZE = 36000
 MAX_BLOOM_HASH_FUNCS = 50
 
 COIN = 100000000  # 1 btc in satoshis
-MAX_MONEY = 21000000 * COIN
+MAX_MONEY = 1210000 * COIN  # Osmium's cap (src/amount.h), not Bitcoin's 21 million
 
 BIP125_SEQUENCE_NUMBER = 0xfffffffd  # Sequence number that is BIP 125 opt-in and BIP 68-opt-out
 
@@ -522,9 +522,49 @@ class CTransaction:
                % (self.nVersion, repr(self.vin), repr(self.vout), self.nLockTime)
 
 
+# Osmium is merge-mined: a block header whose nVersion has VERSION_AUXPOW set carries an auxpow
+# payload after the usual 80 bytes (src/auxpow.h CAuxPow, src/primitives/block.h CBlockHeader).
+# Every block osmiumd mines sets that bit, so a header read off the wire is 262 bytes, not 80.
+VERSION_AUXPOW = (1 << 8)
+
+
+class CAuxPow:
+    __slots__ = ("coinbaseTx", "vMerkleBranch", "nIndex", "vChainMerkleBranch",
+                 "nChainIndex", "parentBlock")
+
+    def __init__(self):
+        self.coinbaseTx = CTransaction()
+        self.vMerkleBranch = []
+        self.nIndex = 0
+        self.vChainMerkleBranch = []
+        self.nChainIndex = 0
+        self.parentBlock = None
+
+    def deserialize(self, f):
+        self.coinbaseTx = CTransaction()
+        self.coinbaseTx.deserialize(f)
+        self.vMerkleBranch = deser_uint256_vector(f)
+        self.nIndex = struct.unpack("<i", f.read(4))[0]
+        self.vChainMerkleBranch = deser_uint256_vector(f)
+        self.nChainIndex = struct.unpack("<i", f.read(4))[0]
+        self.parentBlock = CBlockHeader()
+        # The parent block is a bare 80-byte header, never itself auxpow.
+        self.parentBlock.deserialize_pure(f)
+
+    def serialize(self):
+        r = b""
+        r += self.coinbaseTx.serialize()
+        r += ser_uint256_vector(self.vMerkleBranch)
+        r += struct.pack("<i", self.nIndex)
+        r += ser_uint256_vector(self.vChainMerkleBranch)
+        r += struct.pack("<i", self.nChainIndex)
+        r += self.parentBlock.serialize_pure()
+        return r
+
+
 class CBlockHeader:
     __slots__ = ("hash", "hashMerkleRoot", "hashPrevBlock", "nBits", "nNonce",
-                 "nTime", "nVersion", "sha256")
+                 "nTime", "nVersion", "sha256", "auxpow")
 
     def __init__(self, header=None):
         if header is None:
@@ -538,6 +578,7 @@ class CBlockHeader:
             self.nNonce = header.nNonce
             self.sha256 = header.sha256
             self.hash = header.hash
+            self.auxpow = getattr(header, "auxpow", None)
             self.calc_sha256()
 
     def set_null(self):
@@ -549,18 +590,22 @@ class CBlockHeader:
         self.nNonce = 0
         self.sha256 = None
         self.hash = None
+        self.auxpow = None
 
-    def deserialize(self, f):
+    def deserialize_pure(self, f):
+        """Read only the 80-byte header, without any auxpow payload."""
         self.nVersion = struct.unpack("<i", f.read(4))[0]
         self.hashPrevBlock = deser_uint256(f)
         self.hashMerkleRoot = deser_uint256(f)
         self.nTime = struct.unpack("<I", f.read(4))[0]
         self.nBits = struct.unpack("<I", f.read(4))[0]
         self.nNonce = struct.unpack("<I", f.read(4))[0]
+        self.auxpow = None
         self.sha256 = None
         self.hash = None
 
-    def serialize(self):
+    def serialize_pure(self):
+        """Write only the 80-byte header, without any auxpow payload."""
         r = b""
         r += struct.pack("<i", self.nVersion)
         r += ser_uint256(self.hashPrevBlock)
@@ -568,6 +613,19 @@ class CBlockHeader:
         r += struct.pack("<I", self.nTime)
         r += struct.pack("<I", self.nBits)
         r += struct.pack("<I", self.nNonce)
+        return r
+
+    def deserialize(self, f):
+        self.deserialize_pure(f)
+        # An auxpow payload follows whenever the version says the block is merge-mined.
+        if self.nVersion & VERSION_AUXPOW:
+            self.auxpow = CAuxPow()
+            self.auxpow.deserialize(f)
+
+    def serialize(self):
+        r = self.serialize_pure()
+        if self.nVersion & VERSION_AUXPOW and self.auxpow is not None:
+            r += self.auxpow.serialize()
         return r
 
     def calc_sha256(self):

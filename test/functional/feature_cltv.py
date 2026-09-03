@@ -8,7 +8,7 @@ Test that the CHECKLOCKTIMEVERIFY soft-fork activates at (regtest) block height
 1351.
 """
 
-from test_framework.blocktools import create_coinbase, create_block, create_transaction
+from test_framework.blocktools import BASE_BLOCK_VERSION, create_coinbase, create_block, create_transaction
 from test_framework.messages import CTransaction, msg_block, ToHex
 from test_framework.p2p import P2PInterface
 from test_framework.script import CScript, OP_1NEGATE, OP_CHECKLOCKTIMEVERIFY, OP_DROP, CScriptNum
@@ -96,7 +96,7 @@ class BIP65Test(BitcoinTestFramework):
         tip = self.nodes[0].getbestblockhash()
         block_time = self.nodes[0].getblockheader(tip)['mediantime'] + 1
         block = create_block(int(tip, 16), create_coinbase(CLTV_HEIGHT - 1), block_time)
-        block.nVersion = 3
+        block.nVersion = BASE_BLOCK_VERSION | 3
         block.vtx.append(spendtx)
         block.hashMerkleRoot = block.calc_merkle_root()
         block.solve()
@@ -110,7 +110,7 @@ class BIP65Test(BitcoinTestFramework):
         tip = block.sha256
         block_time += 1
         block = create_block(tip, create_coinbase(CLTV_HEIGHT), block_time)
-        block.nVersion = 3
+        block.nVersion = BASE_BLOCK_VERSION | 3
         block.solve()
 
         with self.nodes[0].assert_debug_log(expected_msgs=['{}, bad-version(0x00000003)'.format(block.hash)]):
@@ -119,7 +119,7 @@ class BIP65Test(BitcoinTestFramework):
             peer.sync_with_ping()
 
         self.log.info("Test that invalid-according-to-cltv transactions cannot appear in a block")
-        block.nVersion = 4
+        block.nVersion = BASE_BLOCK_VERSION | 4
 
         spendtx = create_transaction(self.nodes[0], self.coinbase_txids[1],
                 self.nodeaddress, amount=1.0)

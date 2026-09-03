@@ -138,11 +138,14 @@ MESSAGEMAP = {
     b"spork": None,
 }
 
+# Osmium's pchMessageStart values (src/chainparams.cpp), not Dash's. Every P2P header carries
+# these, so with Dash's bytes the node discards everything the framework sends and each p2p_*
+# test dies waiting for a connection that never completes.
 MAGIC_BYTES = {
-    "mainnet": b"\xbf\x0c\x6b\xbd",   # mainnet
-    "testnet3": b"\xce\xe2\xca\xff",  # testnet3
-    "regtest": b"\xfc\xc1\xb7\xdc",   # regtest
-    "devnet": b"\xe2\xca\xff\xce",    # devnet
+    "mainnet": b"\x4f\x53\x4d\x49",   # mainnet  "OSMI"
+    "testnet3": b"\x74\x4f\x53\x4d",  # testnet3 "tOSM"
+    "regtest": b"\x72\x4f\x53\x4d",   # regtest  "rOSM"
+    "devnet": b"\x64\x4f\x53\x4d",    # devnet   "dOSM"
 }
 
 
@@ -351,12 +354,19 @@ class P2PInterface(P2PConnection):
 
         # The network services received from the peer
         self.nServices = 0
+        # The services *we* advertise. Distinct from self.nServices, which on_version overwrites
+        # with the node's. The node chooses getheaders vs getheaders2 from what the peer offers,
+        # and on Osmium the two sides differ: the node does not advertise NODE_HEADERS_COMPRESSED
+        # (init.cpp:1112 comments it out of nLocalServices) even though it still honours a peer
+        # that does, so the node's own flags are the wrong thing to key off.
+        self.our_services = 0
 
         self.support_addrv2 = support_addrv2
 
     def peer_connect(self, *args, services=NODE_NETWORK | NODE_HEADERS_COMPRESSED, send_version=True, **kwargs):
         create_conn = super().peer_connect(*args, **kwargs)
 
+        self.our_services = services
         if send_version:
             # Send a version msg
             vt = msg_version()
@@ -527,7 +537,7 @@ class P2PInterface(P2PConnection):
 
         def test_function():
             assert self.is_connected
-            return self.last_message.get("getheaders2") if self.nServices & NODE_HEADERS_COMPRESSED \
+            return self.last_message.get("getheaders2") if self.our_services & NODE_HEADERS_COMPRESSED \
                 else self.last_message.get("getheaders")
 
         self.wait_until(test_function, timeout=timeout)

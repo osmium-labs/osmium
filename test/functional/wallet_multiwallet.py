@@ -13,7 +13,7 @@ import shutil
 import time
 
 from test_framework.authproxy import JSONRPCException
-from test_framework.blocktools import COINBASE_MATURITY
+from test_framework.blocktools import COIN, get_miner_reward, COINBASE_MATURITY
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.test_node import ErrorMatch
 from test_framework.util import (
@@ -171,7 +171,9 @@ class MultiWalletTest(BitcoinTestFramework):
         assert_equal(set(node.listwallets()), {"w4", "w5"})
         w5 = wallet("w5")
         w5_info = w5.getwalletinfo()
-        assert_equal(w5_info['immature_balance'], 500)
+        # The immature balance is the reward of the block just mined, not Dash's flat 500.
+        assert_equal(w5_info['immature_balance'],
+                     Decimal(get_miner_reward(self.nodes[0].getblockcount())) / COIN)
 
         competing_wallet_dir = os.path.join(self.options.tmpdir, 'competing_walletdir')
         os.mkdir(competing_wallet_dir)
@@ -196,7 +198,8 @@ class MultiWalletTest(BitcoinTestFramework):
         node.generatetoaddress(nblocks=1, address=wallets[0].getnewaddress())
         for wallet_name, wallet in zip(wallet_names, wallets):
             info = wallet.getwalletinfo()
-            assert_equal(info['immature_balance'], 500 if wallet is wallets[0] else 0)
+            assert_equal(info['immature_balance'],
+                         Decimal(get_miner_reward(self.nodes[0].getblockcount())) / COIN if wallet is wallets[0] else 0)
             assert_equal(info['walletname'], wallet_name)
 
         # accessing invalid wallet fails
@@ -206,19 +209,30 @@ class MultiWalletTest(BitcoinTestFramework):
         assert_raises_rpc_error(-19, "Wallet file not specified", node.getwalletinfo)
 
         w1, w2, w3, w4, *_ = wallets
+        first_mined = node.getblockcount() + 1
         node.generatetoaddress(nblocks=COINBASE_MATURITY + 1, address=w1.getnewaddress())
-        assert_equal(w1.getbalance(), 1000)
+        # Sum the rewards of the blocks that have actually matured rather than assuming Dash's
+        # 2 x 500 -- Osmium's reward varies with height and has the devfee taken out. Maturity is
+        # taken from the node's own confirmation counts rather than recomputed here.
+        expected_w1 = 0
+        for _h in range(first_mined, node.getblockcount() + 1):
+            if node.getblock(node.getblockhash(_h))['confirmations'] >= COINBASE_MATURITY:
+                expected_w1 += get_miner_reward(_h)
+        assert_equal(w1.getbalance(), Decimal(expected_w1) / COIN)
         assert_equal(w2.getbalance(), 0)
         assert_equal(w3.getbalance(), 0)
         assert_equal(w4.getbalance(), 0)
 
-        w1.sendtoaddress(w2.getnewaddress(), 1)
-        w1.sendtoaddress(w3.getnewaddress(), 2)
-        w1.sendtoaddress(w4.getnewaddress(), 3)
+        # 1/2/3 assumed Dash's 1000-coin w1; scale to a unit w1 can actually afford here.
+        unit = (w1.getbalance() / 20).quantize(Decimal('0.00000001'))
+        assert unit > 0, "w1 holds %s, too little to split" % w1.getbalance()
+        w1.sendtoaddress(w2.getnewaddress(), unit)
+        w1.sendtoaddress(w3.getnewaddress(), 2 * unit)
+        w1.sendtoaddress(w4.getnewaddress(), 3 * unit)
         node.generatetoaddress(nblocks=1, address=w1.getnewaddress())
-        assert_equal(w2.getbalance(), 1)
-        assert_equal(w3.getbalance(), 2)
-        assert_equal(w4.getbalance(), 3)
+        assert_equal(w2.getbalance(), unit)
+        assert_equal(w3.getbalance(), 2 * unit)
+        assert_equal(w4.getbalance(), 3 * unit)
 
         batch = w1.batch([w1.getblockchaininfo.get_request(), w1.getwalletinfo.get_request()])
         assert_equal(batch[0]["result"]["chain"], self.chain)

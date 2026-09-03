@@ -6,7 +6,7 @@
 
 from decimal import Decimal
 
-from test_framework.blocktools import COINBASE_MATURITY
+from test_framework.blocktools import COIN, COINBASE_MATURITY, get_miner_reward
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import (
     assert_equal,
@@ -19,7 +19,9 @@ from test_framework.util import (
 # COINBASE_MATURITY (100) blocks. Therefore, after mining 101 blocks we expect
 # node 0 to have a balance of (BLOCKS - COINBASE_MATURITY) * 500 OSMIUM/block.
 BLOCKS = COINBASE_MATURITY + 1
-BALANCE = (BLOCKS - 100) * 500
+# Osmium's reward is not flat: height 1 mints the premine and later blocks pay a small, decaying
+# subsidy less the devfee, so sum the matured blocks rather than multiplying.
+BALANCE = Decimal(sum(get_miner_reward(h) for h in range(1, BLOCKS - 100 + 1))) / COIN
 
 JSON_PARSING_ERROR = 'error: Error parsing JSON: foo'
 BLOCKS_VALUE_OF_ZERO = 'error: the first argument (number of blocks to generate, default: 1) must be an integer value greater than zero'
@@ -99,7 +101,12 @@ class TestBitcoinCli(BitcoinTestFramework):
 
             # Setup to test -getinfo, -generate, and -rpcwallet= with multiple wallets.
             wallets = [self.default_wallet_name, 'Encrypted', 'secret']
-            amounts = [BALANCE + Decimal('459.9999955'), Decimal(9), Decimal(31)]
+            # Dash folded a flat 500 block reward into this literal. Here the block mined below
+            # matures height BLOCKS+1-COINBASE_MATURITY, whose reward is the subsidy less the
+            # devfee, so build the expected balance from that instead.
+            send_2, send_3 = Decimal(9), Decimal(31)
+            matured = Decimal(get_miner_reward(BLOCKS + 1 - COINBASE_MATURITY)) / COIN
+            amounts = [BALANCE + matured - send_2 - send_3 - Decimal('0.0000045'), send_2, send_3]
             self.nodes[0].createwallet(wallet_name=wallets[1])
             self.nodes[0].createwallet(wallet_name=wallets[2])
             w1 = self.nodes[0].get_wallet_rpc(wallets[0])

@@ -4,6 +4,8 @@
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 """Test p2p blocksonly"""
 
+from decimal import Decimal
+
 from test_framework.messages import msg_tx, CTransaction, FromHex
 from test_framework.p2p import P2PInterface
 from test_framework.test_framework import BitcoinTestFramework
@@ -26,7 +28,10 @@ class P2PBlocksOnly(BitcoinTestFramework):
                 'vout': 0
             }],
             outputs=[{
-                self.nodes[0].get_deterministic_priv_key()[0]: 500 - 0.00125
+                # Dash's block-1 coinbase paid a flat 500; Osmium's is the premine, so take the
+                # fee off whatever this output actually holds or sendrawtransaction rejects the
+                # transaction for exceeding the maximum fee.
+                self.nodes[0].get_deterministic_priv_key()[0]: prevtx['vout'][0]['value'] - Decimal("0.00125")
             }],
         )
         sigtx = self.nodes[0].signrawtransactionwithkey(

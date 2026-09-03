@@ -16,9 +16,9 @@ from collections import OrderedDict
 from decimal import Decimal
 from io import BytesIO
 
-from test_framework.blocktools import COINBASE_MATURITY
+from test_framework.blocktools import COIN, COINBASE_MATURITY, get_miner_reward
 from test_framework.messages import CTransaction, ToHex
-from test_framework.test_framework import BitcoinTestFramework
+from test_framework.test_framework import BitcoinTestFramework, generate_until_balance
 from test_framework.util import (
     assert_equal,
     assert_raises_rpc_error,
@@ -68,6 +68,9 @@ class RawTransactionsTest(BitcoinTestFramework):
         self.nodes[2].generate(1)
         self.sync_all()
         self.nodes[0].generate(COINBASE_MATURITY + 1)
+        # node2 mined height 1 and so holds the premine; node0's blocks each pay only the ordinary
+        # regtest subsidy, so it needs a good many more of them before it can fund the sends below.
+        generate_until_balance(self.nodes[0], 20, self.log)
         self.sync_all()
         self.nodes[0].sendtoaddress(self.nodes[2].getnewaddress(),1.5)
         self.nodes[0].sendtoaddress(self.nodes[2].getnewaddress(),1.0)
@@ -255,7 +258,10 @@ class RawTransactionsTest(BitcoinTestFramework):
         self.sync_all()
         self.nodes[0].generate(1)
         self.sync_all()
-        assert_equal(self.nodes[0].getbalance(), bal+Decimal('500.00000000')+Decimal('2.19000000')) #block reward + tx
+        # block reward + tx -- the reward is the subsidy less the devfee at the height that just
+        # matured, not Dash's flat 500.
+        matured = Decimal(get_miner_reward(self.nodes[0].getblockcount() - COINBASE_MATURITY)) / COIN
+        assert_equal(self.nodes[0].getbalance(), bal + matured + Decimal('2.19000000'))
 
         # 2of2 test for combining transactions
         bal = self.nodes[2].getbalance()
@@ -300,7 +306,10 @@ class RawTransactionsTest(BitcoinTestFramework):
         self.sync_all()
         self.nodes[0].generate(1)
         self.sync_all()
-        assert_equal(self.nodes[0].getbalance(), bal+Decimal('500.00000000')+Decimal('2.19000000')) #block reward + tx
+        # block reward + tx -- the reward is the subsidy less the devfee at the height that just
+        # matured, not Dash's flat 500.
+        matured = Decimal(get_miner_reward(self.nodes[0].getblockcount() - COINBASE_MATURITY)) / COIN
+        assert_equal(self.nodes[0].getbalance(), bal + matured + Decimal('2.19000000'))
 
         # getrawtransaction tests
         # 1. valid parameters - only supply txid

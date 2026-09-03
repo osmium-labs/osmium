@@ -35,7 +35,7 @@ import os
 from random import randint
 import shutil
 
-from test_framework.blocktools import COINBASE_MATURITY
+from test_framework.blocktools import COIN, COINBASE_MATURITY, get_miner_reward
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import assert_equal, assert_raises_rpc_error
 
@@ -66,7 +66,9 @@ class WalletBackupTest(BitcoinTestFramework):
 
     def one_send(self, from_node, to_address):
         if (randint(1,2) == 1):
-            amount = Decimal(randint(1,10)) / Decimal(10)
+            # 0.1-1.0 assumed Dash's 500-per-block wallets. Here nodes 1 and 2 hold about 0.1
+            # each, so keep the transfers well inside that.
+            amount = Decimal(randint(1, 10)) / Decimal(1000)
             self.nodes[from_node].sendtoaddress(to_address, amount)
 
     def do_one_round(self):
@@ -123,9 +125,11 @@ class WalletBackupTest(BitcoinTestFramework):
         self.nodes[3].generate(COINBASE_MATURITY)
         self.sync_blocks()
 
-        assert_equal(self.nodes[0].getbalance(), 500)
-        assert_equal(self.nodes[1].getbalance(), 500)
-        assert_equal(self.nodes[2].getbalance(), 500)
+        # nodes 0, 1 and 2 mined heights 1, 2 and 3; on Osmium those pay very different amounts
+        # (the premine, then the ordinary subsidy) rather than Dash's uniform 500.
+        assert_equal(self.nodes[0].getbalance(), Decimal(get_miner_reward(1)) / COIN)
+        assert_equal(self.nodes[1].getbalance(), Decimal(get_miner_reward(2)) / COIN)
+        assert_equal(self.nodes[2].getbalance(), Decimal(get_miner_reward(3)) / COIN)
         assert_equal(self.nodes[3].getbalance(), 0)
 
         self.log.info("Creating transactions")
@@ -157,8 +161,11 @@ class WalletBackupTest(BitcoinTestFramework):
         total = balance0 + balance1 + balance2 + balance3
 
         # At this point, there are 214 blocks (103 for setup, then 10 rounds, then 101.)
-        # 114 are mature, so the sum of all wallets should be 114 * 500 = 57000.
-        assert_equal(total, 57000)
+        # 114 are mature. Osmium's reward is not flat, so sum the actual matured rewards instead
+        # of multiplying by 500 -- almost all of it is the height-1 premine.
+        mature_height = self.nodes[0].getblockcount() - COINBASE_MATURITY
+        expected_total = Decimal(sum(get_miner_reward(h) for h in range(1, mature_height + 1))) / COIN
+        assert_equal(total, expected_total)
 
         ##
         # Test restoring spender wallets from backups

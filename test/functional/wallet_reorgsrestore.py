@@ -32,6 +32,13 @@ class ReorgsRestoreTest(BitcoinTestFramework):
     def run_test(self):
         # Send a tx from which to conflict outputs later
         txid_conflict_from = self.nodes[0].sendtoaddress(self.nodes[0].getnewaddress(), Decimal("10"))
+        # Lock that 10-coin output. Dash's wallet held 500-coin outputs and never picked it for the
+        # next send; Osmium's outputs are comparable in size to it, so coin selection spends it and
+        # the explicit conflict transactions below then refer to an output that no longer exists.
+        # Locking only affects automatic selection -- createrawtransaction still spends it.
+        for d in self.nodes[0].gettransaction(txid_conflict_from)["details"]:
+            if d["amount"] == Decimal("10"):
+                self.nodes[0].lockunspent(False, [{"txid": txid_conflict_from, "vout": d["vout"]}])
         self.nodes[0].generate(1)
         self.sync_blocks()
 

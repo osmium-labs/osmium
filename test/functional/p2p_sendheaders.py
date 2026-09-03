@@ -535,7 +535,7 @@ class SendHeadersTest(BitcoinTestFramework):
                 height += 1
             # Send the header of the second block -> this won't connect.
             with p2p_lock:
-                test_node.last_message.pop("getheaders2" if test_node.nServices & NODE_HEADERS_COMPRESSED else "getheaders", None)
+                test_node.last_message.pop("getheaders2" if test_node.our_services & NODE_HEADERS_COMPRESSED else "getheaders", None)
             test_node.send_header_for_blocks([blocks[1]])
             test_node.wait_for_getheaders()
             test_node.send_header_for_blocks(blocks)
@@ -558,7 +558,7 @@ class SendHeadersTest(BitcoinTestFramework):
         for i in range(1, MAX_UNCONNECTING_HEADERS):
             # Send a header that doesn't connect, check that we get a getheaders.
             with p2p_lock:
-                test_node.last_message.pop("getheaders2" if test_node.nServices & NODE_HEADERS_COMPRESSED else "getheaders", None)
+                test_node.last_message.pop("getheaders2" if test_node.our_services & NODE_HEADERS_COMPRESSED else "getheaders", None)
             test_node.send_header_for_blocks([blocks[i]])
             test_node.wait_for_getheaders()
 
@@ -573,7 +573,7 @@ class SendHeadersTest(BitcoinTestFramework):
         for i in range(5 * MAX_UNCONNECTING_HEADERS - 1):
             # Send a header that doesn't connect, check that we get a getheaders.
             with p2p_lock:
-                test_node.last_message.pop("getheaders2" if test_node.nServices & NODE_HEADERS_COMPRESSED else "getheaders", None)
+                test_node.last_message.pop("getheaders2" if test_node.our_services & NODE_HEADERS_COMPRESSED else "getheaders", None)
             test_node.send_header_for_blocks([blocks[i % len(blocks)]])
             test_node.wait_for_getheaders()
 

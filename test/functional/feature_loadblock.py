@@ -52,7 +52,10 @@ class LoadblockTest(BitcoinTestFramework):
             cfg.write("host={}\n".format(node_url.hostname))
             cfg.write("output_file={}\n".format(bootstrap_file))
             cfg.write("max_height=100\n")
-            cfg.write("netmagic=fcc1b7dc\n")
+            # Osmium's regtest pchMessageStart is 72 4f 53 4d ("rOSM"), not Dash's fcc1b7dc.
+            # With the wrong magic linearize-data.py scans the block files, matches nothing and
+            # produces an empty bootstrap, so the test waits forever for blocks that never load.
+            cfg.write("netmagic=724f534d\n")
             cfg.write("input={}\n".format(blocks_dir))
             cfg.write("genesis={}\n".format(genesis_block))
             cfg.write("hashlist={}\n".format(hash_list.name))

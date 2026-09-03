@@ -100,15 +100,15 @@ class InvalidTxRequestTest(BitcoinTestFramework):
         self.reconnect_p2p(num_connections=2)
 
         self.log.info('Test orphan transaction handling ... ')
-        self.test_orphan_tx_handling(block1.vtx[0].sha256, False)
+        self.test_orphan_tx_handling(block1.vtx[0].sha256, block1.vtx[0].vout[0].nValue, False)
 
         self.log.info('Test orphan transaction handling, resolve via block')
         self.restart_node(0, ["-acceptnonstdtxn=1", '-persistmempool=0', '-maxorphantxsize=1'])
 
         self.reconnect_p2p(num_connections=2)
-        self.test_orphan_tx_handling(block2.vtx[0].sha256, True)
+        self.test_orphan_tx_handling(block2.vtx[0].sha256, block2.vtx[0].vout[0].nValue, True)
 
-    def test_orphan_tx_handling(self, base_tx, resolve_via_block):
+    def test_orphan_tx_handling(self, base_tx, base_value, resolve_via_block):
         node = self.nodes[0]  # convenience reference to the node
 
         # Create a root transaction that we withhold until all dependent transactions
@@ -116,30 +116,37 @@ class InvalidTxRequestTest(BitcoinTestFramework):
         SCRIPT_PUB_KEY_OP_TRUE = b'\x51\x75' * 15 + b'\x51'
         tx_withhold = CTransaction()
         tx_withhold.vin.append(CTxIn(outpoint=COutPoint(base_tx, 0)))
-        tx_withhold.vout.append(CTxOut(nValue=50 * COIN - 12000, scriptPubKey=SCRIPT_PUB_KEY_OP_TRUE))
+        # Dash's coinbases paid a flat 500, so the hardcoded 50/10/11-coin amounts below always
+        # fit. Osmium's block-2 coinbase pays ~0.1, so everything is derived from what the base
+        # transaction actually holds; only the relative structure (a split into three, one child
+        # paying no fee, one paying a fee, one spending more than it has) matters here.
+        fee = 12000
+        withhold_value = base_value - fee
+        split_value = (withhold_value - fee) // 3
+        tx_withhold.vout.append(CTxOut(nValue=withhold_value, scriptPubKey=SCRIPT_PUB_KEY_OP_TRUE))
         tx_withhold.calc_sha256()
 
         # Our first orphan tx with some outputs to create further orphan txs
         tx_orphan_1 = CTransaction()
         tx_orphan_1.vin.append(CTxIn(outpoint=COutPoint(tx_withhold.sha256, 0)))
-        tx_orphan_1.vout = [CTxOut(nValue=10 * COIN, scriptPubKey=SCRIPT_PUB_KEY_OP_TRUE)] * 3
+        tx_orphan_1.vout = [CTxOut(nValue=split_value, scriptPubKey=SCRIPT_PUB_KEY_OP_TRUE)] * 3
         tx_orphan_1.calc_sha256()
 
         # A valid transaction with low fee
         tx_orphan_2_no_fee = CTransaction()
         tx_orphan_2_no_fee.vin.append(CTxIn(outpoint=COutPoint(tx_orphan_1.sha256, 0)))
-        tx_orphan_2_no_fee.vout.append(CTxOut(nValue=10 * COIN, scriptPubKey=SCRIPT_PUB_KEY_OP_TRUE))
+        tx_orphan_2_no_fee.vout.append(CTxOut(nValue=split_value, scriptPubKey=SCRIPT_PUB_KEY_OP_TRUE))
 
         # A valid transaction with sufficient fee
         tx_orphan_2_valid = CTransaction()
         tx_orphan_2_valid.vin.append(CTxIn(outpoint=COutPoint(tx_orphan_1.sha256, 1)))
-        tx_orphan_2_valid.vout.append(CTxOut(nValue=10 * COIN - 12000, scriptPubKey=SCRIPT_PUB_KEY_OP_TRUE))
+        tx_orphan_2_valid.vout.append(CTxOut(nValue=split_value - fee, scriptPubKey=SCRIPT_PUB_KEY_OP_TRUE))
         tx_orphan_2_valid.calc_sha256()
 
         # An invalid transaction with negative fee
         tx_orphan_2_invalid = CTransaction()
         tx_orphan_2_invalid.vin.append(CTxIn(outpoint=COutPoint(tx_orphan_1.sha256, 2)))
-        tx_orphan_2_invalid.vout.append(CTxOut(nValue=11 * COIN, scriptPubKey=SCRIPT_PUB_KEY_OP_TRUE))
+        tx_orphan_2_invalid.vout.append(CTxOut(nValue=split_value + 1, scriptPubKey=SCRIPT_PUB_KEY_OP_TRUE))
         tx_orphan_2_invalid.calc_sha256()
 
         self.log.info('Send the orphans ... ')

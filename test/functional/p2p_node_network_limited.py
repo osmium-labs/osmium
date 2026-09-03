@@ -8,7 +8,7 @@ Tests that a node configured with -prune=550 signals NODE_NETWORK_LIMITED correc
 and that it responds to getdata requests for blocks correctly:
     - send a block within 288 + 2 of the tip
     - disconnect peers who request blocks older than that."""
-from test_framework.messages import CInv, MSG_BLOCK, msg_getdata, NODE_BLOOM, NODE_NETWORK_LIMITED, NODE_HEADERS_COMPRESSED, msg_verack
+from test_framework.messages import CInv, MSG_BLOCK, msg_getdata, NODE_BLOOM, NODE_NETWORK_LIMITED, msg_verack
 from test_framework.p2p import P2PInterface
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import assert_equal
@@ -46,7 +46,9 @@ class NodeNetworkLimitedTest(BitcoinTestFramework):
     def run_test(self):
         node = self.nodes[0].add_p2p_connection(P2PIgnoreInv())
 
-        expected_services = NODE_BLOOM | NODE_NETWORK_LIMITED | NODE_HEADERS_COMPRESSED
+        # Osmium does not advertise NODE_HEADERS_COMPRESSED: it is commented out of nLocalServices
+        # at init.cpp:1112, so the node never negotiates the compressed-headers protocol.
+        expected_services = NODE_BLOOM | NODE_NETWORK_LIMITED
 
         self.log.info("Check that node has signalled expected services.")
         assert_equal(node.nServices, expected_services)

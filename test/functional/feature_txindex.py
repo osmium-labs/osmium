@@ -65,8 +65,10 @@ class TxIndexTest(BitcoinTestFramework):
 
         # Check verbose raw transaction results
         verbose = self.nodes[3].getrawtransaction(txid, 1)
-        assert_equal(verbose["vout"][0]["valueSat"], 50000000000 - tx_fee_sat)
-        assert_equal(verbose["vout"][0]["value"] * 100000000, 50000000000 - tx_fee_sat)
+        # The output is whatever the selected input was worth less the fee; Osmium's coinbase is
+        # not Dash's flat 500, so assert against the amount actually built above.
+        assert_equal(verbose["vout"][0]["valueSat"], amount)
+        assert_equal(verbose["vout"][0]["value"] * 100000000, amount)
 
         self.log.info("Passed")
 

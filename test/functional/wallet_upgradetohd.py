@@ -55,6 +55,15 @@ class WalletUpgradeToHDTest(BitcoinTestFramework):
         self.log.info("Should be spendable and should use correct paths")
         for i in range(5):
             txid = node.sendtoaddress(node.getnewaddress(), 1)
+            # Keep the 1-coin output at receive index i unspent. Dash funded these sends from
+            # 500-coin coinbase outputs and never re-selected the 1-coin outputs; Osmium's wallet
+            # holds ~0.1 outputs alongside the premine, so a 1-coin output is an attractive input
+            # and later sends here consumed the ones at indices 0 and 2. The upgrade paths below
+            # depend on a coin existing at each key index -- in particular index 0, which is all a
+            # freshly encrypted wallet's one-key keypool can rescan.
+            for d in node.gettransaction(txid)["details"]:
+                if d["amount"] == 1:
+                    node.lockunspent(False, [{"txid": txid, "vout": d["vout"]}])
             outs = node.decoderawtransaction(node.gettransaction(txid)['hex'])['vout']
             for out in outs:
                 if out['value'] == 1:
@@ -135,7 +144,14 @@ class WalletUpgradeToHDTest(BitcoinTestFramework):
         assert_equal(mnemonic, node.dumphdinfo()['mnemonic'])
         assert_equal(chainid, node.getwalletinfo()['hdchainid'])
         node.keypoolrefill(5)
-        assert balance_after != node.getbalance()
+        # upgradetohd() rescans by default when a mnemonic is given, and MarkUnusedAddresses tops
+        # the keypool up as that rescan finds used keys -- so how much it recovers depends on how
+        # far the pool ends up extending, which depends on which key indices Osmium's coins landed
+        # on. Dash's flat 500-per-block wallet always left something for the explicit rescan below
+        # to find; here the upgrade recovers everything about one run in five, so the strict
+        # inequality is a coincidence. Assert the bound that actually holds either way.
+        assert balance_non_HD <= node.getbalance() <= balance_after, \
+            "%s not within [%s, %s]" % (node.getbalance(), balance_non_HD, balance_after)
         node.rescanblockchain()
         assert_equal(balance_after, node.getbalance())
 

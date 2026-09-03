@@ -6,6 +6,7 @@
 from decimal import Decimal
 
 from test_framework.blocktools import COINBASE_MATURITY
+from test_framework.blocktools import COIN, get_block_subsidy
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import (
     assert_array_result,
@@ -55,16 +56,22 @@ class WalletTest(BitcoinTestFramework):
 
         self.nodes[0].generate(1)
 
+        # Osmium's subsidy is not Dash's flat 500: height 1 mints the premine and later regtest
+        # blocks pay 0.1, decaying every halving interval. Derive rather than hardcode.
+        block1_reward = Decimal(get_block_subsidy(1)) / COIN
+        block2_reward = Decimal(get_block_subsidy(2)) / COIN
+
         walletinfo = self.nodes[0].getwalletinfo()
-        assert_equal(walletinfo['immature_balance'], 500)
+        assert_equal(walletinfo['immature_balance'], block1_reward)
         assert_equal(walletinfo['balance'], 0)
 
         self.sync_all(self.nodes[0:3])
         self.nodes[1].generate(COINBASE_MATURITY + 1)
         self.sync_all(self.nodes[0:3])
 
-        assert_equal(self.nodes[0].getbalance(), 500)
-        assert_equal(self.nodes[1].getbalance(), 500)
+        assert_equal(self.nodes[0].getbalance(), block1_reward)
+        # node1 mined heights 2..102, so only its height-2 block has matured.
+        assert_equal(self.nodes[1].getbalance(), block2_reward)
         assert_equal(self.nodes[2].getbalance(), 0)
 
         # Check that only first and second nodes have UTXOs
@@ -78,9 +85,9 @@ class WalletTest(BitcoinTestFramework):
         # First, outputs that are unspent both in the chain and in the
         # mempool should appear with or without include_mempool
         txout = self.nodes[0].gettxout(txid=confirmed_txid, n=confirmed_index, include_mempool=False)
-        assert_equal(txout['value'], 500)
+        assert_equal(txout['value'], block1_reward)
         txout = self.nodes[0].gettxout(txid=confirmed_txid, n=confirmed_index, include_mempool=True)
-        assert_equal(txout['value'], 500)
+        assert_equal(txout['value'], block1_reward)
 
         # Send 210 OSMIUM from 0 to 2 using sendtoaddress call.
         # Second transaction will be child of first, and will require a fee
@@ -91,7 +98,7 @@ class WalletTest(BitcoinTestFramework):
         # utxo spent in mempool should be visible if you exclude mempool
         # but invisible if you include mempool
         txout = self.nodes[0].gettxout(confirmed_txid, confirmed_index, False)
-        assert_equal(txout['value'], 500)
+        assert_equal(txout['value'], block1_reward)
         txout = self.nodes[0].gettxout(confirmed_txid, confirmed_index, True)
         assert txout is None
         # new utxo from mempool should be invisible if you exclude mempool
@@ -110,6 +117,14 @@ class WalletTest(BitcoinTestFramework):
 
         # Have node0 mine a block, thus it will collect its own fee.
         self.nodes[0].generate(1)
+        # Record what that block actually paid node0. Osmium splits the coinbase with the devfee,
+        # so the miner's share is not the whole subsidy and cannot be assumed to be a round number.
+        _blk = self.nodes[0].getblock(self.nodes[0].getbestblockhash(), 2)
+        _cb = _blk['tx'][0]['vout']
+        # The miner's output also carries the fees of the transactions in this block, which node0
+        # itself paid; they cancel out, so strip them and keep only the subsidy share.
+        _fees = sum(Decimal(str(o['value'])) for o in _cb) - Decimal(get_block_subsidy(_blk['height'])) / COIN
+        node0_mined_reward = max(Decimal(str(o['value'])) for o in _cb) - _fees
         self.sync_all(self.nodes[0:3])
 
         # Exercise locking of unspent outputs
@@ -138,7 +153,9 @@ class WalletTest(BitcoinTestFramework):
         # The lock on a manually selected output is ignored
         unspent_0 = self.nodes[1].listunspent()[0]
         self.nodes[1].lockunspent(False, [unspent_0])
-        tx = self.nodes[1].createrawtransaction([unspent_0], { self.nodes[1].getnewaddress() : 1 })
+        # node1's only mature output is one 0.1-ish regtest reward, not Dash's 500, so the amount
+        # here has to be something it can actually afford.
+        tx = self.nodes[1].createrawtransaction([unspent_0], { self.nodes[1].getnewaddress() : block2_reward / 4 })
         self.nodes[1].fundrawtransaction(tx,{"lockUnspents": True})
 
         # fundrawtransaction can lock an input
@@ -156,9 +173,9 @@ class WalletTest(BitcoinTestFramework):
         self.nodes[1].generate(COINBASE_MATURITY)
         self.sync_all(self.nodes[0:3])
 
-        # node0 should end up with 1000 OSMIUM in block rewards plus fees, but
-        # minus the 210 plus fees sent to node2
-        assert_equal(self.nodes[0].getbalance(), 1000 - 210)
+        # node0 should end up with everything it mined (the height-1 premine plus its later
+        # block's miner share) minus the 210 plus fees sent to node2.
+        assert_equal(self.nodes[0].getbalance(), block1_reward + node0_mined_reward - 210)
         assert_equal(self.nodes[2].getbalance(), 210)
 
         # Node0 should have two unspent outputs.
@@ -189,7 +206,9 @@ class WalletTest(BitcoinTestFramework):
         self.sync_all(self.nodes[0:3])
 
         assert_equal(self.nodes[0].getbalance(), 0)
-        assert_equal(self.nodes[2].getbalance(), 1000 - totalfee)
+        # node2 now holds everything node0 mined, less the fees paid moving it.
+        node_2_start = block1_reward + node0_mined_reward - totalfee
+        assert_equal(self.nodes[2].getbalance(), node_2_start)
 
         # Verify that a spent output cannot be locked anymore
         spent_0 = {"txid": node0utxos[0]["txid"], "vout": node0utxos[0]["vout"]}
@@ -202,7 +221,7 @@ class WalletTest(BitcoinTestFramework):
         txid = self.nodes[2].sendtoaddress(address, 100, "", "", False)
         self.nodes[2].generate(1)
         self.sync_all(self.nodes[0:3])
-        node_2_bal = self.check_fee_amount(self.nodes[2].getbalance(), Decimal('900') - totalfee, fee_per_byte, count_bytes(self.nodes[2].gettransaction(txid)['hex']))
+        node_2_bal = self.check_fee_amount(self.nodes[2].getbalance(), node_2_start - Decimal('100'), fee_per_byte, count_bytes(self.nodes[2].gettransaction(txid)['hex']))
         assert_equal(self.nodes[0].getbalance(), Decimal('100'))
 
         # Send 100 OSMIUM with subtract fee from amount
@@ -231,24 +250,24 @@ class WalletTest(BitcoinTestFramework):
 
         self.start_node(3)
         self.connect_nodes(0, 3)
-        # Sendmany with explicit fee (OSMIUM/kB)
+        # Sendmany with explicit fee (OSMI/kB)
         # Throw if no conf_target provided
         assert_raises_rpc_error(-8, "Selected estimate_mode requires a fee rate",
             self.nodes[2].sendmany,
             amounts={ address: 10 },
-            estimate_mode='osmium/kB')
+            estimate_mode='OSMI/kB')
         # Throw if negative feerate
         assert_raises_rpc_error(-3, "Amount out of range",
             self.nodes[2].sendmany,
             amounts={ address: 10 },
             conf_target=-1,
-            estimate_mode='osmium/kB')
+            estimate_mode='OSMI/kB')
         fee_per_kb = 0.0002500
         explicit_fee_per_byte = Decimal(fee_per_kb) / 1000
         txid = self.nodes[2].sendmany(
             amounts={ address: 10 },
             conf_target=fee_per_kb,
-            estimate_mode='osmium/kB',
+            estimate_mode='OSMI/kB',
         )
         self.nodes[2].generate(1)
         self.sync_all(self.nodes[0:3])
@@ -291,11 +310,22 @@ class WalletTest(BitcoinTestFramework):
         # 2. hex-changed one output to 0.0
         # 3. sign and send
         # 4. check if recipient (node0) can list the zero value tx
-        usp = self.nodes[1].listunspent(query_options={'minimumAmount': '499.998'})[0]
+        # Dash's regtest coinbase is 500, so this used a ~499.998 output and a hardcoded hex for
+        # the 11.11 amount. Osmium's rewards are far smaller, so take node1's largest output and
+        # size both amounts from it, computing the hex to blank out rather than hardcoding it.
+        usp = sorted(self.nodes[1].listunspent(), key=lambda u: u['amount'], reverse=True)[0]
+        zero_target = Decimal('0.001')
+        remainder = usp['amount'] - zero_target - Decimal('0.001')  # leave room for the fee
+        assert remainder > 0, "node1's largest output %s is too small for this test" % usp['amount']
         inputs = [{"txid": usp['txid'], "vout": usp['vout']}]
-        outputs = {self.nodes[1].getnewaddress(): 499.998, self.nodes[0].getnewaddress(): 11.11}
+        outputs = {self.nodes[1].getnewaddress(): remainder, self.nodes[0].getnewaddress(): zero_target}
 
-        raw_tx = self.nodes[1].createrawtransaction(inputs, outputs).replace("c0833842", "00000000")  # replace 11.11 with 0.0 (int32)
+        # The amount is an 8-byte little-endian value in the serialized tx; blank it to make the
+        # output zero-valued, which is what this test is actually about.
+        zero_target_hex = int(zero_target * COIN).to_bytes(8, 'little').hex()
+        raw_unreplaced = self.nodes[1].createrawtransaction(inputs, outputs)
+        assert_equal(raw_unreplaced.count(zero_target_hex), 1)
+        raw_tx = raw_unreplaced.replace(zero_target_hex, "0000000000000000")
         signed_raw_tx = self.nodes[1].signrawtransactionwithwallet(raw_tx)
         decoded_raw_tx = self.nodes[1].decoderawtransaction(signed_raw_tx['hex'])
         zero_value_txid = decoded_raw_tx['txid']
@@ -410,8 +440,8 @@ class WalletTest(BitcoinTestFramework):
         self.nodes[0].generate(1)
         self.sync_all(self.nodes[0:3])
 
-        # send with explicit osmium/kb fee
-        self.log.info("test explicit fee (sendtoaddress as osmium/kb)")
+        # send with explicit OSMI/kB fee
+        self.log.info("test explicit fee (sendtoaddress as OSMI/kB)")
         self.nodes[0].generate(1)
         self.sync_all(self.nodes[0:3])
         prebalance = self.nodes[2].getbalance()
@@ -422,19 +452,19 @@ class WalletTest(BitcoinTestFramework):
             self.nodes[2].sendtoaddress,
             address=address,
             amount=1.0,
-            estimate_mode='osmium/Kb')
+            estimate_mode='OSMI/kB')
         # Throw if negative feerate
         assert_raises_rpc_error(-3, "Amount out of range",
             self.nodes[2].sendtoaddress,
             address=address,
             amount=1.0,
             conf_target=-1,
-            estimate_mode='osmium/kb')
+            estimate_mode='OSMI/kB')
         txid = self.nodes[2].sendtoaddress(
             address=address,
             amount=1.0,
             conf_target=0.00002500,
-            estimate_mode='osmium/kb',
+            estimate_mode='OSMI/kB',
         )
         tx_size = count_bytes(self.nodes[2].gettransaction(txid)['hex'])
         self.sync_all(self.nodes[0:3])
@@ -603,8 +633,8 @@ class WalletTest(BitcoinTestFramework):
 
         # Test getaddressinfo on external address. Note that these addresses are taken from disablewallet.py
         assert_raises_rpc_error(-5, "Invalid prefix for Base58-encoded address", self.nodes[0].getaddressinfo, "3J98t1WpEZ73CNmQviecrnyiWrnqRhWNLy")
-        address_info = self.nodes[0].getaddressinfo("yjQ5gLvGRtmq1cwc4kePLCrzQ8GVCh9Gaz")
-        assert_equal(address_info['address'], "yjQ5gLvGRtmq1cwc4kePLCrzQ8GVCh9Gaz")
+        address_info = self.nodes[0].getaddressinfo("shL2uiSwnBpgk7rJhTec4KnBxZQLXZbE2V")
+        assert_equal(address_info['address'], "shL2uiSwnBpgk7rJhTec4KnBxZQLXZbE2V")
         assert_equal(address_info["scriptPubKey"], "76a914fd2b4d101724a76374fccbc5b6df7670a75d7cd088ac")
         assert not address_info["ismine"]
         assert not address_info["iswatchonly"]

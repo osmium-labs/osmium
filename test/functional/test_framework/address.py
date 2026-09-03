@@ -15,9 +15,9 @@ from .util import hex_str_to_bytes
 from test_framework.util import assert_equal
 
 # Note unlike in bitcoin, this address isn't bech32 since we don't (at this time) support bech32.
-ADDRESS_BCRT1_UNSPENDABLE = 'yVg3NBUHNEhgDceqwVUjsZHreC5PBHnUo9'
-ADDRESS_BCRT1_UNSPENDABLE_DESCRIPTOR = 'addr(yVg3NBUHNEhgDceqwVUjsZHreC5PBHnUo9)#e5kt0jtk'
-ADDRESS_BCRT1_P2SH_OP_TRUE = '8zJctvfrzGZ5s1zQ3kagwyW1DsPYSQ4V2P'
+ADDRESS_BCRT1_UNSPENDABLE = 'sTbzbYzxiXkXx7ZYaCUxbgD4CdDEXfKQJe'
+ADDRESS_BCRT1_UNSPENDABLE_DESCRIPTOR = 'addr(sTbzbYzxiXkXx7ZYaCUxbgD4CdDEXfKQJe)#3s3wn3vc'
+ADDRESS_BCRT1_P2SH_OP_TRUE = '6AwQ1Aar21Jx8z1nspFTZ6bVpLawTAxR76'
 
 chars = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz'
 
@@ -66,12 +66,12 @@ def base58_to_byte(s, verify_checksum=True):
 
 def keyhash_to_p2pkh(hash, main = False):
     assert len(hash) == 20
-    version = 76 if main else 140
+    version = 63 if main else 125  # Osmium PUBKEY_ADDRESS (Dash: 76 / 140)
     return byte_to_base58(hash, version)
 
 def scripthash_to_p2sh(hash, main = False):
     assert len(hash) == 20
-    version = 16 if main else 19
+    version = 15 if main else 12  # Osmium SCRIPT_ADDRESS (Dash: 16 / 19)
     return byte_to_base58(hash, version)
 
 def key_to_p2pkh(key, main = False):

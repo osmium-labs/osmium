@@ -36,7 +36,7 @@ class GenerateBlockTest(BitcoinTestFramework):
 
         self.log.info('Generate an empty block to a combo descriptor with compressed pubkey')
         combo_key = '0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798'
-        combo_address = 'yWziQMcwmKjRdzi7eWjwiQX8EjWcd6dSg6'
+        combo_address = 'sUvfdj9d7cnHNVcpHDkASXSKoAeTsKojEm'
         hash = node.generateblock('combo(' + combo_key + ')', [])['hash']
         block = node.getblock(hash, 2)
         assert_equal(len(block['tx']), 1)
@@ -57,8 +57,12 @@ class GenerateBlockTest(BitcoinTestFramework):
         assert_equal(block['tx'][1], txid)
 
         self.log.info('Generate block with raw tx')
+        # Dash's coinbases were a flat 500, so the first utxo always covered the 1 spent here.
+        # Osmium's are a fraction of a coin, and the wallet also holds the 0.001 outputs the loop
+        # above created, so listunspent's first entry is often too small. Take the largest.
         utxos = node.listunspent(addresses=[address])
-        raw = node.createrawtransaction([{'txid':utxos[0]['txid'], 'vout':utxos[0]['vout']}],[{address:1}])
+        utxo = max(utxos, key=lambda u: u['amount'])
+        raw = node.createrawtransaction([{'txid':utxo['txid'], 'vout':utxo['vout']}],[{address:1}])
         signed_raw = node.signrawtransactionwithwallet(raw)['hex']
         hash = node.generateblock(address, [signed_raw])['hash']
         block = node.getblock(hash, 1)

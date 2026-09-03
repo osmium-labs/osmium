@@ -87,6 +87,14 @@ class DIP3V19Test(OsmiumTestFramework):
 
         self.mine_cycle_quorum(llmq_type_name='llmq_test_dip0024', llmq_type=103)
 
+        # Osmium gates the Super tier (Dash's "Evo") on consensus.SupernodeHeight, which is 2000
+        # on regtest -- far beyond where the cycle work above leaves us -- so `protx register_super`
+        # fails with "Supernodes aren't allowed yet" until we get there.
+        while self.nodes[0].getblockcount() < 2000:
+            self.bump_mocktime(1)
+            self.nodes[0].generate(min(100, 2000 - self.nodes[0].getblockcount()))
+        self.sync_blocks(self.nodes)
+
         evo_info_0 = self.dynamically_add_masternode(evo=True, rnd=7)
         assert evo_info_0 is not None
         self.nodes[0].generate(8)
