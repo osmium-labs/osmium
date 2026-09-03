@@ -6,6 +6,12 @@ Want your own Maximus node running in minutes? This guide makes it easy.
 
 ## 🚀 Easiest Way (1-click)
 
+> **Important:** Always pin a specific version tag (e.g. `:v1.2.3`) rather than `:latest`.
+> `:latest` tracks ongoing `master` builds and can be ahead of or behind the current
+> stable release — including builds that predate a bug fix while already reporting
+> that fix's version number. Check the [releases page](https://github.com/Maximus-Chain/maximus/releases)
+> for the current recommended tag.
+
 Just install Docker first. Then copy and paste these commands:
 
 ### On Your Computer (Intel/AMD)
@@ -15,7 +21,7 @@ docker run -d \
   --name maximusd \
   -p 9938:9938 \
   -p 9939:9939 \
-  ghcr.io/maximus-chain/maximusd:latest
+  ghcr.io/maximus-chain/maximusd:v1.2.3
 ```
 
 ### On Raspberry Pi or Mac M1/M2/M3
@@ -25,7 +31,7 @@ docker run -d \
   --name maximusd \
   -p 9938:9938 \
   -p 9939:9939 \
-  ghcr.io/maximus-chain/maximusd:latest-arm64
+  ghcr.io/maximus-chain/maximusd:v1.2.3-arm64
 ```
 
 Done! Your node is now running. It will start downloading the blockchain automatically.
@@ -71,7 +77,7 @@ docker run -d \
   -p 9938:9938 \
   -p 9939:9939 \
   -e DAEMON_ARGS="-rpcuser=maximus -rpcpassword=YOUR_VERY_SECURE_PASSWORD" \
-  ghcr.io/Maximus-Chain/maximusd:latest
+  ghcr.io/Maximus-Chain/maximusd:v1.2.3
 ```
 
 > **Never** expose port 9939 (RPC) to the internet. It's only for local use.
@@ -88,7 +94,7 @@ docker run -d \
   -p 19938:19938 \
   -p 19939:19939 \
   -e DAEMON_ARGS="-testnet=1 -rpcuser=maximus -rpcpassword=your_password" \
-  ghcr.io/Maximus-Chain/maximusd:latest
+  ghcr.io/Maximus-Chain/maximusd:v1.2.3
 ```
 
 ---
@@ -107,7 +113,7 @@ docker run -d \
   -p 9938:9938 \
   -p 9939:9939 \
   -v ~/maximus-data:/home/maximus/.maximuscore \
-  ghcr.io/maximus-chain/maximusd:latest
+  ghcr.io/maximus-chain/maximusd:v1.2.3
 ```
 
 ---
@@ -151,7 +157,7 @@ docker run -d \
   --name maximusd \
   -p 19938:9938 \
   -p 19939:9939 \
-  ghcr.io/maximus-chain/maximusd:latest
+  ghcr.io/maximus-chain/maximusd:v1.2.3
 ```
 
 ### Node won't sync
@@ -190,7 +196,7 @@ docker exec -it maximusd /bin/bash
 
 ```bash
 # Stable version
-docker pull ghcr.io/maximus-chain/maximusd:latest
+docker pull ghcr.io/maximus-chain/maximusd:v1.2.3
 
 # Specific version
 docker pull ghcr.io/maximus-chain/maximusd:v1.1.0
@@ -208,7 +214,7 @@ version: '3.8'
 
 services:
   maximusd:
-    image: ghcr.io/maximus-chain/maximusd:latest
+    image: ghcr.io/maximus-chain/maximusd:v1.2.3
     container_name: maximusd
     restart: always
     ports:
@@ -261,20 +267,20 @@ docker run -d \
   -p 9938:9938 \
   -p 9939:9939 \
   -e DAEMON_ARGS="-rpcuser=maximus -rpcpassword=your_secure_password" \
-  ghcr.io/Maximus-Chain/maximusd:latest
+  ghcr.io/Maximus-Chain/maximusd:v1.2.3
 
 # Testnet
 docker run -d \
   -p 19938:19938 \
   -p 19939:19939 \
   -e DAEMON_ARGS="-testnet=1 -rpcuser=maximus -rpcpassword=your_secure_password" \
-  ghcr.io/Maximus-Chain/maximusd:latest
+  ghcr.io/Maximus-Chain/maximusd:v1.2.3
 
 # With custom config file
 docker run -d \
   -v /path/to/maximus.conf:/home/maximus/.maximuscore/maximus.conf \
   -e DAEMON_ARGS="-conf=/home/maximus/.maximuscore/maximus.conf" \
-  ghcr.io/Maximus-Chain/maximusd:latest
+  ghcr.io/Maximus-Chain/maximusd:v1.2.3
 ```
 
 ### Using SNAPSHOT_URL for Fast Sync
@@ -288,7 +294,7 @@ docker run -d \
   -p 9939:9939 \
   -e DAEMON_ARGS="-rpcuser=maximus -rpcpassword=your_secure_password" \
   -e SNAPSHOT_URL="https://example.com/maximus-snapshot.tar.xz" \
-  ghcr.io/Maximus-Chain/maximusd:latest
+  ghcr.io/Maximus-Chain/maximusd:v1.2.3
 
 # Testnet with snapshot
 docker run -d \
@@ -296,7 +302,7 @@ docker run -d \
   -p 19939:19939 \
   -e DAEMON_ARGS="-testnet=1 -rpcuser=maximus -rpcpassword=your_password" \
   -e SNAPSHOT_URL="https://example.com/maximus-testnet-snapshot.tar.xz" \
-  ghcr.io/Maximus-Chain/maximusd:latest
+  ghcr.io/Maximus-Chain/maximusd:v1.2.3
 ```
 
 Supported formats: `.tar.xz`, `.tar.gz`, `.zip`
@@ -320,7 +326,7 @@ docker build -f docker/Dockerfile -t maximus-local:latest .
 
 ```bash
 # On your server
-docker pull ghcr.io/maximus-chain/maximusd:latest
+docker pull ghcr.io/maximus-chain/maximusd:v1.2.3
 
 # Run
 docker run -d \
@@ -329,7 +335,7 @@ docker run -d \
   -p 9939:9939 \
   -v /opt/maximus/data:/home/maximus/.maximuscore \
   -e DAEMON_ARGS="-rpcuser=maximus -rpcpassword=your_secure_password" \
-  ghcr.io/Maximus-Chain/maximusd:latest
+  ghcr.io/Maximus-Chain/maximusd:v1.2.3
 ```
 
 ### Option 2: With systemd (Auto-restart)
@@ -344,7 +350,7 @@ Wants=network-online.target
 
 [Service]
 Type=simple
-ExecStartPre=/usr/bin/docker pull ghcr.io/maximus-chain/maximusd:latest
+ExecStartPre=/usr/bin/docker pull ghcr.io/maximus-chain/maximusd:v1.2.3
 ExecStart=/usr/bin/docker run \
     --name maximusd \
     --read-only \
@@ -353,7 +359,7 @@ ExecStart=/usr/bin/docker run \
     -p 9939:9939 \
     -v /opt/maximus/data:/home/maximus/.maximuscore \
     -e DAEMON_ARGS="-rpcuser=admin -rpcpassword=YOUR_PASSWORD" \
-    ghcr.io/Maximus-Chain/maximusd:latest
+    ghcr.io/Maximus-Chain/maximusd:v1.2.3
 ExecStop=/usr/bin/docker stop -t 60 maximusd
 ExecStopPost=/usr/bin/docker rm -f maximusd
 Restart=always
