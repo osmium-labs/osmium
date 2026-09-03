@@ -37,6 +37,17 @@ bool VerifyWallets(interfaces::Chain& chain)
             chain.initError(strprintf(_("Specified -walletdir \"%s\" is a relative path"), wallet_dir.string()));
             return false;
         }
+        // boost >= 1.79 no longer strips a trailing separator in fs::canonical(), so
+        // "-walletdir=/path/wallets/" would be stored as ".../wallets/" while
+        // "-walletdir=/path/wallets" is stored as ".../wallets". g_dbenvs is keyed by the
+        // path string (wallet/bdb.cpp), so the two spellings would name different Berkeley
+        // environments for one directory -- exactly what canonicalizing here is meant to
+        // prevent. Strip trailing separators so the stored value is the same either way.
+        {
+            std::string wd = canonical_wallet_dir.string();
+            while (wd.size() > 1 && (wd.back() == '/' || wd.back() == '\\')) wd.pop_back();
+            canonical_wallet_dir = fs::path(wd);
+        }
         gArgs.ForceSetArg("-walletdir", canonical_wallet_dir.string());
     }
 
