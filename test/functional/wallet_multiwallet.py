@@ -120,7 +120,10 @@ class MultiWalletTest(BitcoinTestFramework):
 
         # should raise rpc error if wallet path can't be created
         err_code = -4 if self.options.is_sqlite_only else -1
-        assert_raises_rpc_error(err_code, "boost::filesystem::create_directory:", self.nodes[0].createwallet, "w8/bad")
+        # boost >= 1.79 reports the outer call in this exception ("create_directories")
+        # where older versions reported "create_directory". Match the common prefix so the
+        # assertion does not depend on which boost the depends tree pinned.
+        assert_raises_rpc_error(err_code, "boost::filesystem::create_director", self.nodes[0].createwallet, "w8/bad")
 
         # check that all requested wallets were created
         self.stop_node(0)
