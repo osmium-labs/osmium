@@ -138,6 +138,9 @@ $(1)_config_env+=$($(1)_config_env_$(host_arch)_$(host_os)) $($(1)_config_env_$(
 
 $(1)_config_env+=PKG_CONFIG_LIBDIR=$($($(1)_type)_prefix)/lib/pkgconfig
 $(1)_config_env+=PKG_CONFIG_PATH=$($($(1)_type)_prefix)/share/pkgconfig
+# Qt's configure disables pkg-config when cross-compiling unless PKG_CONFIG_SYSROOT_DIR is
+# set (qtbase/configure.pri), which turns the explicit -pkg-config into a hard error.
+$(1)_config_env+=PKG_CONFIG_SYSROOT_DIR=/
 $(1)_config_env+=CMAKE_MODULE_PATH=$($($(1)_type)_prefix)/lib/cmake
 $(1)_config_env+=PATH=$(build_prefix)/bin:$(PATH)
 $(1)_build_env+=PATH=$(build_prefix)/bin:$(PATH)
@@ -211,17 +214,17 @@ $($(1)_configured): | $($(1)_dependencies) $($(1)_preprocessed)
 	echo Configuring $(1)...
 	rm -rf $(host_prefix); mkdir -p $(host_prefix)/lib; cd $(host_prefix); $(foreach package,$($(1)_all_dependencies), $(build_TAR) --no-same-owner -xf $($(package)_cached); )
 	mkdir -p $$(@D)
-	+cd $$(@D); $($(1)_config_env) $($(1)_config_cmds)
+	+cd $$(@D); export $($(1)_config_env); $($(1)_config_cmds)
 	touch $$@
 $($(1)_built): | $($(1)_configured)
 	echo Building $(1)...
 	mkdir -p $$(@D)
-	+cd $$(@D); $($(1)_build_env) $($(1)_build_cmds)
+	+cd $$(@D); export $($(1)_build_env); $($(1)_build_cmds)
 	touch $$@
 $($(1)_staged): | $($(1)_built)
 	echo Staging $(1)...
 	mkdir -p $($(1)_staging_dir)/$(host_prefix)
-	cd $($(1)_build_dir); $($(1)_stage_env) $($(1)_stage_cmds)
+	cd $($(1)_build_dir); export $($(1)_stage_env); $($(1)_stage_cmds)
 	rm -rf $($(1)_extract_dir)
 	touch $$@
 $($(1)_postprocessed): | $($(1)_staged)

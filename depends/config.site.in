@@ -72,6 +72,18 @@ fi
 
 if test "@host_os@" = darwin; then
   BREW=no
+
+  # Build static-only on macOS. libtool's darwin C++ archive_cmds always creates a
+  # "master object" with `$CC -r -keep_private_externs -nostdlib` before producing a
+  # dylib, and ld64.lld implements neither -r nor -keep_private_externs (checked on
+  # LLVM 18 and 19): it warns, performs a full link instead, and every libc/libc++
+  # symbol -- including main -- comes out undefined. Since the depends toolchain uses
+  # lld rather than cctools' ld64, the dylib cannot be produced at all. Only
+  # libosmiumconsensus is affected; it is still built as a static library, and the
+  # shipped binaries do not use the dylib. (Upstream Bitcoin removed the equivalent
+  # libbitcoinconsensus outright in v27.)
+  enable_shared=no
+  enable_static=yes
 fi
 
 PATH="${depends_prefix}/native/bin:${PATH}"
