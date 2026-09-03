@@ -26,6 +26,10 @@ void TestTxHelper(const CMutableTransaction& tx, bool is_basic_bls, bool expecte
 
     // No need to check anything else if GetTxPayload() expected to fail
     if (payload_to_fail) return;
+    // BOOST_CHECK_EQUAL above is non-fatal, so an unexpected deserialization failure used to fall
+    // through into opt_payload->, dereferencing a disengaged optional. That is undefined behaviour
+    // and in practice hung the run rather than reporting the failing vector.
+    if (!opt_payload.has_value()) return;
 
     TxValidationState dummy_state;
     BOOST_CHECK_EQUAL(opt_payload->IsTriviallyValid(is_basic_bls, dummy_state), !expected_failure);

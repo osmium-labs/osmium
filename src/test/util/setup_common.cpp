@@ -196,7 +196,13 @@ BasicTestingSetup::~BasicTestingSetup()
     m_node.evodb.reset();
 
     LogInstance().DisconnectTestLogger();
-    fs::remove_all(m_path_root);
+    // Teardown must not abort the run: a leftover open handle (seen on Windows/Wine)
+    // makes remove_all throw, which would take down the whole test binary.
+    try {
+        fs::remove_all(m_path_root);
+    } catch (const fs::filesystem_error& e) {
+        LogPrintf("%s: failed to remove test datadir %s: %s\n", __func__, m_path_root.string(), e.what());
+    }
     gArgs.ClearArgs();
     ECC_Stop();
 }
@@ -358,6 +364,18 @@ void TestChainSetup::mineBlocks(int num_blocks)
         CBlock b = CreateAndProcessBlock(noTxns, scriptPubKey);
         SetMockTime(GetTime() + 1);
         m_coinbase_txns.push_back(b.vtx[0]);
+    }
+
+    // Assigning over the global destroys the previous index. It is still registered as a
+    // validation interface, and the scheduler thread may be part-way through a queued
+    // BlockConnected callback writing into its LevelDB, so tear it down the same way
+    // ~TestChainSetup() does before replacing it. Without this the scheduler writes into the
+    // freed leveldb memtable: an intermittent heap-use-after-free that shows up as a crash in
+    // whichever test happens to call mineBlocks() more than once.
+    if (g_txindex) {
+        IndexWaitSynced(*g_txindex);
+        g_txindex->Stop();
+        SyncWithValidationInterfaceQueue();
     }
 
     g_txindex = std::make_unique<TxIndex>(1 << 20, true);

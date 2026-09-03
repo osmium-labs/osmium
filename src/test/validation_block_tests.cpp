@@ -8,6 +8,7 @@
 #include <consensus/consensus.h>
 #include <consensus/merkle.h>
 #include <consensus/validation.h>
+#include <devfee_payment.h>
 #include <evo/evodb.h>
 #include <governance/governance.h>
 #include <llmq/blockprocessor.h>
@@ -24,10 +25,16 @@
 #include <validation.h>
 #include <validationinterface.h>
 
+#include <algorithm>
+#include <chrono>
 #include <thread>
 
 namespace validation_block_tests {
 struct MinerTestingSetup : public RegTestingSetup {
+    // Height of every block this fixture has minted, so a re-parented block can be paid what its
+    // real height allows. Seeded with the genesis block on first use.
+    std::map<uint256, int> m_block_heights;
+
     std::shared_ptr<CBlock> Block(const uint256& prev_hash);
     std::shared_ptr<const CBlock> GoodBlock(const uint256& prev_hash);
     std::shared_ptr<const CBlock> BadBlock(const uint256& prev_hash);
@@ -75,6 +82,9 @@ std::shared_ptr<CBlock> MinerTestingSetup::Block(const uint256& prev_hash)
     CScript pubKey;
     pubKey << i++ << OP_TRUE;
 
+    if (m_block_heights.empty()) m_block_heights[Params().GenesisBlock().GetHash()] = 0;
+    const int height = m_block_heights.at(prev_hash) + 1;
+
     auto ptemplate = BlockAssembler(*m_node.sporkman, *m_node.govman, *m_node.llmq_ctx, *m_node.evodb, ::ChainstateActive(), *m_node.mempool, Params()).CreateNewBlock(pubKey);
     auto pblock = std::make_shared<CBlock>(ptemplate->block);
     pblock->hashPrevBlock = prev_hash;
@@ -85,6 +95,13 @@ std::shared_ptr<CBlock> MinerTestingSetup::Block(const uint256& prev_hash)
         pubKey << OP_HASH160 << ToByteVector(CScriptID(CScript() << OP_TRUE))
                << OP_EQUAL;
     }
+    // CreateNewBlock() sized the reward against the current tip, but the block was just
+    // re-parented, so it has to pay what its real height allows. Osmium mints an 8000-coin premine
+    // at height 1 and 0.1 per block after that, so a template minted at genesis pays 80000x the
+    // limit as soon as it sits deeper in the chain (bad-cb-amount). Dash's flat ~500 per regtest
+    // block made re-parenting harmless here.
+    const CAmount reward = GetBlockSubsidyInner(pblock->nBits, height - 1, Params().GetConsensus(), false);
+
     // Make the coinbase transaction with two outputs:
     // One zero-value one that has a unique pubkey to make sure that blocks at
     // the same height can have a different hash. Another one that has the
@@ -93,8 +110,49 @@ std::shared_ptr<CBlock> MinerTestingSetup::Block(const uint256& prev_hash)
     CMutableTransaction txCoinbase(*pblock->vtx[0]);
     txCoinbase.vout.resize(2);
     txCoinbase.vout[1].scriptPubKey = pubKey;
-    txCoinbase.vout[1].nValue = txCoinbase.vout[0].nValue;
+    txCoinbase.vout[1].nValue = reward;
     txCoinbase.vout[0].nValue = 0;
+
+    // Truncating to two outputs above dropped the assembler's devfee payment, which is consensus
+    // enforced past nDevfeePayment.getStartBlock() (bad-cb-devfee-payment-not-found).
+    //
+    // The amount cannot simply be this block's own, because ProcessNewBlock() checks the coinbase
+    // against the height of the CURRENT TIP rather than the block's (validation.cpp:4270), while
+    // ConnectBlock and AcceptBlock use the block's real height. A block below the start height
+    // therefore still has to carry the payment once the tip has climbed past it, and the amount is
+    // sized from whichever height validation happens to use. Pay the larger of the two so the block
+    // is acceptable under either, and keep it out of the spendable output so the coinbase still
+    // pays no more than the reward. A scratch transaction absorbs FillDevfeePayment's deduction,
+    // which it always applies to vout[0], while ours has to stay at index 1 for the reorg test.
+    {
+        DevfeePayment devfee_payment = Params().GetConsensus().nDevfeePayment;
+        const int start_block = devfee_payment.getStartBlock();
+        const int tip_height = ::ChainActive().Height() + 1;
+
+        // The check only bites once the height validation uses is past the start block, so the
+        // largest amount it can demand is the largest subsidy over that enforced range. The range
+        // ends at the tip, and the subsidy is piecewise: it decays through each halving and steps
+        // up between tiers, so the maximum sits at one end or the other. Sampling both endpoints
+        // keeps this correct without walking every height, and deliberately never samples the
+        // premine at height 1, which is not an enforceable height.
+        const Consensus::Params& consensus = Params().GetConsensus();
+        const CAmount subsidy_at_start = GetBlockSubsidyInner(pblock->nBits, start_block + 1, consensus, false);
+        const CAmount subsidy_at_tip = GetBlockSubsidyInner(pblock->nBits, std::max(tip_height - 1, start_block + 1), consensus, false);
+        const CAmount worst_case = std::max({reward, subsidy_at_start, subsidy_at_tip});
+
+        CMutableTransaction scratch;
+        scratch.vout.emplace_back(reward, CScript());
+        CTxOut txout_devfee;
+        devfee_payment.FillDevfeePayment(scratch, std::max(height, start_block + 1), worst_case, txout_devfee);
+        if (!txout_devfee.IsNull()) {
+            // Paying the devfee out of a reward that cannot cover it would trip bad-cb-amount
+            // instead, which would be a far more confusing failure than this assertion.
+            BOOST_REQUIRE(txout_devfee.nValue < txCoinbase.vout[1].nValue);
+            txCoinbase.vout[1].nValue -= txout_devfee.nValue;
+            txCoinbase.vout.emplace_back(txout_devfee);
+        }
+    }
+
     pblock->vtx[0] = MakeTransactionRef(std::move(txCoinbase));
 
     return pblock;
@@ -107,6 +165,7 @@ std::shared_ptr<CBlock> MinerTestingSetup::FinalizeBlock(std::shared_ptr<CBlock>
     while (!CheckProofOfWork(pblock->GetHash(), pblock->nBits, Params().GetConsensus())) {
         ++(pblock->nNonce);
     }
+    m_block_heights[pblock->GetHash()] = m_block_heights.at(pblock->hashPrevBlock) + 1;
 
     return pblock;
 }
@@ -312,12 +371,16 @@ BOOST_AUTO_TEST_CASE(mempool_locks_reorg)
             // This thread is checking that the mempool either contains all of
             // the transactions invalidated by the reorg, or none of them, and
             // not some intermediate amount.
+            // Bounded so that a reorg which never happens fails the checks below instead of
+            // spinning here forever and taking the whole test binary with it.
+            const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(60);
             while (true) {
                 LOCK(m_node.mempool->cs);
                 if (m_node.mempool->mapTx.size() == 0) {
                     // We are done with the reorg
                     break;
                 }
+                if (std::chrono::steady_clock::now() > deadline) return;
                 // Internally, we might be in the middle of the reorg, but
                 // externally the reorg to the most-proof-of-work chain should
                 // be atomic. So the caller assumes that the returned mempool

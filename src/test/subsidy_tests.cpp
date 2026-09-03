@@ -11,90 +11,67 @@
 
 BOOST_FIXTURE_TEST_SUITE(subsidy_tests, TestingSetup)
 
+/*
+ * Osmium's emission (GetBlockSubsidyHelper in validation.cpp), by nPrevHeight:
+ *
+ *   height 0        8000 OSMI premine
+ *   1 .. 500        0.1 OSMI
+ *   501 ..          1 OSMI
+ *
+ * reduced by 1/reductionRatio at every multiple of nSubsidyHalvingInterval (172,800), and
+ * split 95/5 between miner and superblock once nPrevHeight > nSuperblockStartBlock (500).
+ *
+ * reductionRatio is `1210000 / 172800` -- INTEGER division, so exactly 7.0, i.e. a 14.2857%
+ * decline per interval, matching the "~14.3%" in the source comment. The probes below are
+ * computed from that rule independently of the implementation, so a change to either the
+ * tiers or the ratio fails this test rather than being silently absorbed.
+ */
 BOOST_AUTO_TEST_CASE(block_subsidy_test)
 {
     const auto chainParams = CreateChainParams(*m_node.args, CBaseChainParams::MAIN);
+    const auto& consensus = chainParams->GetConsensus();
 
-    uint32_t nPrevBits;
-    int32_t nPrevHeight;
-    CAmount nSubsidy;
+    BOOST_CHECK_EQUAL(consensus.nSubsidyHalvingInterval, 172800);
+    BOOST_CHECK_EQUAL(consensus.nSuperblockStartBlock, 500);
 
-    // details for block 4249 (subsidy returned will be for block 4250)
-    nPrevBits = 0x1c4a47c4;
-    nPrevHeight = 4249;
-    nSubsidy = GetBlockSubsidyInner(nPrevBits, nPrevHeight, chainParams->GetConsensus(), /*fV20Active=*/ false);
-    BOOST_CHECK_EQUAL(nSubsidy, 50000000000ULL);
+    struct Probe { int nPrevHeight; CAmount miner; CAmount superblock; };
+    const Probe probes[] = {
+        {        0, CAmount{800000000000}, CAmount{         0}},  // premine, no superblock cut
+        {        1, CAmount{    10000000}, CAmount{         0}},  // 0.1 tier
+        {      500, CAmount{    10000000}, CAmount{         0}},  // last block of the 0.1 tier
+        {      501, CAmount{    95000000}, CAmount{   5000000}},  // 1 OSMI, superblock cut begins
+        {   172799, CAmount{    95000000}, CAmount{   5000000}},  // last block before 1st reduction
+        {   172800, CAmount{    81428571}, CAmount{   4285714}},  // 1st reduction (-1/7)
+        {   172801, CAmount{    81428571}, CAmount{   4285714}},  // still the 1st reduction
+        {   345600, CAmount{    69795918}, CAmount{   3673469}},  // 2nd reduction
+        {   864000, CAmount{    43953114}, CAmount{   2313321}},  // 5th reduction
+        {  1728000, CAmount{    20335538}, CAmount{   1070291}},  // 10th reduction
+    };
 
-    // details for block 4249 (subsidy returned will be for block 4250)
-    // v20 should make difference for blocks with low diff, regardless of their height
-    nPrevBits = 0x1c4a47c4;
-    nPrevHeight = 4249;
-    nSubsidy = GetBlockSubsidyInner(nPrevBits, nPrevHeight, chainParams->GetConsensus(), /*fV20Active=*/ true);
-    BOOST_CHECK_EQUAL(nSubsidy, 500000000ULL);
+    for (const auto& p : probes) {
+        BOOST_CHECK_EQUAL(GetBlockSubsidyInner(0, p.nPrevHeight, consensus, /*fV20Active=*/false), p.miner);
+        BOOST_CHECK_EQUAL(GetSuperblockSubsidyInner(0, p.nPrevHeight, consensus, /*fV20Active=*/false), p.superblock);
+    }
+}
 
-    // details for block 4501 (subsidy returned will be for block 4502)
-    nPrevBits = 0x1c4a47c4;
-    nPrevHeight = 4501;
-    nSubsidy = GetBlockSubsidyInner(nPrevBits, nPrevHeight, chainParams->GetConsensus(), /*fV20Active=*/ false);
-    BOOST_CHECK_EQUAL(nSubsidy, 5600000000ULL);
+/*
+ * Unlike Dash, Osmium's subsidy depends only on height: GetBlockSubsidyHelper reads neither
+ * nPrevBits nor fV20Active. Dash scaled the reward by the previous block's difficulty and
+ * changed behaviour at v20; both were dropped here. Pin that, so reintroducing a
+ * difficulty- or deployment-dependent reward cannot pass unnoticed.
+ */
+BOOST_AUTO_TEST_CASE(block_subsidy_ignores_bits_and_v20)
+{
+    const auto chainParams = CreateChainParams(*m_node.args, CBaseChainParams::MAIN);
+    const auto& consensus = chainParams->GetConsensus();
 
-    // details for block 5464 (subsidy returned will be for block 5465)
-    nPrevBits = 0x1c29ec00;
-    nPrevHeight = 5464;
-    nSubsidy = GetBlockSubsidyInner(nPrevBits, nPrevHeight, chainParams->GetConsensus(), /*fV20Active=*/ false);
-    BOOST_CHECK_EQUAL(nSubsidy, 2100000000ULL);
-
-    // details for block 5465 (subsidy returned will be for block 5466)
-    nPrevBits = 0x1c29ec00;
-    nPrevHeight = 5465;
-    nSubsidy = GetBlockSubsidyInner(nPrevBits, nPrevHeight, chainParams->GetConsensus(), /*fV20Active=*/ false);
-    BOOST_CHECK_EQUAL(nSubsidy, 12200000000ULL);
-
-    // details for block 17588 (subsidy returned will be for block 17589)
-    nPrevBits = 0x1c08ba34;
-    nPrevHeight = 17588;
-    nSubsidy = GetBlockSubsidyInner(nPrevBits, nPrevHeight, chainParams->GetConsensus(), /*fV20Active=*/ false);
-    BOOST_CHECK_EQUAL(nSubsidy, 6100000000ULL);
-
-    // details for block 99999 (subsidy returned will be for block 100000)
-    nPrevBits = 0x1b10cf42;
-    nPrevHeight = 99999;
-    nSubsidy = GetBlockSubsidyInner(nPrevBits, nPrevHeight, chainParams->GetConsensus(), /*fV20Active=*/ false);
-    BOOST_CHECK_EQUAL(nSubsidy, 500000000ULL);
-
-    // details for block 210239 (subsidy returned will be for block 210240)
-    nPrevBits = 0x1b11548e;
-    nPrevHeight = 210239;
-    nSubsidy = GetBlockSubsidyInner(nPrevBits, nPrevHeight, chainParams->GetConsensus(), /*fV20Active=*/ false);
-    BOOST_CHECK_EQUAL(nSubsidy, 500000000ULL);
-
-    // 1st subsidy reduction happens here
-
-    // details for block 210240 (subsidy returned will be for block 210241)
-    nPrevBits = 0x1b10d50b;
-    nPrevHeight = 210240;
-    nSubsidy = GetBlockSubsidyInner(nPrevBits, nPrevHeight, chainParams->GetConsensus(), /*fV20Active=*/ false);
-    BOOST_CHECK_EQUAL(nSubsidy, 464285715ULL);
-
-    // details for block 210240 (subsidy returned will be for block 210241)
-    // v20 makes no difference for blocks with high enough diff while budgets aren't active yet
-    nPrevBits = 0x1b10d50b;
-    nPrevHeight = 210240;
-    nSubsidy = GetBlockSubsidyInner(nPrevBits, nPrevHeight, chainParams->GetConsensus(), /*fV20Active=*/ true);
-    BOOST_CHECK_EQUAL(nSubsidy, 464285715ULL);
-
-    // details for block 420480 (subsidy returned will be for block 210241)
-    nPrevBits = 0x1b10d50b;
-    nPrevHeight = 420480;
-    nSubsidy = GetBlockSubsidyInner(nPrevBits, nPrevHeight, chainParams->GetConsensus(), /*fV20Active=*/ false);
-    BOOST_CHECK_EQUAL(nSubsidy, 388010205ULL); // 431122450 * 0.9
-
-    // details for block 420480 (subsidy returned will be for block 210241)
-    // budgets are active, reallocation matters now
-    nPrevBits = 0x1b10d50b;
-    nPrevHeight = 420480;
-    nSubsidy = GetBlockSubsidyInner(nPrevBits, nPrevHeight, chainParams->GetConsensus(), /*fV20Active=*/ true);
-    BOOST_CHECK_EQUAL(nSubsidy, 344897960ULL); // 431122450 * 0.8
+    for (const int height : {0, 1, 500, 501, 172800, 345600}) {
+        const CAmount baseline = GetBlockSubsidyInner(0, height, consensus, /*fV20Active=*/false);
+        for (const uint32_t bits : {0x1c4a47c4u, 0x1b1441deu, 0x207fffffu, 0u}) {
+            BOOST_CHECK_EQUAL(GetBlockSubsidyInner(bits, height, consensus, /*fV20Active=*/false), baseline);
+            BOOST_CHECK_EQUAL(GetBlockSubsidyInner(bits, height, consensus, /*fV20Active=*/true), baseline);
+        }
+    }
 }
 
 BOOST_AUTO_TEST_SUITE_END()

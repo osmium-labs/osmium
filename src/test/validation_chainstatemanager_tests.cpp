@@ -222,6 +222,16 @@ BOOST_FIXTURE_TEST_CASE(chainstatemanager_activate_snapshot, TestChain100Setup)
     size_t initial_size;
     size_t initial_total_coins{100};
 
+    // Osmium's coinbase pays a devfee output alongside the miner's, so the coins cache holds
+    // more entries than there are coinbase transactions (initial_total_coins counts one
+    // outpoint per tx). Derive the cache expectation from the actual outputs rather than
+    // assuming one output per block.
+    const auto total_coinbase_outputs = [&]() {
+        size_t n{0};
+        for (const CTransactionRef& txn : m_coinbase_txns) n += txn->vout.size();
+        return n;
+    };
+
     // Make some initial assertions about the contents of the chainstate.
     {
         LOCK(::cs_main);
@@ -236,7 +246,7 @@ BOOST_FIXTURE_TEST_CASE(chainstatemanager_activate_snapshot, TestChain100Setup)
         }
 
         BOOST_CHECK_EQUAL(total_coins, initial_total_coins);
-        BOOST_CHECK_EQUAL(initial_size, initial_total_coins);
+        BOOST_CHECK_EQUAL(initial_size, total_coinbase_outputs());
     }
 
     // Snapshot should refuse to load at this height.
@@ -247,7 +257,6 @@ BOOST_FIXTURE_TEST_CASE(chainstatemanager_activate_snapshot, TestChain100Setup)
     // Mine 10 more blocks, putting at us height 110 where a valid assumeutxo value can
     // be found.
     mineBlocks(10);
-    initial_size += 10;
     initial_total_coins += 10;
 
     // Should not load malleated snapshots
@@ -316,7 +325,12 @@ BOOST_FIXTURE_TEST_CASE(chainstatemanager_activate_snapshot, TestChain100Setup)
                 total_coins++;
             }
 
-            BOOST_CHECK_EQUAL(initial_size , coinscache.GetCacheSize());
+            // Both caches were empty above, so each must now hold exactly the coins the loop
+            // just pulled in and nothing else. Upstream compares against the IBD cache's initial
+            // size, which works only because a Bitcoin coinbase has a single output; Osmium's
+            // carries a devfee output too, so that size counts outputs while this loop counts
+            // transactions.
+            BOOST_CHECK_EQUAL(coinscache.GetCacheSize(), total_coins);
             BOOST_CHECK_EQUAL(total_coins, initial_total_coins);
             chains_tested++;
         }

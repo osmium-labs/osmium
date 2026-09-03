@@ -3,6 +3,8 @@
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #include <blockencodings.h>
+#include <consensus/validation.h>
+#include <validation.h>
 #include <chainparams.h>
 #include <consensus/merkle.h>
 #include <pow.h>
@@ -26,7 +28,10 @@ static CBlock BuildBlockTestCase() {
 
     block.vtx.resize(3);
     block.vtx[0] = MakeTransactionRef(tx);
-    block.nVersion = 42;
+    // Osmium is merge-mined: CheckProofOfWork() rejects any non-legacy header whose chain ID
+    // does not match nAuxpowChainId, and CheckBlockHeader reports that as "high-hash".
+    // A raw nVersion (upstream used 42) encodes chain ID 0, so the block never validates.
+    block.SetBaseVersion(4, Params().GetConsensus().nAuxpowChainId);
     block.hashPrevBlock = InsecureRand256();
     block.nBits = 0x207fffff;
 
@@ -268,7 +273,10 @@ BOOST_AUTO_TEST_CASE(EmptyBlockRoundTripTest)
     CBlock block;
     block.vtx.resize(1);
     block.vtx[0] = MakeTransactionRef(std::move(coinbase));
-    block.nVersion = 42;
+    // Osmium is merge-mined: CheckProofOfWork() rejects any non-legacy header whose chain ID
+    // does not match nAuxpowChainId, and CheckBlockHeader reports that as "high-hash".
+    // A raw nVersion (upstream used 42) encodes chain ID 0, so the block never validates.
+    block.SetBaseVersion(4, Params().GetConsensus().nAuxpowChainId);
     block.hashPrevBlock = InsecureRand256();
     block.nBits = 0x207fffff;
 

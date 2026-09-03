@@ -116,7 +116,12 @@ BOOST_AUTO_TEST_CASE(get_next_work)
 
     CBlockHeader blockHeader;
     blockHeader.nTime = 1408732505; // Block #123457
-    BOOST_CHECK_EQUAL(GetNextWorkRequired(&blockIndexLast, &blockHeader, chainParams->GetConsensus()), 0x1b1441deU); // Block #123457 has 0x1b1441de
+    // DarkGravityWave v3 over this 24-block window. The window itself is replayed Dash mainnet
+    // history (#123434-#123456) and is kept as-is; only the expectation changes, because DGW
+    // divides by nPastBlocks * nPowTargetSpacing and Osmium's spacing is 90s where Dash's was
+    // 150s. Recomputing DGW by hand over this window yields Dash's own 0x1b1441de at 150s and
+    // 0x1b21c31e at 90s, so this pins the algorithm against our spacing rather than snapshotting.
+    BOOST_CHECK_EQUAL(GetNextWorkRequired(&blockIndexLast, &blockHeader, chainParams->GetConsensus()), 0x1b21c31eU);
 
     // test special rules for slow blocks on devnet/testnet
     gArgs.SoftSetBoolArg("-devnet", true);
@@ -125,7 +130,7 @@ BOOST_AUTO_TEST_CASE(get_next_work)
 
     // make sure normal rules apply
     blockHeader.nTime = 1408732505; // Block #123457
-    BOOST_CHECK_EQUAL(GetNextWorkRequired(&blockIndexLast, &blockHeader, chainParamsDev->GetConsensus()), 0x1b1441deU); // Block #123457 has 0x1b1441de
+    BOOST_CHECK_EQUAL(GetNextWorkRequired(&blockIndexLast, &blockHeader, chainParamsDev->GetConsensus()), 0x1b21c31eU); // devnet spacing is also 90s
 
     // 10x higher target
     blockHeader.nTime = 1408733090; // Block #123457 (10m+1sec)

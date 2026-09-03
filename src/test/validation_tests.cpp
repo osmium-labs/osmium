@@ -27,7 +27,9 @@ BOOST_AUTO_TEST_CASE(test_assumeutxo)
     }
 
     const auto out110 = *ExpectedAssumeutxo(110, *params);
-    BOOST_CHECK_EQUAL(out110.hash_serialized.ToString(), "9b2a277a3e3b979f1a539d57e949495d7f8247312dbc32bce6619128c192b44b");
+    // Pins the regtest snapshot regenerated for Osmium in chainparams.cpp; the inherited Dash hash
+    // was left behind here when that table was corrected.
+    BOOST_CHECK_EQUAL(out110.hash_serialized.ToString(), "5e6c5467274e3d54ab08b0a474008edb452379142234703537a70d8351ae8c68");
     BOOST_CHECK_EQUAL(out110.nChainTx, (unsigned int)110);
 
     const auto out210 = *ExpectedAssumeutxo(210, *params);

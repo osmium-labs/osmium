@@ -22,124 +22,108 @@
 #include <boost/test/unit_test.hpp>
 
 const auto deployment_id = Consensus::DEPLOYMENT_TESTDUMMY;
-constexpr int window{100}, th_start{80}, th_end{60};
+constexpr int window{100};
 
-static constexpr int threshold(int attempt)
-{
-    // An implementation of VersionBitsConditionChecker::Threshold()
-    int threshold_calc = th_start - attempt * attempt * window / 100 / 5;
-    if (threshold_calc < th_end) {
-        return th_end;
-    }
-    return threshold_calc;
-}
-
+/**
+ * BIP9 signalling cannot happen on Osmium, and this suite pins that rather than the dynamic
+ * threshold machinery it inherited, which no chain of ours can ever drive.
+ *
+ * Osmium is always-auxpow, so a block's chain ID lives in the top 16 bits of nVersion
+ * (CPureBlockHeader::GetChainId() is nVersion / 2^16) and validation rejects any block whose chain
+ * ID is not nAuxpowChainId. VersionBitsConditionChecker::Condition() meanwhile requires the top
+ * three bits of nVersion to be 001. Those two demands are mutually exclusive: every version that
+ * signals carries chain ID 0x2000, and every version we accept has its top three bits clear. That
+ * is what the FIXME in miner.cpp ("Active version bits after the always-auxpow fork!") is about --
+ * ComputeBlockVersion() is not merely commented out, re-enabling it would emit blocks the network
+ * rejects.
+ *
+ * Deployments therefore have to be driven deliberately (ALWAYS_ACTIVE) or through EHF, never by
+ * miner signalling. If version bits are ever made to work, these tests fail and force this file to
+ * be reconsidered instead of quietly passing.
+ */
 struct TestChainDATSetup : public TestChainSetup
 {
     TestChainDATSetup() : TestChainSetup(window - 2, {"-vbparams=testdummy:0:999999999999:100:80:60:5:0"}) {}
-
-    void signal(int num_blocks, bool expected_lockin)
-    {
-        const auto& consensus_params = Params().GetConsensus();
-        // Mine non-signalling blocks
-        gArgs.ForceSetArg("-blockversion", "536870912");
-        for (int i = 0; i < window - num_blocks; ++i) {
-            CreateAndProcessBlock({}, coinbaseKey);
-        }
-        gArgs.ForceRemoveArg("blockversion");
-        if (num_blocks > 0) {
-            // Mine signalling blocks
-            for (int i = 0; i < num_blocks; ++i) {
-                CreateAndProcessBlock({}, coinbaseKey);
-            }
-        }
-        LOCK(cs_main);
-        if (expected_lockin) {
-            BOOST_CHECK_EQUAL(g_versionbitscache.State(::ChainActive().Tip(), consensus_params, deployment_id), ThresholdState::LOCKED_IN);
-        } else {
-            BOOST_CHECK_EQUAL(g_versionbitscache.State(::ChainActive().Tip(), consensus_params, deployment_id), ThresholdState::STARTED);
-        }
-    }
-
-    void test(int activation_index, bool check_activation_at_min)
-    {
-        const auto& consensus_params = Params().GetConsensus();
-        CScript coinbasePubKey = CScript() <<  ToByteVector(coinbaseKey.GetPubKey()) << OP_CHECKSIG;
-
-        {
-            LOCK(cs_main);
-            BOOST_CHECK_EQUAL(::ChainActive().Height(), window - 2);
-            BOOST_CHECK_EQUAL(g_versionbitscache.State(::ChainActive().Tip(), consensus_params, deployment_id), ThresholdState::DEFINED);
-        }
-
-        CreateAndProcessBlock({}, coinbaseKey);
-
-        {
-            LOCK(cs_main);
-            // Advance from DEFINED to STARTED at height = window - 1
-            BOOST_CHECK_EQUAL(::ChainActive().Height(), window - 1);
-            BOOST_CHECK_EQUAL(g_versionbitscache.State(::ChainActive().Tip(), consensus_params, deployment_id), ThresholdState::STARTED);
-            BOOST_CHECK_EQUAL(g_versionbitscache.Statistics(::ChainActive().Tip(), consensus_params, deployment_id).threshold, threshold(0));
-            // Next block should be signaling by default
-            const auto pblocktemplate = BlockAssembler(*m_node.sporkman, *m_node.govman, *m_node.llmq_ctx, *m_node.evodb, ::ChainstateActive(), *m_node.mempool, Params()).CreateNewBlock(coinbasePubKey);
-            const uint32_t bitmask = ((uint32_t)1) << consensus_params.vDeployments[deployment_id].bit;
-            BOOST_CHECK_EQUAL(::ChainActive().Tip()->nVersion & bitmask, 0);
-            BOOST_CHECK_EQUAL(pblocktemplate->block.nVersion & bitmask, bitmask);
-        }
-
-        // Reach activation_index level
-        for (int i = 0; i < activation_index; ++i) {
-            signal(threshold(i) - 1, false); // 1 block short
-
-            {
-                // Still STARTED but with a (potentially) new threshold
-                LOCK(cs_main);
-                BOOST_CHECK_EQUAL(::ChainActive().Height(), window * (i + 2) - 1);
-                BOOST_CHECK_EQUAL(g_versionbitscache.State(::ChainActive().Tip(), consensus_params, deployment_id), ThresholdState::STARTED);
-                const auto vbts = g_versionbitscache.Statistics(::ChainActive().Tip(), consensus_params, deployment_id);
-                BOOST_CHECK_EQUAL(vbts.threshold, threshold(i + 1));
-                BOOST_CHECK(vbts.threshold <= th_start);
-                BOOST_CHECK(vbts.threshold >= th_end);
-            }
-        }
-        if (LOCK(cs_main); check_activation_at_min) {
-            BOOST_CHECK_EQUAL(g_versionbitscache.Statistics(::ChainActive().Tip(), consensus_params, deployment_id).threshold, th_end);
-        } else {
-            BOOST_CHECK(g_versionbitscache.Statistics(::ChainActive().Tip(), consensus_params, deployment_id).threshold > th_end);
-        }
-
-        // activate
-        signal(threshold(activation_index), true);
-        for (int i = 0; i < window; ++i) {
-            CreateAndProcessBlock({}, coinbaseKey);
-        }
-        {
-            LOCK(cs_main);
-            BOOST_CHECK_EQUAL(g_versionbitscache.State(::ChainActive().Tip(), consensus_params, deployment_id), ThresholdState::ACTIVE);
-        }
-
-    }
 };
 
+/** Same deployment, but switched on deliberately rather than by signalling. */
+struct TestChainAlwaysActiveSetup : public TestChainSetup
+{
+    TestChainAlwaysActiveSetup() : TestChainSetup(window - 2, {"-vbparams=testdummy:-1:999999999999:100:80:60:5:0"}) {}
+};
 
 BOOST_AUTO_TEST_SUITE(dynamic_activation_thresholds_tests)
 
-#define TEST(INDEX, activate_at_min_level)  BOOST_FIXTURE_TEST_CASE(activate_at_##INDEX##_level, TestChainDATSetup) \
-{ \
-    test(INDEX, activate_at_min_level); \
+BOOST_FIXTURE_TEST_CASE(miner_does_not_signal, TestChainDATSetup)
+{
+    const auto& consensus_params = Params().GetConsensus();
+    CScript coinbasePubKey = CScript() << ToByteVector(coinbaseKey.GetPubKey()) << OP_CHECKSIG;
+
+    LOCK(cs_main);
+    const auto pblocktemplate = BlockAssembler(*m_node.sporkman, *m_node.govman, *m_node.llmq_ctx, *m_node.evodb, ::ChainstateActive(), *m_node.mempool, Params()).CreateNewBlock(coinbasePubKey);
+    const int32_t nVersion = pblocktemplate->block.nVersion;
+
+    // The assembler stamps the auxpow chain ID, which is what makes the block acceptable...
+    BOOST_CHECK_EQUAL(pblocktemplate->block.GetChainId(), consensus_params.nAuxpowChainId);
+    // ...and it is exactly what stops the block from ever satisfying BIP9's top-bits condition.
+    BOOST_CHECK_NE(nVersion & VERSIONBITS_TOP_MASK, VERSIONBITS_TOP_BITS);
+
+    const uint32_t bitmask = ((uint32_t)1) << consensus_params.vDeployments[deployment_id].bit;
+    BOOST_CHECK_EQUAL(nVersion & bitmask, 0);
 }
 
-TEST(1, false)
-TEST(2, false)
-TEST(3, false)
-TEST(4, false)
-TEST(5, false)
-TEST(6, false)
-TEST(7, false)
-TEST(8, false)
-TEST(9, false)
-TEST(10, true)
-TEST(11, true)
-TEST(12, true)
+BOOST_FIXTURE_TEST_CASE(signalling_version_is_rejected, TestChainDATSetup)
+{
+    const auto& consensus_params = Params().GetConsensus();
+    const int32_t signalling_version = VERSIONBITS_TOP_BITS | (((int32_t)1) << consensus_params.vDeployments[deployment_id].bit);
+
+    // Control: the assembler's own version is accepted, so a failure below is about the version and
+    // not about anything else in the block.
+    const int height_before = WITH_LOCK(cs_main, return ::ChainActive().Height());
+    CreateAndProcessBlock({}, coinbaseKey);
+    BOOST_CHECK_EQUAL(WITH_LOCK(cs_main, return ::ChainActive().Height()), height_before + 1);
+
+    // Positive control for the override itself: an explicit version that keeps our chain ID is
+    // accepted, so the rejection below is about the version's value and not about -blockversion
+    // being ignored or malformed.
+    const int32_t valid_version = (consensus_params.nAuxpowChainId << 16) | 4;
+    gArgs.ForceSetArg("-blockversion", ToString(valid_version));
+    CreateAndProcessBlock({}, coinbaseKey);
+    gArgs.ForceRemoveArg("blockversion");
+    BOOST_CHECK_EQUAL(WITH_LOCK(cs_main, return ::ChainActive().Height()), height_before + 2);
+
+    // A version that would signal carries chain ID 0x2000 instead of ours, and is refused.
+    gArgs.ForceSetArg("-blockversion", ToString(signalling_version));
+    CreateAndProcessBlock({}, coinbaseKey);
+    gArgs.ForceRemoveArg("blockversion");
+    BOOST_CHECK_EQUAL(WITH_LOCK(cs_main, return ::ChainActive().Height()), height_before + 2);
+
+    // And the chain is still usable afterwards: the rejection was of that block, not of the chain.
+    CreateAndProcessBlock({}, coinbaseKey);
+    BOOST_CHECK_EQUAL(WITH_LOCK(cs_main, return ::ChainActive().Height()), height_before + 3);
+}
+
+BOOST_FIXTURE_TEST_CASE(deployment_never_locks_in_by_mining, TestChainDATSetup)
+{
+    const auto& consensus_params = Params().GetConsensus();
+
+    // Mine several whole windows. Upstream this would lock in; here no block can ever signal, so
+    // the deployment starts and then stays there however long we mine.
+    for (int i = 0; i < window * 3; ++i) {
+        CreateAndProcessBlock({}, coinbaseKey);
+    }
+
+    LOCK(cs_main);
+    BOOST_CHECK_EQUAL(g_versionbitscache.State(::ChainActive().Tip(), consensus_params, deployment_id), ThresholdState::STARTED);
+    BOOST_CHECK_EQUAL(g_versionbitscache.Statistics(::ChainActive().Tip(), consensus_params, deployment_id).count, 0);
+}
+
+BOOST_FIXTURE_TEST_CASE(always_active_deployment_activates, TestChainAlwaysActiveSetup)
+{
+    // The escape hatch: a deployment switched on deliberately is ACTIVE without any signalling,
+    // which is how anything has to be activated on this chain.
+    LOCK(cs_main);
+    BOOST_CHECK_EQUAL(g_versionbitscache.State(::ChainActive().Tip(), Params().GetConsensus(), deployment_id), ThresholdState::ACTIVE);
+}
 
 BOOST_AUTO_TEST_SUITE_END()

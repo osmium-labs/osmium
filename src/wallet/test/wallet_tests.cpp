@@ -74,7 +74,11 @@ static void TestUnloadWallet(std::shared_ptr<CWallet>&& wallet)
 static CMutableTransaction TestSimpleSpend(const CTransaction& from, uint32_t index, const CKey& key, const CScript& pubkey)
 {
     CMutableTransaction mtx;
-    mtx.vout.push_back({from.vout[index].nValue - DEFAULT_TRANSACTION_MAXFEE, pubkey});
+    // Osmium's early-block subsidy (0.1 coin) is no larger than DEFAULT_TRANSACTION_MAXFEE, so a
+    // flat max-fee deduction would leave a zero/negative output and the spend would be rejected.
+    // Cap the fee at half the input so the helper works for small and large coinbases alike.
+    const CAmount fee = std::min<CAmount>(DEFAULT_TRANSACTION_MAXFEE, from.vout[index].nValue / 2);
+    mtx.vout.push_back({from.vout[index].nValue - fee, pubkey});
     mtx.vin.push_back({CTxIn{from.GetHash(), index}});
     FillableSigningProvider keystore;
     keystore.AddKey(key);
@@ -135,7 +139,8 @@ BOOST_FIXTURE_TEST_CASE(scan_for_wallet_transactions, TestChain100Setup)
         BOOST_CHECK(result.last_failed_block.IsNull());
         BOOST_CHECK_EQUAL(result.last_scanned_block, newTip->GetBlockHash());
         BOOST_CHECK_EQUAL(*result.last_scanned_height, newTip->nHeight);
-        BOOST_CHECK_EQUAL(wallet.GetBalance().m_mine_immature, 1000 * COIN);
+        // Two blocks were scanned (old tip + new tip): sum their actual coinbase credits.
+        BOOST_CHECK_EQUAL(wallet.GetBalance().m_mine_immature, m_coinbase_txns.back()->vout[0].nValue + m_coinbase_txns[m_coinbase_txns.size() - 2]->vout[0].nValue);
     }
 
     // Prune the older block file.
@@ -161,7 +166,8 @@ BOOST_FIXTURE_TEST_CASE(scan_for_wallet_transactions, TestChain100Setup)
         BOOST_CHECK_EQUAL(result.last_failed_block, oldTip->GetBlockHash());
         BOOST_CHECK_EQUAL(result.last_scanned_block, newTip->GetBlockHash());
         BOOST_CHECK_EQUAL(*result.last_scanned_height, newTip->nHeight);
-        BOOST_CHECK_EQUAL(wallet.GetBalance().m_mine_immature, 500 * COIN);
+        // Only the new tip was scanned, so one coinbase is credited.
+        BOOST_CHECK_EQUAL(wallet.GetBalance().m_mine_immature, m_coinbase_txns.back()->vout[0].nValue);
     }
 
     // Prune the remaining block file.
@@ -421,7 +427,7 @@ BOOST_FIXTURE_TEST_CASE(coin_mark_dirty_immature_credit, TestChain100Setup)
     // credit amount is calculated.
     wtx.MarkDirty();
     BOOST_CHECK(spk_man->AddKeyPubKey(coinbaseKey, coinbaseKey.GetPubKey()));
-    BOOST_CHECK_EQUAL(wtx.GetImmatureCredit(), 500*COIN);
+    BOOST_CHECK_EQUAL(wtx.GetImmatureCredit(), m_coinbase_txns.back()->vout[0].nValue);
 }
 
 static int64_t AddTx(ChainstateManager& chainman, CWallet& wallet, uint32_t lockTime, int64_t mockTime, int64_t blockTime)
@@ -644,7 +650,8 @@ BOOST_FIXTURE_TEST_CASE(ListCoins, ListCoinsTestingSetup)
     BOOST_CHECK_EQUAL(list.begin()->second.size(), 1U);
 
     // Check initial balance from one mature coinbase transaction.
-    BOOST_CHECK_EQUAL(500 * COIN, wallet->GetAvailableBalance());
+    // Mature coinbase here is block 1 (the premine); maturity is 100 blocks.
+    BOOST_CHECK_EQUAL(m_coinbase_txns[0]->vout[0].nValue, wallet->GetAvailableBalance());
 
     // Add a transaction creating a change address, and confirm ListCoins still
     // returns the coin associated with the change address underneath the
@@ -1133,7 +1140,8 @@ BOOST_FIXTURE_TEST_CASE(CreateTransactionTest, CreateTransactionTestSetup)
 BOOST_FIXTURE_TEST_CASE(select_coins_grouped_by_addresses, ListCoinsTestingSetup)
 {
     // Check initial balance from one mature coinbase transaction.
-    BOOST_CHECK_EQUAL(wallet->GetAvailableBalance(), 500 * COIN);
+    // The single mature coinbase is block 1 -- Osmium's premine, not a flat block subsidy.
+    BOOST_CHECK_EQUAL(wallet->GetAvailableBalance(), m_coinbase_txns[0]->vout[0].nValue);
 
     {
         std::vector<CompactTallyItem> vecTally = wallet->SelectCoinsGroupedByAddresses(/*fSkipDenominated=*/false,
@@ -1141,7 +1149,7 @@ BOOST_FIXTURE_TEST_CASE(select_coins_grouped_by_addresses, ListCoinsTestingSetup
                 /*fSkipUnconfirmed=*/false,
                 /*nMaxOupointsPerAddress=*/100);
         BOOST_CHECK_EQUAL(vecTally.size(), 1);
-        BOOST_CHECK_EQUAL(vecTally.at(0).nAmount, 500 * COIN);
+        BOOST_CHECK_EQUAL(vecTally.at(0).nAmount, m_coinbase_txns[0]->vout[0].nValue);
         BOOST_CHECK_EQUAL(vecTally.at(0).vecInputCoins.size(), 1);
     }
 
@@ -1186,8 +1194,9 @@ BOOST_FIXTURE_TEST_CASE(select_coins_grouped_by_addresses, ListCoinsTestingSetup
     BOOST_CHECK_EQUAL(vecTally.size(), 2);
     BOOST_CHECK_EQUAL(vecTally.at(0).vecInputCoins.size(), 1);
     BOOST_CHECK_EQUAL(vecTally.at(1).vecInputCoins.size(), 1);
-    BOOST_CHECK_EQUAL(vecTally.at(0).nAmount + vecTally.at(1).nAmount, (500 + 499) * COIN);
-    BOOST_CHECK_EQUAL(wallet->GetAvailableBalance(), (500 + 499) * COIN);
+    // tx2 spent the mature premine and returned change; mining it matured block 2's coinbase too.
+    BOOST_CHECK_EQUAL(vecTally.at(0).nAmount + vecTally.at(1).nAmount, (m_coinbase_txns[0]->vout[0].nValue - 1 * COIN) + m_coinbase_txns[1]->vout[0].nValue);
+    BOOST_CHECK_EQUAL(wallet->GetAvailableBalance(), (m_coinbase_txns[0]->vout[0].nValue - 1 * COIN) + m_coinbase_txns[1]->vout[0].nValue);
 }
 
 BOOST_FIXTURE_TEST_CASE(wallet_disableprivkeys, TestChain100Setup)

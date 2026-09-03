@@ -25,18 +25,50 @@
 
 #include <boost/test/unit_test.hpp>
 
-using SimpleUTXOMap = std::map<COutPoint, std::pair<int, CAmount>>;
+/**
+ * A spendable output tracked by these tests. Coinbase outputs need 101 confirmations; ordinary
+ * ones (the change we hand back to the map) only need to be mined, so the two cases carry
+ * different maturity rules and must be told apart.
+ */
+struct SimpleUTXO {
+    int height;
+    CAmount amount;
+    bool is_coinbase;
+};
+using SimpleUTXOMap = std::map<COutPoint, SimpleUTXO>;
 
 static SimpleUTXOMap BuildSimpleUtxoMap(const std::vector<CTransactionRef>& txs)
 {
     SimpleUTXOMap utxos;
+    // Only vout[0] is paid to the coinbase key. Osmium's coinbase carries an additional
+    // devfee output (miner.cpp: FillDevfeePayment), which coinbaseKey cannot sign for --
+    // including it here makes SignSignature fail once such an output gets selected.
     for (size_t i = 0; i < txs.size(); i++) {
         auto& tx = txs[i];
-        for (size_t j = 0; j < tx->vout.size(); j++) {
-            utxos.emplace(COutPoint(tx->GetHash(), j), std::make_pair((int)i + 1, tx->vout[j].nValue));
-        }
+        utxos.emplace(COutPoint(tx->GetHash(), 0), SimpleUTXO{(int)i + 1, tx->vout[0].nValue, true});
     }
     return utxos;
+}
+
+/**
+ * Hand an output of a just-funded transaction back to the map so later transactions can spend it.
+ *
+ * Osmium's regtest value is concentrated in the height-1 premine (nSubsidyBase = 8000) while
+ * every later coinbase pays ~0.07; funding one 500-coin collateral therefore consumes the premine
+ * and produces thousands of coins of change. Dash's uniform 500-coin coinbases made discarding
+ * that change harmless, but here it is the difference between funding six masternodes and running
+ * dry after the first. The transaction is not mined yet, so the output becomes spendable at the
+ * next height.
+ */
+static void AddSpendableOutput(SimpleUTXOMap& utxos, const CMutableTransaction& tx, int n)
+{
+    utxos.emplace(COutPoint(tx.GetHash(), n), SimpleUTXO{::ChainActive().Height() + 1, tx.vout[n].nValue, false});
+}
+
+static bool IsSpendable(const SimpleUTXO& utxo)
+{
+    return utxo.is_coinbase ? (::ChainActive().Height() - utxo.height >= COINBASE_MATURITY + 1)
+                            : (::ChainActive().Height() >= utxo.height);
 }
 
 static std::vector<COutPoint> SelectUTXOs(SimpleUTXOMap& utoxs, CAmount amount, CAmount& changeRet)
@@ -44,16 +76,32 @@ static std::vector<COutPoint> SelectUTXOs(SimpleUTXOMap& utoxs, CAmount amount, 
     changeRet = 0;
 
     std::vector<COutPoint> selectedUtxos;
+
+    // Prefer the smallest single output that covers the amount on its own. Osmium's regtest value
+    // is lumpy -- one large premine output and then ~0.07 per block -- so plain first-fit spends a
+    // collateral-sized output on a one-coin transaction and strands the rest as change that cannot
+    // be used again until it is mined.
+    auto best = utoxs.end();
+    for (auto it = utoxs.begin(); it != utoxs.end(); ++it) {
+        if (!IsSpendable(it->second)) continue;
+        if (it->second.amount < amount) continue;
+        if (best == utoxs.end() || it->second.amount < best->second.amount) best = it;
+    }
+    if (best != utoxs.end()) {
+        changeRet = best->second.amount - amount;
+        selectedUtxos.emplace_back(best->first);
+        utoxs.erase(best);
+        return selectedUtxos;
+    }
+
     CAmount selectedAmount = 0;
     while (!utoxs.empty()) {
         bool found = false;
         for (auto it = utoxs.begin(); it != utoxs.end(); ++it) {
-            if (::ChainActive().Height() - it->second.first < 101) {
-                continue;
-            }
+            if (!IsSpendable(it->second)) continue;
 
             found = true;
-            selectedAmount += it->second.second;
+            selectedAmount += it->second.amount;
             selectedUtxos.emplace_back(it->first);
             utoxs.erase(it);
             break;
@@ -64,11 +112,15 @@ static std::vector<COutPoint> SelectUTXOs(SimpleUTXOMap& utoxs, CAmount amount, 
             break;
         }
     }
+    // Running the map dry without reaching the target would silently build an unfundable
+    // transaction that fails much later as bad-txns-in-belowout.
+    BOOST_ASSERT(selectedAmount >= amount);
 
     return selectedUtxos;
 }
 
-static void FundTransaction(CMutableTransaction& tx, SimpleUTXOMap& utoxs, const CScript& scriptPayout, CAmount amount, const CKey& coinbaseKey)
+/** Returns the index of the change output, or -1 when the inputs were exact. */
+static int FundTransaction(CMutableTransaction& tx, SimpleUTXOMap& utoxs, const CScript& scriptPayout, CAmount amount, const CKey& coinbaseKey)
 {
     CAmount change;
     auto inputs = SelectUTXOs(utoxs, amount, change);
@@ -77,8 +129,10 @@ static void FundTransaction(CMutableTransaction& tx, SimpleUTXOMap& utoxs, const
     }
     tx.vout.emplace_back(CTxOut(amount, scriptPayout));
     if (change != 0) {
-        tx.vout.emplace_back(CTxOut(change, scriptPayout));
+        tx.vout.emplace_back(CTxOut(change, GetScriptForDestination(PKHash(coinbaseKey.GetPubKey()))));
+        return (int)tx.vout.size() - 1;
     }
+    return -1;
 }
 
 static void SignTransaction(const CTxMemPool& mempool, CMutableTransaction& tx, const CKey& coinbaseKey)
@@ -91,6 +145,51 @@ static void SignTransaction(const CTxMemPool& mempool, CMutableTransaction& tx, 
         CTransactionRef txFrom = GetTransaction(/* block_index */ nullptr, &mempool, tx.vin[i].prevout.hash, Params().GetConsensus(), hashBlock);
         BOOST_ASSERT(txFrom);
         BOOST_ASSERT(SignSignature(tempKeystore, *txFrom, tx, i, SIGHASH_ALL));
+    }
+}
+
+/**
+ * Recut the chain's spendable value into masternode-sized pieces.
+ *
+ * Dash's regtest pays ~500 coins per block, so any coinbase output could fund a collateral and the
+ * inherited helpers never had to track change. Osmium pays 0.1 (later 1) coin per block and puts
+ * everything else in the height-1 premine, so a single output holds the whole balance. That breaks
+ * the cases which register several masternodes in one block: the second registration would have to
+ * spend the first's change, which is not yet mined, and SignTransaction resolves inputs through the
+ * chain and mempool only. Splitting up front gives every registration its own confirmed output.
+ */
+static void SplitPremine(TestChainSetup& setup, SimpleUTXOMap& utxos)
+{
+    constexpr CAmount SMALL_OUTPUT = 2 * COIN;
+    constexpr size_t NUM_SMALL_OUTPUTS = 8;
+    const CAmount collateral = dmn_types::Regular.collat_amount;
+
+    CMutableTransaction tx;
+    CAmount total = 0;
+    for (auto it = utxos.begin(); it != utxos.end();) {
+        if (!IsSpendable(it->second)) {
+            ++it;
+            continue;
+        }
+        tx.vin.emplace_back(CTxIn(it->first));
+        total += it->second.amount;
+        it = utxos.erase(it);
+    }
+    BOOST_ASSERT(total > collateral + SMALL_OUTPUT * NUM_SMALL_OUTPUTS);
+
+    const CScript script = GetScriptForDestination(PKHash(setup.coinbaseKey.GetPubKey()));
+    const size_t num_collaterals = (total - SMALL_OUTPUT * NUM_SMALL_OUTPUTS) / collateral;
+    for (size_t i = 0; i < num_collaterals; i++) tx.vout.emplace_back(CTxOut(collateral, script));
+    for (size_t i = 0; i < NUM_SMALL_OUTPUTS; i++) tx.vout.emplace_back(CTxOut(SMALL_OUTPUT, script));
+    const CAmount change = total - (CAmount)num_collaterals * collateral - SMALL_OUTPUT * NUM_SMALL_OUTPUTS;
+    if (change > 0) tx.vout.emplace_back(CTxOut(change, script));
+
+    SignTransaction(*(setup.m_node.mempool), tx, setup.coinbaseKey);
+    setup.CreateAndProcessBlock({tx}, setup.coinbaseKey);
+    BOOST_ASSERT(::ChainActive().Tip()->GetBlockHash() != uint256());
+
+    for (size_t i = 0; i < tx.vout.size(); i++) {
+        utxos.emplace(COutPoint(tx.GetHash(), i), SimpleUTXO{::ChainActive().Height(), tx.vout[i].nValue, false});
     }
 }
 
@@ -111,10 +210,13 @@ static CMutableTransaction CreateProRegTx(const CTxMemPool& mempool, SimpleUTXOM
     CMutableTransaction tx;
     tx.nVersion = 3;
     tx.nType = TRANSACTION_PROVIDER_REGISTER;
-    FundTransaction(tx, utxos, scriptPayout, dmn_types::Regular.collat_amount, coinbaseKey);
+    const int change_idx = FundTransaction(tx, utxos, scriptPayout, dmn_types::Regular.collat_amount, coinbaseKey);
     proTx.inputsHash = CalcTxInputsHash(CTransaction(tx));
     SetTxPayload(tx, proTx);
     SignTransaction(mempool, tx, coinbaseKey);
+
+    // Signing finalises the txid, so the change outpoint is only known now.
+    if (change_idx >= 0) AddSpendableOutput(utxos, tx, change_idx);
 
     return tx;
 }
@@ -130,11 +232,14 @@ static CMutableTransaction CreateProUpServTx(const CTxMemPool& mempool, SimpleUT
     CMutableTransaction tx;
     tx.nVersion = 3;
     tx.nType = TRANSACTION_PROVIDER_UPDATE_SERVICE;
-    FundTransaction(tx, utxos, GetScriptForDestination(PKHash(coinbaseKey.GetPubKey())), 1 * COIN, coinbaseKey);
+    const int change_idx = FundTransaction(tx, utxos, GetScriptForDestination(PKHash(coinbaseKey.GetPubKey())), 1 * COIN, coinbaseKey);
     proTx.inputsHash = CalcTxInputsHash(CTransaction(tx));
     proTx.sig = operatorKey.Sign(::SerializeHash(proTx));
     SetTxPayload(tx, proTx);
     SignTransaction(mempool, tx, coinbaseKey);
+
+    // Signing finalises the txid, so the change outpoint is only known now.
+    if (change_idx >= 0) AddSpendableOutput(utxos, tx, change_idx);
 
     return tx;
 }
@@ -151,11 +256,14 @@ static CMutableTransaction CreateProUpRegTx(const CTxMemPool& mempool, SimpleUTX
     CMutableTransaction tx;
     tx.nVersion = 3;
     tx.nType = TRANSACTION_PROVIDER_UPDATE_REGISTRAR;
-    FundTransaction(tx, utxos, GetScriptForDestination(PKHash(coinbaseKey.GetPubKey())), 1 * COIN, coinbaseKey);
+    const int change_idx = FundTransaction(tx, utxos, GetScriptForDestination(PKHash(coinbaseKey.GetPubKey())), 1 * COIN, coinbaseKey);
     proTx.inputsHash = CalcTxInputsHash(CTransaction(tx));
     CHashSigner::SignHash(::SerializeHash(proTx), mnKey, proTx.vchSig);
     SetTxPayload(tx, proTx);
     SignTransaction(mempool, tx, coinbaseKey);
+
+    // Signing finalises the txid, so the change outpoint is only known now.
+    if (change_idx >= 0) AddSpendableOutput(utxos, tx, change_idx);
 
     return tx;
 }
@@ -169,11 +277,14 @@ static CMutableTransaction CreateProUpRevTx(const CTxMemPool& mempool, SimpleUTX
     CMutableTransaction tx;
     tx.nVersion = 3;
     tx.nType = TRANSACTION_PROVIDER_UPDATE_REVOKE;
-    FundTransaction(tx, utxos, GetScriptForDestination(PKHash(coinbaseKey.GetPubKey())), 1 * COIN, coinbaseKey);
+    const int change_idx = FundTransaction(tx, utxos, GetScriptForDestination(PKHash(coinbaseKey.GetPubKey())), 1 * COIN, coinbaseKey);
     proTx.inputsHash = CalcTxInputsHash(CTransaction(tx));
     proTx.sig = operatorKey.Sign(::SerializeHash(proTx));
     SetTxPayload(tx, proTx);
     SignTransaction(mempool, tx, coinbaseKey);
+
+    // Signing finalises the txid, so the change outpoint is only known now.
+    if (change_idx >= 0) AddSpendableOutput(utxos, tx, change_idx);
 
     return tx;
 }
@@ -243,7 +354,12 @@ void FuncDIP3Activation(TestChainSetup& setup)
     auto utxos = BuildSimpleUtxoMap(setup.m_coinbase_txns);
     CKey ownerKey;
     CBLSSecretKey operatorKey;
-    CTxDestination payoutDest = DecodeDestination("yRq1Ky1AfFmf597rnotj7QRxsDUKePVWNF");
+    // Regtest P2PKH payee. The inherited literal carried Dash's PUBKEY_ADDRESS byte (140);
+    // ours is 125, so it decoded to CNoDestination and the empty scriptPayout was rejected by
+    // CheckProRegTx as bad-protx-payee. Re-encoded for our prefix, same hash160.
+    CTxDestination payoutDest = DecodeDestination("sPkxZLXr1YpWoe2ZRWtwqXMARecAyFQSLF");
+    // Fail here rather than deep in ConnectBlock if the regtest prefix ever changes again.
+    BOOST_ASSERT(IsValidDestination(payoutDest));
     auto tx = CreateProRegTx(*(setup.m_node.mempool), utxos, 1, GetScriptForDestination(payoutDest), setup.coinbaseKey, ownerKey, operatorKey);
     std::vector<CMutableTransaction> txns = {tx};
 
@@ -319,7 +435,9 @@ void FuncV19Activation(TestChainSetup& setup)
     CMutableTransaction tx_spend;
     COutPoint collateralOutpoint(tx_reg_hash, 0);
     tx_spend.vin.emplace_back(collateralOutpoint);
-    tx_spend.vout.emplace_back(999.99 * COIN, collateralScript);
+    // Derive from the collateral constant rather than hardcoding it: the inherited literal was
+    // Dash's 1000-coin collateral less a 0.01 fee, and our Regular collateral is 500.
+    tx_spend.vout.emplace_back(dmn_types::Regular.collat_amount - COIN / 100, collateralScript);
 
     FillableSigningProvider signing_provider;
     signing_provider.AddKeyPubKey(collateral_key, collateral_key.GetPubKey());
@@ -410,6 +528,7 @@ void FuncDIP3Protx(TestChainSetup& setup)
     setup.m_node.sporkman->SetPrivKey(EncodeSecret(sporkKey));
 
     auto utxos = BuildSimpleUtxoMap(setup.m_coinbase_txns);
+    SplitPremine(setup, utxos);
 
     int nHeight = ::ChainActive().Height();
     int port = 1;
@@ -588,8 +707,10 @@ void FuncDIP3Protx(TestChainSetup& setup)
 
 void FuncTestMempoolReorg(TestChainSetup& setup)
 {
-    int nHeight = ::ChainActive().Height();
     auto utxos = BuildSimpleUtxoMap(setup.m_coinbase_txns);
+    SplitPremine(setup, utxos);
+
+    int nHeight = ::ChainActive().Height();
 
     CKey ownerKey;
     CKey payoutKey;
@@ -666,6 +787,7 @@ void FuncTestMempoolReorg(TestChainSetup& setup)
 void FuncTestMempoolDualProregtx(TestChainSetup& setup)
 {
     auto utxos = BuildSimpleUtxoMap(setup.m_coinbase_txns);
+    SplitPremine(setup, utxos);
 
     // Create a MN
     CKey ownerKey1;
@@ -721,8 +843,10 @@ void FuncVerifyDB(TestChainSetup& setup)
 {
     auto& dmnman = *Assert(setup.m_node.dmnman);
 
-    int nHeight = ::ChainActive().Height();
     auto utxos = BuildSimpleUtxoMap(setup.m_coinbase_txns);
+    SplitPremine(setup, utxos);
+
+    int nHeight = ::ChainActive().Height();
 
     CKey ownerKey;
     CKey payoutKey;
@@ -783,7 +907,9 @@ void FuncVerifyDB(TestChainSetup& setup)
 
     // Now spend the collateral while updating the same MN
     SimpleUTXOMap collateral_utxos;
-    collateral_utxos.emplace(payload.collateralOutpoint, std::make_pair(1, 1000));
+    // The outpoint holds the full collateral; the inherited 1000-satoshi placeholder only worked
+    // because nothing checked that the selected inputs covered the amount.
+    collateral_utxos.emplace(payload.collateralOutpoint, SimpleUTXO{1, dmn_types::Regular.collat_amount, false});
     auto proUpRevTx = CreateProUpRevTx(*(setup.m_node.mempool), collateral_utxos, tx_reg_hash, operatorKey, collateralKey);
 
     block = std::make_shared<CBlock>(setup.CreateBlock({proUpRevTx}, setup.coinbaseKey));
