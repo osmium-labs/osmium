@@ -106,6 +106,17 @@ $(OSX_APP)/Contents/Resources/osmium.icns: $(OSX_INSTALLER_ICONS)
 $(OSX_APP)/Contents/MacOS/Osmium-Qt: all-recursive
 	$(MKDIR_P) $(@D)
 	STRIPPROG="$(STRIP)" $(INSTALL_STRIP_PROGRAM)  $(BITCOIN_QT_BIN) $@
+	@# Apple Silicon refuses to exec an unsigned arm64 Mach-O -- it is SIGKILLed with no
+	@# error, which is stricter than Gatekeeper's bypassable warning. Prefer codesign when
+	@# building natively on a Mac; fall back to ldid when cross-compiling from Linux, where
+	@# codesign does not exist. Ad-hoc only: this does not satisfy notarization.
+	if command -v codesign >/dev/null 2>&1; then \
+		codesign --force --deep --sign - "$(OSX_APP)"; \
+	elif command -v ldid >/dev/null 2>&1; then \
+		ldid -Cadhoc -S "$@"; \
+	else \
+		echo "Warning: neither codesign nor ldid found - $@ will be unsigned and cannot launch on Apple Silicon"; \
+	fi
 
 $(OSX_APP)/Contents/Resources/Base.lproj/InfoPlist.strings:
 	$(MKDIR_P) $(@D)
@@ -134,6 +145,13 @@ $(OSX_DMG): $(OSX_TEMP_ISO)
 
 $(APP_DIST_DIR)/$(OSX_APP)/Contents/MacOS/Osmium-Qt: $(OSX_APP_BUILT) $(OSX_PACKAGING)
 	INSTALLNAMETOOL=$(INSTALLNAMETOOL) OTOOL=$(OTOOL) STRIP=$(STRIP) $(PYTHON) $(OSX_DEPLOY_SCRIPT) $(OSX_APP) $(OSX_VOLNAME) -translations-dir=$(QT_TRANSLATION_DIR)
+	if command -v codesign >/dev/null 2>&1; then \
+		codesign --force --deep --sign - "$(APP_DIST_DIR)/$(OSX_APP)"; \
+	elif command -v ldid >/dev/null 2>&1; then \
+		ldid -Cadhoc -S "$(APP_DIST_DIR)/$(OSX_APP)/Contents/MacOS/Osmium-Qt"; \
+	else \
+		echo "Warning: neither codesign nor ldid found - the .app will be unsigned"; \
+	fi
 
 deploydir: $(APP_DIST_DIR)/$(OSX_APP)/Contents/MacOS/Osmium-Qt
 endif !BUILD_DARWIN
