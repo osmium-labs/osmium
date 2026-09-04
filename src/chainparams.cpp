@@ -876,11 +876,17 @@ public:
         m_assumeutxo_data = MapAssumeutxo{
             {
                 110,
-                {AssumeutxoHash{uint256S("0x9b2a277a3e3b979f1a539d57e949495d7f8247312dbc32bce6619128c192b44b")}, 110},
+                // Regenerated for Osmium: the UTXO set differs from Dash because the coinbase
+                // carries a devfee output in addition to the miner's (170 coins at height 110,
+                // not 110). Computed from the actual regtest chainstate.
+                {AssumeutxoHash{uint256S("0x5e6c5467274e3d54ab08b0a474008edb452379142234703537a70d8351ae8c68")}, 110},
             },
             {
                 210,
-                {AssumeutxoHash{uint256S("0xd4c97d32882583b057efc3dce673e44204851435e6ffcef20346e69cddc7c91e")}, 210},
+                // Regenerated for Osmium for the same reason as the height-110 entry above: the
+                // inherited value describes Dash's UTXO set, not ours. Measured by activating a
+                // snapshot of the deterministic test chain at height 210.
+                {AssumeutxoHash{uint256S("0xb8d417e2b5b2fb439f645a7b2d74f35989f4fb45fda7dde1e7723020f44af122")}, 210},
             },
         };
 
