@@ -115,22 +115,11 @@ AC_ARG_WITH([backend],
 
 if test x"$want_backend" = x"auto"; then
   GMP_CHECK
+  dnl macOS aarch64 was carved out here because gmp only gained proper support
+  dnl for it in 6.3.0; depends now ships 6.3.0, so the backend follows GMP_CHECK
+  dnl on every host, as upstream does.
   if test x"$has_gmp" = x"yes"; then
-    case $host in
-      *darwin*)
-        case $host_cpu in
-          aarch*)
-            want_backend=easy
-            ;;
-          *)
-            want_backend=gmp
-            ;;
-        esac
-        ;;
-      *)
-        want_backend=gmp
-        ;;
-    esac
+    want_backend=gmp
   else
     want_backend=easy
   fi

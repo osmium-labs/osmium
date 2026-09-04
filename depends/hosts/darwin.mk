@@ -68,12 +68,6 @@ ifneq ($(build_os),darwin)
 darwin_CFLAGS += -mlinker-version=$(LLD_VERSION)
 darwin_CXXFLAGS += -mlinker-version=$(LLD_VERSION)
 darwin_LDFLAGS += -Wl,-no_adhoc_codesign -fuse-ld=lld
-# libtool strips -fuse-ld= out of LDFLAGS, so a libtool link (e.g. libosmiumconsensus.la)
-# falls back to the system ld, which cannot produce Mach-O. Upstream does not hit this
-# because they build with CMake; this tree still uses autotools + libtool. Putting the flag
-# in CC/CXX makes it survive, at the cost of an unused-argument warning when compiling.
-darwin_CC += -fuse-ld=lld
-darwin_CXX += -fuse-ld=lld
 endif
 
 darwin_release_CFLAGS=-O2
