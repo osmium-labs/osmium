@@ -1002,29 +1002,43 @@ if ENABLE_BENCH
 include Makefile.bench.include
 endif
 
+# Strip and, on macOS, ad-hoc sign everything we install. Doing it in one hook
+# keeps the release process symmetric: `make install` is the command on every
+# platform, and the differences live here rather than in whoever runs it.
+#
+# `make install-strip` is deliberately not used. On darwin libtool installs
+# libraries with --strip-unneeded, which llvm-strip rejects for Mach-O
+# ("option is not supported for MachO"), so the install aborts on the consensus
+# dylib. -x is accepted for Mach-O executables and dylibs alike.
+#
+# Static archives (.a) and libtool descriptors (.la) are excluded by the globs:
+# stripping an archive would break it.
 if TARGET_DARWIN
+STRIP_FLAGS = -x
+INSTALL_CODESIGN = yes
+else
+STRIP_FLAGS =
+INSTALL_CODESIGN = no
+endif
+
 # Apple Silicon refuses to execute an unsigned arm64 Mach-O: it is killed by the
 # kernel with no user-facing error, which is stricter than Gatekeeper's warning
-# and is not cleared by removing the quarantine attribute. The .app bundle is
-# signed in the top-level Makefile.am; the installed CLI binaries and the
-# consensus dylib need the same treatment or they cannot start.
-#
-# Prefer codesign when installing on a Mac, fall back to ldid when
-# cross-compiling from Linux, where codesign does not exist. The -Cadhoc is
-# required: ldid -S alone leaves the CodeDirectory flags at 0 and macOS then
-# reports "no signature" despite LC_CODE_SIGNATURE being present.
+# and is not cleared by removing the quarantine attribute. Prefer codesign when
+# installing on a Mac, fall back to ldid when cross-compiling from Linux where
+# codesign does not exist. The -Cadhoc is required: ldid -S alone leaves the
+# CodeDirectory flags at 0 and macOS then reports "no signature" despite
+# LC_CODE_SIGNATURE being present.
 #
 # Strip before signing, never after: stripping rewrites the file and would
-# invalidate an existing signature. `make install-strip` cannot be used on darwin
-# because libtool strips libraries with --strip-unneeded, which llvm-strip rejects
-# for Mach-O; -x works on both executables and dylibs.
+# invalidate a signature already applied.
 #
 # Ad-hoc only. This is not notarization; a browser-downloaded copy is still
 # quarantined and blocked.
 install-exec-hook:
-	@for f in $(DESTDIR)$(bindir)/* $(DESTDIR)$(libdir)/*.dylib; do \
+	@for f in $(DESTDIR)$(bindir)/* $(DESTDIR)$(libdir)/*.dylib $(DESTDIR)$(libdir)/*.so*; do \
 		if test -L "$$f" || test ! -f "$$f"; then continue; fi; \
-		$(STRIP) -x "$$f" || exit 1; \
+		$(STRIP) $(STRIP_FLAGS) "$$f" || exit 1; \
+		test "$(INSTALL_CODESIGN)" = yes || continue; \
 		if command -v codesign >/dev/null 2>&1; then \
 			codesign --force --sign - "$$f"; \
 		elif command -v ldid >/dev/null 2>&1; then \
@@ -1033,7 +1047,7 @@ install-exec-hook:
 			echo "Warning: neither codesign nor ldid found - $$f is unsigned and cannot run on Apple Silicon"; \
 		fi; \
 	done
-endif
+
 
 if ENABLE_QT
 include Makefile.qt.include
