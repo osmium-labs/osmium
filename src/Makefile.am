@@ -1002,6 +1002,33 @@ if ENABLE_BENCH
 include Makefile.bench.include
 endif
 
+if TARGET_DARWIN
+# Apple Silicon refuses to execute an unsigned arm64 Mach-O: it is killed by the
+# kernel with no user-facing error, which is stricter than Gatekeeper's warning
+# and is not cleared by removing the quarantine attribute. The .app bundle is
+# signed in the top-level Makefile.am; the installed CLI binaries and the
+# consensus dylib need the same treatment or they cannot start.
+#
+# Prefer codesign when installing on a Mac, fall back to ldid when
+# cross-compiling from Linux, where codesign does not exist. The -Cadhoc is
+# required: ldid -S alone leaves the CodeDirectory flags at 0 and macOS then
+# reports "no signature" despite LC_CODE_SIGNATURE being present.
+#
+# Ad-hoc only. This is not notarization; a browser-downloaded copy is still
+# quarantined and blocked.
+install-exec-hook:
+	@for f in $(DESTDIR)$(bindir)/* $(DESTDIR)$(libdir)/*.dylib; do \
+		if test -L "$$f" || test ! -f "$$f"; then continue; fi; \
+		if command -v codesign >/dev/null 2>&1; then \
+			codesign --force --sign - "$$f"; \
+		elif command -v ldid >/dev/null 2>&1; then \
+			ldid -Cadhoc -S "$$f"; \
+		else \
+			echo "Warning: neither codesign nor ldid found - $$f is unsigned and cannot run on Apple Silicon"; \
+		fi; \
+	done
+endif
+
 if ENABLE_QT
 include Makefile.qt.include
 endif
