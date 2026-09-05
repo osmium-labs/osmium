@@ -1014,11 +1014,17 @@ if TARGET_DARWIN
 # required: ldid -S alone leaves the CodeDirectory flags at 0 and macOS then
 # reports "no signature" despite LC_CODE_SIGNATURE being present.
 #
+# Strip before signing, never after: stripping rewrites the file and would
+# invalidate an existing signature. `make install-strip` cannot be used on darwin
+# because libtool strips libraries with --strip-unneeded, which llvm-strip rejects
+# for Mach-O; -x works on both executables and dylibs.
+#
 # Ad-hoc only. This is not notarization; a browser-downloaded copy is still
 # quarantined and blocked.
 install-exec-hook:
 	@for f in $(DESTDIR)$(bindir)/* $(DESTDIR)$(libdir)/*.dylib; do \
 		if test -L "$$f" || test ! -f "$$f"; then continue; fi; \
+		$(STRIP) -x "$$f" || exit 1; \
 		if command -v codesign >/dev/null 2>&1; then \
 			codesign --force --sign - "$$f"; \
 		elif command -v ldid >/dev/null 2>&1; then \
