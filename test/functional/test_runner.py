@@ -293,7 +293,6 @@ BASE_SCRIPTS = [
     # Put them in a random line within the section that fits their approximate run-time
 ]
 
-# Place EXTENDED_SCRIPTS first since it has the 3 longest running tests
 # Tests parked because they depend on behaviour Osmium does not have, not because the test is
 # wrong. Each needs a decision on the production side before it can be re-enabled -- do not
 # "fix" these by weakening the test.
@@ -375,6 +374,12 @@ SKIPPED_NEEDS_DECISION = {
                        'attached (SER_READ only allocates on the read path). Needs a production fix.',
 }
 
+# Parked scripts keep their place in the lists above, so un-parking one is just deleting its
+# entry here. check_script_list() enforces that every parked name is still registered.
+# Place EXTENDED_SCRIPTS first since it has the 3 longest running tests
+REGISTERED_SCRIPTS = EXTENDED_SCRIPTS + BASE_SCRIPTS
+
+EXTENDED_SCRIPTS = [t for t in EXTENDED_SCRIPTS if t.split()[0] not in SKIPPED_NEEDS_DECISION]
 BASE_SCRIPTS = [t for t in BASE_SCRIPTS if t.split()[0] not in SKIPPED_NEEDS_DECISION]
 
 ALL_SCRIPTS = EXTENDED_SCRIPTS + BASE_SCRIPTS
@@ -449,26 +454,7 @@ def main():
     # Build list of tests
     test_list = []
     if tests:
-        # Individual tests have been specified. Run specified tests that exist
-        # in the ALL_SCRIPTS list. Accept names with or without a .py extension.
-        # Specified tests can contain wildcards, but in that case the supplied
-        # paths should be coherent, e.g. the same path as that provided to call
-        # test_runner.py. Examples:
-        #   `test/functional/test_runner.py test/functional/wallet*`
-        #   `test/functional/test_runner.py ./test/functional/wallet*`
-        #   `test_runner.py wallet*`
-        #   but not:
-        #   `test/functional/test_runner.py wallet*`
-        # Multiple wildcards can be passed:
-        #   `test_runner.py tool* mempool*`
-        for test in tests:
-            script = test.split("/")[-1]
-            script = script + ".py" if ".py" not in script else script
-            matching_scripts = [s for s in ALL_SCRIPTS if s.startswith(script)]
-            if matching_scripts:
-                test_list.extend(matching_scripts)
-            else:
-                print("{}WARNING!{} Test '{}' not found in full test list.".format(BOLD[1], BOLD[0], test))
+        test_list = select_named_scripts(tests)
     elif args.extended:
         # Include extended tests
         test_list += ALL_SCRIPTS
@@ -520,6 +506,36 @@ def main():
         failfast=args.failfast,
         use_term_control=args.ansi,
     )
+
+def select_named_scripts(tests):
+    """Resolve the test names given on the command line.
+
+    Accepts names with or without a .py extension. Specified tests can contain
+    wildcards, but in that case the supplied paths should be coherent, e.g. the
+    same path as that provided to call test_runner.py. Examples:
+      `test/functional/test_runner.py test/functional/wallet*`
+      `test/functional/test_runner.py ./test/functional/wallet*`
+      `test_runner.py wallet*`
+      but not:
+      `test/functional/test_runner.py wallet*`
+    Multiple wildcards can be passed:
+      `test_runner.py tool* mempool*`
+
+    A parked script runs when named, with a note saying why it is parked.
+    """
+    test_list = []
+    for test in tests:
+        script = test.split("/")[-1]
+        script = script + ".py" if ".py" not in script else script
+        matching_scripts = [s for s in REGISTERED_SCRIPTS if s.startswith(script)]
+        if not matching_scripts:
+            print("{}WARNING!{} Test '{}' not found in full test list.".format(BOLD[1], BOLD[0], test))
+        for s in matching_scripts:
+            reason = SKIPPED_NEEDS_DECISION.get(s.split()[0])
+            if reason:
+                print("{}NOTE:{} '{}' is parked and runs only because it was named: {}".format(BOLD[1], BOLD[0], s, reason))
+        test_list.extend(matching_scripts)
+    return test_list
 
 def run_tests(*, test_list, src_dir, build_dir, tmpdir, jobs=1, attempts=1, enable_coverage=False, args=None, combined_logs_len=0,failfast=False, use_term_control):
     args = args or []
@@ -797,7 +813,7 @@ def check_script_prefixes():
     """Check that test scripts start with one of the allowed name prefixes."""
 
     good_prefixes_re = re.compile("^(example|feature|interface|mempool|mining|p2p|rpc|wallet|tool)_")
-    bad_script_names = [script for script in ALL_SCRIPTS if good_prefixes_re.match(script) is None]
+    bad_script_names = [script for script in REGISTERED_SCRIPTS if good_prefixes_re.match(script) is None]
 
     if bad_script_names:
         print("%sERROR:%s %d tests not meeting naming conventions:" % (BOLD[1], BOLD[0], len(bad_script_names)))
@@ -812,12 +828,23 @@ def check_script_list(*, src_dir, fail_on_warn):
     not being run by pull-tester.py."""
     script_dir = src_dir + '/test/functional/'
     python_files = set([test_file for test_file in os.listdir(script_dir) if test_file.endswith(".py")])
-    missed_tests = list(python_files - set(map(lambda x: x.split()[0], ALL_SCRIPTS + NON_SCRIPTS)))
-    if len(missed_tests) != 0:
-        print("%sWARNING!%s The following scripts are not being run: %s. Check the test lists in test_runner.py." % (BOLD[1], BOLD[0], str(missed_tests)))
-        if fail_on_warn:
-            # On CI this warning is an error to prevent merging incomplete commits into master
-            sys.exit(1)
+    registered = set(map(lambda x: x.split()[0], REGISTERED_SCRIPTS))
+    parked = set(SKIPPED_NEEDS_DECISION)
+    non_scripts = set(NON_SCRIPTS)
+
+    problems = [
+        ("The following scripts are not being run", python_files - registered - non_scripts),
+        ("SKIPPED_NEEDS_DECISION names a file that does not exist", parked - python_files),
+        ("SKIPPED_NEEDS_DECISION names a file listed in NON_SCRIPTS", parked & non_scripts),
+    ]
+    found = False
+    for message, names in problems:
+        if names:
+            found = True
+            print("%sWARNING!%s %s: %s. Check the test lists in test_runner.py." % (BOLD[1], BOLD[0], message, str(sorted(names))))
+    if found and fail_on_warn:
+        # On CI this warning is an error to prevent merging incomplete commits into master
+        sys.exit(1)
 
 
 class RPCCoverage():
