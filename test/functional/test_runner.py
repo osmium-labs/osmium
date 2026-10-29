@@ -252,6 +252,7 @@ BASE_SCRIPTS = [
     'p2p_unrequested_blocks.py',
     'feature_shutdown.py',
     'feature_devfee.py',
+    'mining_auxpow.py',
     'rpc_coinjoin.py',
     'rpc_masternode.py',
     'rpc_mnauth.py',
