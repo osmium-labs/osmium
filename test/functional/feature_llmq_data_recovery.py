@@ -24,7 +24,9 @@ llmq_type_strings = {llmq_test: 'llmq_test', llmq_test_v17: 'llmq_test_v17'}
 
 class QuorumDataRecoveryTest(OsmiumTestFramework):
     def set_test_params(self):
-        extra_args = [["-vbparams=testdummy:0:999999999999:10:8:6:5:-1"] for _ in range(9)]
+        # llmq_test_v17 quorums only form while TESTDUMMY is active. Signalling it cannot work on
+        # an auxpow chain (the chain ID occupies the version bits), so start it ALWAYS_ACTIVE (-1).
+        extra_args = [["-vbparams=testdummy:-1:999999999999:10:8:6:5:-1"] for _ in range(9)]
         self.set_osmium_test_params(9, 7, fast_dip3_enforcement=True, extra_args=extra_args)
         self.set_osmium_llmq_test_params(4, 3)
 
