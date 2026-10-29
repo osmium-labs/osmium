@@ -653,11 +653,13 @@ UniValue importelectrumwallet(const JSONRPCRequest& request)
 
     fsbridge::ifstream file;
     std::string strFileName = request.params[0].get_str();
-    size_t nDotPos = strFileName.find_last_of(".");
-    if(nDotPos == std::string::npos)
+    // The extension belongs to the file name, not the path: a directory such as "v1.2" or
+    // ".osmiumcore" would otherwise supply one.
+    std::string strFileExt = fs::path(strFileName).extension().string();
+    if(strFileExt.empty())
         throw JSONRPCError(RPC_INVALID_PARAMETER, "File has no extension, should be .json or .csv");
 
-    std::string strFileExt = strFileName.substr(nDotPos+1);
+    strFileExt.erase(0, 1); // extension() keeps the dot
     if(strFileExt != "json" && strFileExt != "csv")
         throw JSONRPCError(RPC_INVALID_PARAMETER, "File has wrong extension, should be .json or .csv");
 
