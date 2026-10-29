@@ -2639,4 +2639,12 @@ BOOST_AUTO_TEST_CASE(message_hash)
     BOOST_CHECK_NE(message_hash1, signature_hash);
 }
 
+BOOST_AUTO_TEST_CASE(copyright_holders_lists_upstreams)
+{
+    const std::string holders = CopyrightHolders("(C)", 2024, 2026);
+    BOOST_CHECK(holders.find("(C) 2024-2026 The Osmium Core developers") != std::string::npos);
+    BOOST_CHECK(holders.find("(C) 2014-2026 The Dash Core developers") != std::string::npos);
+    BOOST_CHECK(holders.find("(C) 2009-2026 The Bitcoin Core developers") != std::string::npos);
+}
+
 BOOST_AUTO_TEST_SUITE_END()
