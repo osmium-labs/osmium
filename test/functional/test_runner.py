@@ -253,6 +253,7 @@ BASE_SCRIPTS = [
     'feature_shutdown.py',
     'feature_devfee.py',
     'mining_auxpow.py',
+    'rpc_blockchain_queries.py',
     'rpc_coinjoin.py',
     'rpc_masternode.py',
     'rpc_mnauth.py',
