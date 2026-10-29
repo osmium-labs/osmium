@@ -85,6 +85,11 @@ struct BIP9Deployment {
 struct Params {
     uint256 hashGenesisBlock;
     uint256 hashDevnetGenesisBlock;
+    /** Block subsidy tiers, by previous block height, before the reductions every nSubsidyHalvingInterval */
+    CAmount nPremineSubsidy;          //!< paid at prev-height 0
+    CAmount nEarlySubsidy;            //!< prev-height 1 .. nEarlySubsidyLastHeight
+    int nEarlySubsidyLastHeight;
+    CAmount nBaseSubsidy;             //!< after that
     int nSubsidyHalvingInterval;
     /** Block height at which BIP16 becomes active */
     int BIP16Height;

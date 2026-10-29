@@ -146,6 +146,10 @@ class CMainParams : public CChainParams {
 public:
     CMainParams() {
         strNetworkID = CBaseChainParams::MAIN;
+        consensus.nPremineSubsidy = 8000 * COIN;
+        consensus.nEarlySubsidy = COIN / 10;
+        consensus.nEarlySubsidyLastHeight = 500;
+        consensus.nBaseSubsidy = 1 * COIN;
         consensus.nSubsidyHalvingInterval = 172800;
         consensus.BIP16Height = 0;
         consensus.nMasternodePaymentsStartBlock = 250; // not true, but it's ok as long as it's less then nMasternodePaymentsIncreaseBlock
@@ -327,6 +331,10 @@ class CTestNetParams : public CChainParams {
 public:
     CTestNetParams() {
         strNetworkID = CBaseChainParams::TESTNET;
+        consensus.nPremineSubsidy = 8000 * COIN;
+        consensus.nEarlySubsidy = COIN / 10;
+        consensus.nEarlySubsidyLastHeight = 500;
+        consensus.nBaseSubsidy = 1 * COIN;
         consensus.nSubsidyHalvingInterval = 172800;
         consensus.BIP16Height = 0;
         consensus.nMasternodePaymentsStartBlock = 250;
@@ -498,6 +506,10 @@ class CDevNetParams : public CChainParams {
 public:
     explicit CDevNetParams(const ArgsManager& args) {
         strNetworkID = CBaseChainParams::DEVNET;
+        consensus.nPremineSubsidy = 8000 * COIN;
+        consensus.nEarlySubsidy = COIN / 10;
+        consensus.nEarlySubsidyLastHeight = 500;
+        consensus.nBaseSubsidy = 1 * COIN;
         consensus.nSubsidyHalvingInterval = 172800;
         consensus.BIP16Height = 0;
         consensus.nMasternodePaymentsStartBlock = 4010; // not true, but it's ok as long as it's less then nMasternodePaymentsIncreaseBlock
@@ -746,6 +758,10 @@ class CRegTestParams : public CChainParams {
 public:
     explicit CRegTestParams(const ArgsManager& args) {
         strNetworkID =  CBaseChainParams::REGTEST;
+        consensus.nPremineSubsidy = 8000 * COIN;
+        consensus.nEarlySubsidy = COIN / 10;
+        consensus.nEarlySubsidyLastHeight = 500;
+        consensus.nBaseSubsidy = 1 * COIN;
         consensus.nSubsidyHalvingInterval = 150;
         consensus.BIP16Height = 0; // always enforce P2SH BIP16 on regtest
         consensus.nMasternodePaymentsStartBlock = 500;
