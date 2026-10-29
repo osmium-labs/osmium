@@ -254,6 +254,7 @@ BASE_SCRIPTS = [
     'feature_devfee.py',
     'mining_auxpow.py',
     'rpc_blockchain_queries.py',
+    'wallet_address_queries.py',
     'rpc_coinjoin.py',
     'rpc_masternode.py',
     'rpc_mnauth.py',
