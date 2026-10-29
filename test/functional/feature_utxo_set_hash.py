@@ -39,11 +39,11 @@ class UTXOSetHashTest(BitcoinTestFramework):
 
         node = self.nodes[0]
 
-        # Generate 100 blocks and remove the first since we plan to spend its
-        # coinbase
+        # Generate 100 blocks; we plan to spend the first one's coinbase. Its miner output is
+        # spent, but its devfee output stays in the UTXO set, so the block itself is kept.
         block_hashes = node.generate(100)
         blocks = list(map(lambda block: FromHex(CBlock(), node.getblock(block, False)), block_hashes))
-        spending = blocks.pop(0)
+        spending = blocks[0]
 
         # Create a spending transaction and mine a block which includes it
         tx = create_transaction(node, spending.vtx[0].rehash(), node.getnewaddress(), amount=49)
@@ -57,12 +57,13 @@ class UTXOSetHashTest(BitcoinTestFramework):
         muhash = MuHash3072()
 
         for height, block in enumerate(blocks):
-            # The Genesis block coinbase is not part of the UTXO set and we
-            # spent the first mined block
-            height += 2
+            # The Genesis block coinbase is not part of the UTXO set
+            height += 1
 
             for tx in block.vtx:
                 for n, tx_out in enumerate(tx.vout):
+                    if tx is spending.vtx[0] and n == 0:
+                        continue  # spent above
                     coinbase = 1 if not tx.vin[0].prevout.hash else 0
 
                     # Bitcoin skipped the coinbase's witness commitment here. Osmium has no

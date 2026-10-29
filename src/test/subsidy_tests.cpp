@@ -64,6 +64,43 @@ BOOST_AUTO_TEST_CASE(block_subsidy_test)
 }
 
 /*
+ * Regtest pays a flat 500 OSMI from the first block, reduced by 1/7 every 150 blocks (the same
+ * floating-point reduction as mainnet), with no superblock cut until nPrevHeight > 1500.
+ */
+BOOST_AUTO_TEST_CASE(regtest_subsidy_schedule)
+{
+    const auto chainParams = CreateChainParams(*m_node.args, CBaseChainParams::REGTEST);
+    const auto& consensus = chainParams->GetConsensus();
+
+    BOOST_CHECK_EQUAL(consensus.nSubsidyHalvingInterval, 150);
+    BOOST_CHECK_EQUAL(consensus.nSuperblockStartBlock, 1500);
+
+    struct Probe { int nPrevHeight; CAmount miner; CAmount superblock; };
+    const Probe probes[] = {
+        {    0, CAmount{50000000000}, CAmount{        0}},
+        {    1, CAmount{50000000000}, CAmount{        0}},
+        {  149, CAmount{50000000000}, CAmount{        0}},
+        {  150, CAmount{42857142857}, CAmount{        0}},  // 1st reduction
+        {  299, CAmount{42857142857}, CAmount{        0}},
+        {  300, CAmount{36734693877}, CAmount{        0}},  // 2nd reduction
+        { 1500, CAmount{10702915778}, CAmount{        0}},  // 10th reduction
+        { 1501, CAmount{10167769990}, CAmount{535145788}},  // superblock cut begins
+    };
+
+    for (const auto& p : probes) {
+        BOOST_CHECK_EQUAL(GetBlockSubsidyInner(0, p.nPrevHeight, consensus, /*fV20Active=*/false), p.miner);
+        BOOST_CHECK_EQUAL(GetSuperblockSubsidyInner(0, p.nPrevHeight, consensus, /*fV20Active=*/false), p.superblock);
+    }
+
+    // The devfee starts at block 0: the miner pays it from height 1 (CheckBlock enforces it from
+    // height 2; see feature_devfee.py).
+    auto devfee = consensus.nDevfeePayment;
+    BOOST_CHECK_EQUAL(devfee.getStartBlock(), 0);
+    BOOST_CHECK_EQUAL(devfee.getDevfeePaymentAmount(0, 50000000000), 0);
+    BOOST_CHECK_EQUAL(devfee.getDevfeePaymentAmount(1, 50000000000), 50000000000 / 19);
+}
+
+/*
  * Unlike Dash, Osmium's subsidy depends only on height: GetBlockSubsidyHelper reads neither
  * nPrevBits nor fV20Active. Dash scaled the reward by the previous block's difficulty and
  * changed behaviour at v20; both were dropped here. Pin that, so reintroducing a

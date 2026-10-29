@@ -29,8 +29,8 @@ from io import BytesIO
 MAX_BLOCK_SIGOPS = 20000
 
 # Osmium is always-auxpow: the chain ID occupies the top 16 bits of nVersion, and validation
-# rejects a block whose version is 1 as "late-legacy-block" above height 1 (validation.cpp:3887)
-# and anything carrying a different chain ID outright (validation.cpp:3723). Dash's framework
+# rejects a block whose version is 1 as "late-legacy-block" above height 1 (validation.cpp:3885)
+# and anything carrying a different chain ID outright (validation.cpp:3721). Dash's framework
 # defaulted to version 1, so every block the framework built was refused.
 AUXPOW_CHAIN_ID = 0x0062  # regtest nAuxpowChainId, src/chainparams.cpp
 BASE_BLOCK_VERSION = (AUXPOW_CHAIN_ID << 16) | 4
@@ -281,21 +281,15 @@ def get_legacy_sigopcount_tx(tx, accurate=True):
 def get_block_subsidy(nHeight, nSubsidyHalvingInterval=150, nSuperblockStartBlock=1500):
     """Block subsidy in muffs at `nHeight`, per src/validation.cpp GetBlockSubsidyHelper.
 
-    Osmium does not pay Dash's flat 500 per regtest block. Height 1 mints an 8000-coin premine,
-    heights 2..500 pay 0.1, and later blocks pay 1 -- then every nSubsidyHalvingInterval blocks
-    the subsidy is reduced by 1/7 (the C++ `reductionRatio` is 1210000/172800, which is integer
-    division and therefore exactly 7). Superblock share is carved out above nSuperblockStartBlock.
+    Regtest pays a flat 500 per block (CRegTestParams sets nPremineSubsidy, nEarlySubsidy and
+    nBaseSubsidy all to 500 coins). Every nSubsidyHalvingInterval blocks the subsidy is reduced
+    by 1/7 (the C++ `reductionRatio` is 1210000/172800, which is integer division and therefore
+    exactly 7). Superblock share is carved out above nSuperblockStartBlock.
 
     Defaults are the regtest values from src/chainparams.cpp (CRegTestParams).
     """
     nPrevHeight = nHeight - 1
-    if nPrevHeight == 0:
-        base = 8000
-    elif nPrevHeight <= 500:
-        base = 0.1
-    else:
-        base = 1
-    nSubsidy = int(base * COIN)
+    nSubsidy = 500 * COIN
 
     # The C++ does this in floating point -- `reductionRatio` is a double (1210000/172800, an
     # integer division that yields exactly 7.0) and `nSubsidy -= nSubsidy / reductionRatio`
@@ -309,7 +303,7 @@ def get_block_subsidy(nHeight, nSubsidyHalvingInterval=150, nSuperblockStartBloc
     return nSubsidy - nSuperblockPart
 
 
-def get_devfee(nHeight, start_block=50, divisor=19):
+def get_devfee(nHeight, start_block=0, divisor=19):
     """Devfee carved out of the coinbase at `nHeight` (src/devfee_payment.cpp).
 
     Zero at or below nDevfeePayment.getStartBlock(); otherwise blockSubsidy / rewardDivisor,

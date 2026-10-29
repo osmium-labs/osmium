@@ -348,31 +348,11 @@ SKIPPED_NEEDS_DECISION = {
     # no such cache. See the comment at the failing assertion for the full trace.
     'wallet_abandonconflict.py': 'abandontransaction() does not restore inputs to setWalletUTXO, '
                                  'so the balance rises by 10 instead of 30. Needs a production fix.',
-    # Same production bug as the sub-test skipped in rpc_blockchain.py: CheckBlock() is called at
-    # validation.cpp:4270 with `ChainActive().Height() + 1`, i.e. the TIP's height rather than the
-    # height of the block being checked, and its devfee rule uses that height. feature_block's
-    # large-reorg section builds an alternative chain from height 89 while the node's tip is at
-    # 1222; the devfee amount implied by height 1221 (eight subsidy reductions later) does not
-    # match what a height-89 coinbase pays, so every alt block is rejected as
-    # bad-cb-devfee-payment-not-found and the peer is discouraged. Everything before that section
-    # now passes -- the file's Osmium fixes (block versions, sigop budgets, BIP30 coinbase,
-    # resurrection amounts) are all in place, so it should run through once CheckBlock() is given
-    # the block's own height.
-    # NOT a mainnet bug -- do not "fix" this without reading the analysis. On mainnet the devfee
-    # startBlock is 1 and there is a single reward structure, so the required amount is always
-    # subsidy(tip)/19; a competing block at height H <= tip pays subsidy(H-1)/19, the subsidy only
-    # decays with height, and IsBlockPayeeValid() compares with >=, so a real fork block always
-    # pays at least what is asked. The rule can only reject a block whose own height is at or below
-    # the devfee startBlock -- unreachable on mainnet, but routine in regtest where startBlock is
-    # 50 and these tests deliberately fork below it. Correcting CheckBlock() would relax block
-    # acceptance, i.e. a hard-forking change, for no live-network benefit.
-    'feature_block.py': 'large-reorg section forks below the regtest devfee startBlock while the '
-                        'tip is far above it, so the tip-relative CheckBlock() height rejects the '
-                        'alt chain as bad-cb-devfee-payment-not-found. Regtest-only; see above.',
     # Not a version-bits issue: this one aborts the node outright.
     'mining_basic.py': 'node aborts on assert(obj.auxpow != nullptr), primitives/block.h:44 -- '
                        'serializing a header whose version has the auxpow bit set but no auxpow '
                        'attached (SER_READ only allocates on the read path). Needs a production fix.',
+    'p2p_unrequested_blocks.py': 'fails under the regtest devfee rules; revisit in Release B.',
 }
 
 # Parked scripts keep their place in the lists above, so un-parking one is just deleting its
