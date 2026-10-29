@@ -4,7 +4,7 @@
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 from test_framework.test_framework import BitcoinTestFramework
-from test_framework.util import assert_equal
+from test_framework.util import assert_equal, assert_raises_rpc_error
 
 '''
 rpc_coinjoin.py
@@ -23,6 +23,11 @@ class CoinJoinTest(BitcoinTestFramework):
         self.test_coinjoin_start_stop()
         self.test_coinjoin_setamount()
         self.test_coinjoin_setrounds()
+        self.test_getpoolinfo()
+
+    def test_getpoolinfo(self):
+        self.log.info('"getpoolinfo" is a stub that points at getcoinjoininfo')
+        assert_raises_rpc_error(-1, "DEPRECATED. Please use getcoinjoininfo instead.", self.nodes[0].getpoolinfo)
 
     def test_coinjoin_start_stop(self):
         # Start Mixing
