@@ -28,6 +28,7 @@
 
 #include <fstream>
 #include <iomanip>
+#include <limits>
 
 static UniValue masternodelist(const JSONRPCRequest& request, ChainstateManager& chainman);
 
@@ -437,12 +438,25 @@ static UniValue masternode_payments(const JSONRPCRequest& request, const Chainst
     }
 
     int64_t nCount = request.params.size() > 1 ? ParseInt64V(request.params[1], "count") : 1;
+    if (nCount == std::numeric_limits<int64_t>::min()) {
+        // std::abs() below has no representable result for this one value.
+        throw JSONRPCError(RPC_INVALID_PARAMETER, "count is out of range");
+    }
 
     // A temporary vector which is used to sort results properly (there is no "reverse" in/for UniValue)
     std::vector<UniValue> vecPayments;
 
     const NodeContext& node = EnsureAnyNodeContext(request.context);
     while (vecPayments.size() < uint64_t(std::abs(nCount)) && pindex != nullptr) {
+        if (pindex->pprev == nullptr) {
+            // The genesis block pays no masternode, and everything below dereferences its
+            // (null) pprev. Skip it; walking backwards, there is nothing left.
+            if (nCount < 0) break;
+            LOCK(cs_main);
+            pindex = chainman.ActiveChain().Next(pindex);
+            continue;
+        }
+
         CBlock block;
         if (!ReadBlockFromDisk(block, pindex, Params().GetConsensus())) {
             throw JSONRPCError(RPC_INTERNAL_ERROR, "Can't read block from disk");
@@ -460,6 +474,10 @@ static UniValue masternode_payments(const JSONRPCRequest& request, const Chainst
             for (const auto& txin : tx->vin) {
                 uint256 blockHashTmp;
                 CTransactionRef txPrev = GetTransaction(/* block_index */ nullptr, &mempool, txin.prevout.hash, Params().GetConsensus(), blockHashTmp);
+                if (!txPrev) {
+                    // Without -txindex only the mempool is searched.
+                    throw JSONRPCError(RPC_INTERNAL_ERROR, strprintf("Previous transaction %s not found (is -txindex enabled?)", txin.prevout.hash.ToString()));
+                }
                 nValueIn += txPrev->vout[txin.prevout.n].nValue;
             }
             nBlockFees += nValueIn - tx->GetValueOut();
