@@ -19,8 +19,8 @@ from test_framework.util import (
 # COINBASE_MATURITY (100) blocks. Therefore, after mining 101 blocks we expect
 # node 0 to have a balance of (BLOCKS - COINBASE_MATURITY) * 500 OSMIUM/block.
 BLOCKS = COINBASE_MATURITY + 1
-# Osmium's reward is not flat: height 1 mints the premine and later blocks pay a small, decaying
-# subsidy less the devfee, so sum the matured blocks rather than multiplying.
+# The miner's share is the subsidy less the devfee, and the subsidy decays every 150 blocks, so
+# sum the matured blocks rather than multiplying.
 BALANCE = Decimal(sum(get_miner_reward(h) for h in range(1, BLOCKS - 100 + 1))) / COIN
 
 JSON_PARSING_ERROR = 'error: Error parsing JSON: foo'

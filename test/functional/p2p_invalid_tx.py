@@ -116,9 +116,8 @@ class InvalidTxRequestTest(BitcoinTestFramework):
         SCRIPT_PUB_KEY_OP_TRUE = b'\x51\x75' * 15 + b'\x51'
         tx_withhold = CTransaction()
         tx_withhold.vin.append(CTxIn(outpoint=COutPoint(base_tx, 0)))
-        # Dash's coinbases paid a flat 500, so the hardcoded 50/10/11-coin amounts below always
-        # fit. Osmium's block-2 coinbase pays ~0.1, so everything is derived from what the base
-        # transaction actually holds; only the relative structure (a split into three, one child
+        # Amounts are derived from what the base transaction actually holds rather than Dash's
+        # hardcoded 50/10/11 coins; only the relative structure (a split into three, one child
         # paying no fee, one paying a fee, one spending more than it has) matters here.
         fee = 12000
         withhold_value = base_value - fee

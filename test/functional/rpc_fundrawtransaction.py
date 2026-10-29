@@ -64,10 +64,7 @@ class RawTransactionsTest(BitcoinTestFramework):
         #            = 2 bytes * minRelayTxFeePerByte
         self.fee_tolerance = 2 * self.min_relay_tx_fee / 1000
 
-        # Osmium mints almost the entire regtest supply as the height-1 premine (~8000 of a ~8670
-        # ceiling), so whoever mines block 1 holds essentially everything. This test needs node0
-        # funded, so give node0 the premine and node2 a single ordinary block for the exact-match
-        # case below. Dash could mine in either order because every block paid the same 500.
+        # node0 needs funding and node2 a single block's reward for the exact-match case below.
         self.nodes[0].generate(1)
         self.sync_all()
         self.nodes[2].generate(1)

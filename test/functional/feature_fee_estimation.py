@@ -210,9 +210,8 @@ class EstimateFeeTest(BitcoinTestFramework):
         # Split a coinbase into two transaction puzzle outputs.
         # split_inputs() pops from the end of the list, and Dash's coinbases were a uniform 500,
         # so any of them seeded 2048 outputs of ~0.24 -- enough for the 0.005 payments below.
-        # Osmium's outputs are the height-1 premine plus a tail of ~0.1 subsidies; seeding from a
-        # small one leaves outputs of ~0.00004, so a single payment would need over a hundred
-        # inputs. Sort so the largest is the one that gets split.
+        # Osmium's coinbases are not uniform: the miner's share shrinks by 1/7 every 150 blocks
+        # and some outputs here are change. Sort so the largest is the one that gets split.
         unspent = sorted(self.nodes[0].listunspent(0), key=lambda u: u["amount"])
         split_inputs(self.nodes[0], unspent, self.txouts, True)
 

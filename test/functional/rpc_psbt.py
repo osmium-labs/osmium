@@ -42,8 +42,7 @@ class PSBTTest(BitcoinTestFramework):
 
         # Manually selected inputs can be locked:
         assert_equal(len(self.nodes[0].listlockunspent()), 0)
-        # Largest output: Osmium's ordinary regtest outputs are ~0.1, so funding 1 coin from an
-        # arbitrary one pulls in a dozen inputs and locks them all, where Dash needed just one.
+        # Largest output, so that a single input covers the send and exactly one is locked.
         utxo1 = sorted(self.nodes[0].listunspent(), key=lambda u: u['amount'], reverse=True)[0]
         # Send less than that single output is worth, so exactly one input is selected and locked.
         utxo1_send = (utxo1['amount'] / 2).quantize(Decimal('0.00000001'))

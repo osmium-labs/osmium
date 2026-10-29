@@ -96,10 +96,9 @@ std::shared_ptr<CBlock> MinerTestingSetup::Block(const uint256& prev_hash)
                << OP_EQUAL;
     }
     // CreateNewBlock() sized the reward against the current tip, but the block was just
-    // re-parented, so it has to pay what its real height allows. Osmium mints an 8000-coin premine
-    // at height 1 and 0.1 per block after that, so a template minted at genesis pays 80000x the
-    // limit as soon as it sits deeper in the chain (bad-cb-amount). Dash's flat ~500 per regtest
-    // block made re-parenting harmless here.
+    // re-parented, so it has to pay what its real height allows: the subsidy is reduced every
+    // nSubsidyHalvingInterval blocks, so a template sized for a lower height overpays once it sits
+    // deeper in the chain (bad-cb-amount).
     const CAmount reward = GetBlockSubsidyInner(pblock->nBits, height - 1, Params().GetConsensus(), false);
 
     // Make the coinbase transaction with two outputs:
@@ -117,7 +116,7 @@ std::shared_ptr<CBlock> MinerTestingSetup::Block(const uint256& prev_hash)
     // enforced past nDevfeePayment.getStartBlock() (bad-cb-devfee-payment-not-found).
     //
     // The amount cannot simply be this block's own, because ProcessNewBlock() checks the coinbase
-    // against the height of the CURRENT TIP rather than the block's (validation.cpp:4270), while
+    // against the height of the CURRENT TIP rather than the block's (validation.cpp:4268), while
     // ConnectBlock and AcceptBlock use the block's real height. A block below the start height
     // therefore still has to carry the payment once the tip has climbed past it, and the amount is
     // sized from whichever height validation happens to use. Pay the larger of the two so the block
@@ -131,10 +130,9 @@ std::shared_ptr<CBlock> MinerTestingSetup::Block(const uint256& prev_hash)
 
         // The check only bites once the height validation uses is past the start block, so the
         // largest amount it can demand is the largest subsidy over that enforced range. The range
-        // ends at the tip, and the subsidy is piecewise: it decays through each halving and steps
-        // up between tiers, so the maximum sits at one end or the other. Sampling both endpoints
-        // keeps this correct without walking every height, and deliberately never samples the
-        // premine at height 1, which is not an enforceable height.
+        // ends at the tip, and the subsidy is piecewise: it decays through each halving and can
+        // step between tiers, so the maximum sits at one end or the other. Sampling both endpoints
+        // keeps this correct without walking every height.
         const Consensus::Params& consensus = Params().GetConsensus();
         const CAmount subsidy_at_start = GetBlockSubsidyInner(pblock->nBits, start_block + 1, consensus, false);
         const CAmount subsidy_at_tip = GetBlockSubsidyInner(pblock->nBits, std::max(tip_height - 1, start_block + 1), consensus, false);

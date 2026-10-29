@@ -76,9 +76,8 @@ class P2PEvict(BitcoinTestFramework):
             prevtx = node.getblock(node.getblockhash(i + 1), 2)['tx'][0]
             rawtx = node.createrawtransaction(
                 inputs=[{'txid': prevtx['txid'], 'vout': 0}],
-                # Dash's coinbases paid a flat 500, so 50 was always spendable. Osmium's early
-                # blocks pay the premine and then ~0.1, so the flat 50 made three of these four
-                # transactions invalid and left their peers unprotected from eviction.
+                # Spend the coinbase's actual miner output rather than a flat amount: Osmium's
+                # coinbase splits the subsidy with the devfee, so its size is not Dash's 500.
                 outputs=[{node.get_deterministic_priv_key().address: prevtx['vout'][0]['value'] - Decimal("0.00125")}],
             )
             sigtx = node.signrawtransactionwithkey(

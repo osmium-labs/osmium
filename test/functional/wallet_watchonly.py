@@ -42,8 +42,7 @@ class CreateWalletWatchonlyTest(BitcoinTestFramework):
         node.generatetoaddress(COINBASE_MATURITY + 1, a1)
 
         # send 1 btc to our watch-only address
-        # Dash's single matured block was 500, so sending 1 was trivial. Osmium's is ~0.1, so
-        # send a fraction of whatever actually matured.
+        # Send a fraction of whatever actually matured (the miner's share, not Dash's 500).
         wo_amount = (def_wallet.getbalance() / 4).quantize(Decimal('0.00000001'))
         assert wo_amount > 0, "def_wallet holds nothing to send"
         txid = def_wallet.sendtoaddress(wo_addr, wo_amount)

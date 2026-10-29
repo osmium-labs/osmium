@@ -147,8 +147,8 @@ class CoinStatsIndexTest(BitcoinTestFramework):
 
             # Test an older block height that included a normal tx
             res5 = index_node.gettxoutsetinfo(hash_option, 102)
-            # The spent prevout is the coinbase the wallet drew on -- Osmium's height-1 premine,
-            # not Dash's flat 500 -- and the block's own coinbase is its subsidy plus the fee.
+            # The spent prevout is the height-1 coinbase the wallet drew on -- the miner's share, not
+            # Dash's flat 500 -- and the block's own coinbase is its subsidy plus the fee.
             spent = Decimal(framework_miner_reward(1)) / COIN
             tx_fee = Decimal('0.00000225')
             subsidy_102 = Decimal(framework_block_subsidy(102)) / COIN
@@ -195,8 +195,8 @@ class CoinStatsIndexTest(BitcoinTestFramework):
         for hash_option in index_hash_options:
             # Check all amounts were registered correctly
             res6 = index_node.gettxoutsetinfo(hash_option, 108)
-            # As above: the spent prevouts are Osmium's premine plus the 11 moved earlier, and the
-            # coinbase is this block's subsidy plus the fees, rather than Dash's flat 500.
+            # As above: the spent prevouts are the height-1 miner's share plus the 11 moved earlier,
+            # and the coinbase is this block's subsidy plus the fees, rather than Dash's flat 500.
             spent_108 = Decimal(framework_miner_reward(1)) / COIN + Decimal('11')
             fees_108 = Decimal('0.01000260')
             unspendable_108 = Decimal('20.98999999')

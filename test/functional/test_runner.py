@@ -328,17 +328,17 @@ SKIPPED_NEEDS_DECISION = {
                                      'and every lookup fails with "quorum not found"',
     # Same root cause, from the other direction: a block that signals a version bit must carry
     # VERSIONBITS_TOP_BITS (0x20000000) in the top bits of nVersion, but those bits hold the auxpow
-    # chain ID. CheckProofOfWork() (validation.cpp:3716) rejects such a block outright with "block
+    # chain ID. CheckProofOfWork() (validation.cpp:3714) rejects such a block outright with "block
     # does not have our chain ID", surfaced as high-hash, so no version bit can ever be signalled.
     'feature_versionbits_warning.py': 'cannot send a block signalling an unknown version bit -- the '
                                       'top 16 bits of nVersion are the auxpow chain ID, so the '
                                       'block is rejected before the warning logic is reached',
-    # The outdated-block-version gates (BIP34/66/65) at validation.cpp:3930 compare the FULL
+    # The outdated-block-version gates (BIP34/66/65) at validation.cpp:3928 compare the FULL
     # nVersion against 2/3/4. Every valid Osmium block carries the auxpow chain ID in the top 16
     # bits, so nVersion is always >= 0x00620000 and those three checks can never fire -- a block
     # with base version 3 is accepted after BIP65 activation. Auxpow chains normally compare
     # CPureBlockHeader::GetBaseVersion() here. These tests are correct; the check is not.
-    'feature_cltv.py': 'BIP65 version gate never fires -- validation.cpp:3930 compares full '
+    'feature_cltv.py': 'BIP65 version gate never fires -- validation.cpp:3928 compares full '
                        'nVersion, which always includes the auxpow chain ID',
     'feature_dersig.py': 'BIP66 version gate never fires -- same cause as feature_cltv.py',
     # Wallet bug, not a chain-parameter difference: CWallet::AddToSpends() erases the spent

@@ -191,7 +191,7 @@ class BIP68_112_113Test(BitcoinTestFramework):
     def create_test_block(self, txs):
         block = create_block(self.tip, create_coinbase(self.tipheight + 1), self.last_block_time + 600)
         # Dash used a bare version 4 here. On Osmium the top 16 bits of nVersion carry the auxpow
-        # chain ID, and CheckProofOfWork() (validation.cpp:3716) rejects a block whose chain ID
+        # chain ID, and CheckProofOfWork() (validation.cpp:3714) rejects a block whose chain ID
         # does not match -- so the base version has to be OR'd into BASE_BLOCK_VERSION.
         block.nVersion = BASE_BLOCK_VERSION
         block.vtx.extend(txs)

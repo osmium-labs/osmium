@@ -68,8 +68,8 @@ class AddressIndexTest(BitcoinTestFramework):
         balance0 = self.nodes[1].getaddressbalance("6EEGopcuW4XHB6iHyjiBPWV4d69eJAG1tx")
         balance_mining = self.nodes[1].getaddressbalance(mining_address)
         assert_equal(balance0["balance"], 0)
-        # Osmium's reward varies by height (premine at 1, then a decaying subsidy less the
-        # devfee), so sum the actual rewards instead of multiplying by Dash's flat 500. At height
+        # The miner's share is the subsidy less the devfee, and the subsidy decays every 150
+        # blocks, so sum the actual rewards instead of multiplying by Dash's flat 500. At height
         # 105 only blocks 1..5 have matured.
         assert_equal(balance_mining["balance"], sum(get_miner_reward(h) for h in range(1, 106)))
         assert_equal(balance_mining["balance_immature"], sum(get_miner_reward(h) for h in range(6, 106)))
@@ -139,10 +139,9 @@ class AddressIndexTest(BitcoinTestFramework):
         self.log.info("Testing for txid uniqueness...")
         addressHash = binascii.unhexlify("FE30B718DCF0BF8A2A686BF1820C073F8B2C3B37")
         scriptPubKey = CScript([OP_HASH160, addressHash, OP_EQUAL])
-        # Split a SMALL output rather than spending a fixed 21 coins. Osmium's ordinary regtest
-        # outputs are a fraction of a coin (Dash's were 500), and this transaction burns most of
-        # its input as fee, so take the smallest usable one and leave the premine for the steps
-        # further down which need a large input.
+        # Split a SMALL output rather than spending a fixed 21 coins: this transaction burns most
+        # of its input as fee, so take the smallest usable one and leave the large ones for the
+        # steps further down which need them.
         unspent = sorted((u for u in self.nodes[0].listunspent() if u['amount'] > Decimal('0.001')),
                          key=lambda u: u['amount'])
         in_value = int(unspent[0]["amount"] * COIN)

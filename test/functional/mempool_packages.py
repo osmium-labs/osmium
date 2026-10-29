@@ -299,9 +299,8 @@ class MempoolPackagesTest(BitcoinTestFramework):
         # last block.
 
         # Create tx0 with 2 outputs
-        # Largest first: Osmium's ordinary regtest outputs are ~0.1, too small to chain
-
-        # 25 transactions of fees through. Dash's were all 500.
+        # Largest first, so the input comfortably carries 25 transactions' worth of fees: on
+        # Osmium some of the wallet's outputs are small change. Dash's were all 500.
 
         utxo = sorted(self.nodes[0].listunspent(), key=lambda u: u['amount'], reverse=True)
         txid = utxo[0]['txid']

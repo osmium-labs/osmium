@@ -47,8 +47,7 @@ class DIP3Test(BitcoinTestFramework):
 
     def run_test(self):
         self.log.info("funding controller node")
-        # Osmium's collateral is 500, not Dash's 1000. At 1000 this asked for 14000 coins, more
-        # than the regtest chain can ever mint (~8670), so the loop never terminated.
+        # Osmium's collateral is 500, not Dash's 1000.
         generate_until_balance(self.nodes[0], (self.num_initial_mn + 3) * MASTERNODE_COLLATERAL, self.log)
         self.log.info("controller node has {} osmium".format(self.nodes[0].getbalance()))
 
@@ -351,10 +350,9 @@ class DIP3Test(BitcoinTestFramework):
         dummy_txin = None
         if with_dummy_input_output:
             dummyaddress = self.nodes[0].getnewaddress()
-            # Take the largest mature output rather than the first one over 1 coin. Dash pays 500
-            # per regtest block so anything qualified; Osmium pays at most 1 (and ~0.07 early), so
-            # the old filter matched nothing once the premine had been spent into collaterals, and
-            # the None was appended and only blew up later as a TypeError in mine_double_spend.
+            # Take the largest mature output rather than the first one over 1 coin, and fail here
+            # if there is none instead of appending None, which only blew up later as a TypeError
+            # in mine_double_spend.
             unspent = sorted(self.nodes[0].listunspent(110), key=lambda u: u['amount'], reverse=True)
             assert len(unspent) > 0, "no mature outputs available for the dummy input"
             u = unspent[0]

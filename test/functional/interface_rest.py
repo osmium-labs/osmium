@@ -93,7 +93,7 @@ class RESTTest (BitcoinTestFramework):
         self.nodes[1].generatetoaddress(100, not_related_address)
         self.sync_all()
 
-        # Osmium's height-1 block mints the premine rather than Dash's flat 500.
+        # The height-1 miner keeps the subsidy less the devfee, not Dash's flat 500.
         assert_equal(self.nodes[0].getbalance(), Decimal(get_miner_reward(1)) / COIN)
 
         txid = self.nodes[0].sendtoaddress(self.nodes[1].getnewaddress(), 0.1)

@@ -23,8 +23,8 @@ def create_transactions(node, address, amt, fees):
     # outputs are left unspent depends on the order listunspent() happens to return -- and the
     # balances asserted downstream depend on node 1 spending *all* of its outputs (that is what
     # makes its whole balance untrusted). Dash's node 1 held a single 500 output so there was
-    # nothing to order; Osmium's holds its 0.1 reward plus the large amount received from node 0,
-    # and taking the large one first leaves the 0.1 behind as a trusted balance.
+    # nothing to order; Osmium's holds its block reward plus the amount received from node 0, so
+    # spend them in a fixed order.
     utxos = sorted((u for u in node.listunspent(0) if u['spendable']), key=lambda u: u['amount'])
 
     # Create transactions
@@ -80,10 +80,9 @@ class WalletTest(BitcoinTestFramework):
         self.nodes[1].generatetoaddress(COINBASE_MATURITY + 1, ADDRESS_WATCHONLY)
         self.sync_all()
 
-        # Osmium pays the premine at height 1 and a small, decaying subsidy after that, with a
-        # devfee carved out above height 50 -- so each of these balances is a different number
-        # instead of Dash's uniform 500. node0 mined height 1, node1 height 2, and the watch-only
-        # address heights 3..103 (of which only height 3 has matured).
+        # Each block pays its miner the subsidy less the devfee instead of Dash's 500. node0 mined
+        # height 1, node1 height 2, and the watch-only address heights 3..103 (of which only
+        # height 3 has matured).
         n0_reward = Decimal(get_miner_reward(1)) / COIN
         n1_reward = Decimal(get_miner_reward(2)) / COIN
         watch_trusted = Decimal(get_miner_reward(3)) / COIN
