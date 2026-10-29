@@ -341,13 +341,6 @@ SKIPPED_NEEDS_DECISION = {
     'feature_cltv.py': 'BIP65 version gate never fires -- validation.cpp:3928 compares full '
                        'nVersion, which always includes the auxpow chain ID',
     'feature_dersig.py': 'BIP66 version gate never fires -- same cause as feature_cltv.py',
-    # Wallet bug, not a chain-parameter difference: CWallet::AddToSpends() erases the spent
-    # outpoint from setWalletUTXO and CWallet::AbandonTransaction() never puts it back, so an
-    # abandoned input only reappears if its parent transaction still has another unspent output
-    # (GetSpendableTXs() is built from setWalletUTXO). Dash-specific code; upstream Bitcoin has
-    # no such cache. See the comment at the failing assertion for the full trace.
-    'wallet_abandonconflict.py': 'abandontransaction() does not restore inputs to setWalletUTXO, '
-                                 'so the balance rises by 10 instead of 30. Needs a production fix.',
     # Not a version-bits issue: this one aborts the node outright.
     'mining_basic.py': 'node aborts on assert(obj.auxpow != nullptr), primitives/block.h:44 -- '
                        'serializing a header whose version has the auxpow bit set but no auxpow '
