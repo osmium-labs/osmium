@@ -473,6 +473,10 @@ class ImportMultiTest(BitcoinTestFramework):
         self.test_importmulti({"desc": descsum_create(desc), "timestamp": "now", "range": [0, 1000001]},
                               success=False, error_code=-8, error_message='Range is too large')
 
+        # The highest allowed end, INT_MAX: the expansion loop's counter must not overflow.
+        self.test_importmulti({"desc": descsum_create(desc), "timestamp": "now", "range": [2147483645, 2147483647]},
+                              success=True)
+
         # Test importing a descriptor containing a WIF private key
         wif_priv = "cTT3BvHnd51YJf8fkdr2XvZTQRRUZruWhRvRyQY1raVFg5Lvam2A"
         address = "sQS7Qy93gGLLQgViJNi3dMP7HJHbCLguRH"
