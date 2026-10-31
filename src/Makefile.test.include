@@ -365,6 +365,8 @@ if BUILD_BITCOIN_TX
 endif
 	@echo "Running test/util/rpcauth-test.py..."
 	$(PYTHON) $(top_builddir)/test/util/rpcauth-test.py
+	@echo "Running test/util/test_runner-test.py..."
+	$(PYTHON) $(top_builddir)/test/util/test_runner-test.py
 if TARGET_WINDOWS
 else
 if ENABLE_BENCH
