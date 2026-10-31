@@ -1986,12 +1986,16 @@ size_t CConnman::SocketRecvData(CNode *pnode)
     // typical socket buffer is 8K-64K
     uint8_t pchBuf[0x10000];
     int nBytes = 0;
+    int nErr = 0;
     {
         LOCK(pnode->cs_hSocket);
         if (pnode->hSocket == INVALID_SOCKET)
             return 0;
         nBytes = recv(pnode->hSocket, (char*)pchBuf, sizeof(pchBuf), MSG_DONTWAIT);
-        if (nBytes < (int)sizeof(pchBuf)) {
+        if (nBytes < 0) nErr = WSAGetLastError();
+        // Only a close or EWOULDBLOCK says the socket is drained; a short read doesn't. Edge-triggered
+        // events (EPOLLET, EV_CLEAR) won't report the socket again, so the peer's close would go unread.
+        if (nBytes == 0 || (nBytes < 0 && nErr == WSAEWOULDBLOCK)) {
             pnode->fHasRecvData = false;
         }
     }
@@ -2033,7 +2037,6 @@ size_t CConnman::SocketRecvData(CNode *pnode)
     else if (nBytes < 0)
     {
         // error
-        int nErr = WSAGetLastError();
         if (nErr != WSAEWOULDBLOCK && nErr != WSAEMSGSIZE && nErr != WSAEINTR && nErr != WSAEINPROGRESS)
         {
             if (!pnode->fDisconnect){

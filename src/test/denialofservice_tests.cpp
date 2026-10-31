@@ -24,6 +24,11 @@
 #include <array>
 #include <stdint.h>
 
+#ifndef WIN32
+#include <sys/socket.h>
+#include <unistd.h>
+#endif
+
 #include <boost/test/unit_test.hpp>
 
 
@@ -517,5 +522,33 @@ BOOST_AUTO_TEST_CASE(process_messages_does_not_wake_select_without_unpause)
     BOOST_CHECK(!ProcessOneMessageWakesSelect(*this, 1000 * 1000, /*expect_paused=*/false));
 }
 #endif // USE_WAKEUP_PIPE
+
+#ifndef WIN32
+// recv() on a stream socket rarely fills the buffer, so a short read doesn't mean the socket is
+// drained; only 0 (closed) or EWOULDBLOCK does. Edge-triggered events (EPOLLET, EV_CLEAR) don't
+// report the socket again, so clearing readiness on a short read can leave the peer's close unread.
+BOOST_AUTO_TEST_CASE(socket_recv_data_keeps_reading_after_a_short_read)
+{
+    int fds[2];
+    BOOST_REQUIRE_EQUAL(socketpair(AF_UNIX, SOCK_STREAM, 0, fds), 0);
+    const char payload[] = "final bytes";
+    BOOST_REQUIRE_EQUAL(write(fds[1], payload, sizeof(payload)), (ssize_t)sizeof(payload));
+    BOOST_REQUIRE_EQUAL(shutdown(fds[1], SHUT_WR), 0);
+
+    auto connman = std::make_unique<ConnmanTestMsg>(0x1337, 0x1337, *m_node.addrman);
+    connman->Init(CConnman::Options{});
+    CNode node(id++, NODE_NETWORK, fds[0], CAddress(ip(0xa0b0c003), NODE_NONE), 0, 0, CAddress(), "", ConnectionType::INBOUND);
+    node.fHasRecvData = true; // as SocketHandler() sets it when the socket is reported readable
+
+    BOOST_CHECK_EQUAL(connman->RecvDataOnce(node), sizeof(payload));
+    BOOST_CHECK(node.fHasRecvData);
+    BOOST_CHECK(!node.fDisconnect);
+
+    BOOST_CHECK_EQUAL(connman->RecvDataOnce(node), 0U);
+    BOOST_CHECK(!node.fHasRecvData);
+    BOOST_CHECK(node.fDisconnect);
+    close(fds[1]);
+}
+#endif // WIN32
 
 BOOST_AUTO_TEST_SUITE_END()
