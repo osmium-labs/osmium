@@ -691,7 +691,12 @@ class CBlock(CBlockHeader):
     def is_valid(self):
         self.calc_sha256()
         target = uint256_from_compact(self.nBits)
-        if self.sha256 > target:
+        # A merge-mined block's work is in its parent header, not its own hash (CheckProofOfWork).
+        pow_header = self
+        if self.auxpow is not None:
+            pow_header = self.auxpow.parentBlock
+            pow_header.calc_sha256()
+        if pow_header.sha256 > target:
             return False
         for tx in self.vtx:
             if not tx.is_valid():
