@@ -942,6 +942,7 @@ public:
         UpdateLLMQTestParametersFromArgs(args, Consensus::LLMQ_TEST);
         UpdateLLMQTestParametersFromArgs(args, Consensus::LLMQ_TEST_INSTANTSEND);
         UpdateLLMQInstantSendDIP0024FromArgs(args);
+        UpdateLLMQTestTiersFromArgs(args);
     }
 
     /**
@@ -1022,6 +1023,7 @@ public:
 
     void UpdateLLMQTestParametersFromArgs(const ArgsManager& args, const Consensus::LLMQType llmqType);
     void UpdateLLMQInstantSendDIP0024FromArgs(const ArgsManager& args);
+    void UpdateLLMQTestTiersFromArgs(const ArgsManager& args);
 };
 
 void CRegTestParams::UpdateActivationParametersFromArgs(const ArgsManager& args)
@@ -1164,6 +1166,26 @@ void CRegTestParams::UpdateLLMQTestParametersFromArgs(const ArgsManager& args, c
     }
     LogPrintf("Setting %s parameters to size=%ld, threshold=%ld\n", llmq_name, size, threshold);
     UpdateLLMQTestParameters(size, threshold, llmqType);
+}
+
+void CRegTestParams::UpdateLLMQTestTiersFromArgs(const ArgsManager& args)
+{
+    if (!args.IsArgSet("-llmqtesttiers")) return;
+
+    const std::vector<std::string> vParams = SplitString(args.GetArg("-llmqtesttiers", ""), ':');
+    int mn_count, size, threshold;
+    if (vParams.size() != 3 || !ParseInt32(vParams[0], &mn_count) || !ParseInt32(vParams[1], &size) ||
+        !ParseInt32(vParams[2], &threshold) || mn_count <= 0 || size <= 0 || threshold <= 0 || threshold > size) {
+        throw std::runtime_error("-llmqtesttiers malformed, expecting <mncount>:<size>:<threshold>");
+    }
+    const auto& lower = consensus.llmqs.at(Consensus::LLMQ_TEST);
+    auto upper = lower;
+    upper.size = size;
+    upper.minSize = threshold;
+    upper.threshold = threshold;
+    upper.dkgBadVotesThreshold = threshold;
+    m_llmq_test_tiers = LLMQTestTiers{static_cast<size_t>(mn_count), lower, upper};
+    LogPrintf("Setting LLMQ_TEST tiers: size=%d, threshold=%d from %d masternodes\n", size, threshold, mn_count);
 }
 
 void CRegTestParams::UpdateLLMQInstantSendDIP0024FromArgs(const ArgsManager& args)
@@ -1381,7 +1403,8 @@ bool IsLLMQsMiningPhase(int nHeight) {
 }
 
 void CChainParams::UpdateLLMQParams(size_t totalMnCount, int height) {
-    if (Params().NetworkIDString() == CBaseChainParams::DEVNET || Params().NetworkIDString() == CBaseChainParams::REGTEST)
+    if (Params().NetworkIDString() == CBaseChainParams::DEVNET ||
+        (Params().NetworkIDString() == CBaseChainParams::REGTEST && !m_llmq_test_tiers))
         return;
 
     bool isNotLLMQsMiningPhase;
@@ -1391,6 +1414,10 @@ void CChainParams::UpdateLLMQParams(size_t totalMnCount, int height) {
                   isNotLLMQsMiningPhase);
         lastCheckMnCount = totalMnCount;
         lastCheckHeight = height;
+        if (m_llmq_test_tiers) {
+            consensus.llmqs.at(Consensus::LLMQ_TEST) = totalMnCount < m_llmq_test_tiers->upper_from_mn_count ? m_llmq_test_tiers->lower : m_llmq_test_tiers->upper;
+            return;
+        }
         bool isTestNet = strcmp(Params().NetworkIDString().c_str(), "test") == 0;
         if ((totalMnCount < 80 && isTestNet) || (totalMnCount < 100 && !isTestNet)) {
             consensus.llmqs[Consensus::LLMQ_50_60] = Consensus::llmq_10_60;
@@ -1413,7 +1440,7 @@ void CChainParams::UpdateLLMQParams(size_t totalMnCount, int height) {
             if (totalMnCount > 2000)
                 consensus.llmqs[Consensus::LLMQ_60_75] = Consensus::llmq_60_75;
         }
-    } else {
+    } else if (!m_llmq_test_tiers) {
         if (height >= 26495 && totalMnCount < 80)
             consensus.llmqs[Consensus::LLMQ_60_75] = Consensus::llmq_10_75;
     }

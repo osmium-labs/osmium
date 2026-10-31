@@ -120,6 +120,7 @@ BASE_SCRIPTS = [
     'feature_llmq_rotation.py',
     'feature_llmq_connections.py',
     'feature_llmq_evo.py',
+    'feature_llmq_tiers.py',
     'feature_llmq_simplepose.py',
     'feature_llmq_is_cl_conflicts.py',
     'feature_llmq_is_retroactive.py',
