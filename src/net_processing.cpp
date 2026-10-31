@@ -4510,15 +4510,21 @@ bool PeerManagerImpl::ProcessMessages(CNode* pfrom, std::atomic<bool>& interrupt
     if (pfrom->fPauseSend) return false;
 
     std::list<CNetMessage> msgs;
+    bool wake_select{false};
     {
         LOCK(pfrom->cs_vProcessMsg);
         if (pfrom->vProcessMsg.empty()) return false;
         // Just take one message
         msgs.splice(msgs.begin(), pfrom->vProcessMsg, pfrom->vProcessMsg.begin());
         pfrom->nProcessQueueSize -= msgs.front().m_raw_message_size;
+        const bool was_paused{pfrom->fPauseRecv};
         pfrom->fPauseRecv = pfrom->nProcessQueueSize > m_connman.GetReceiveFloodSize();
+        // Nothing else tells the socket thread this peer can be read again before its wait times out.
+        wake_select = was_paused && !pfrom->fPauseRecv;
         fMoreWork = !pfrom->vProcessMsg.empty();
     }
+    // Outside cs_vProcessMsg, which the socket thread also takes.
+    if (wake_select) m_connman.WakeSelect();
     CNetMessage& msg(msgs.front());
 
     if (gArgs.GetBoolArg("-capturemessages", false)) {

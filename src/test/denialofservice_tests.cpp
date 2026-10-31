@@ -468,4 +468,54 @@ BOOST_AUTO_TEST_CASE(socket_handler_polls_only_for_receivable_nodes)
     connman->RemoveReceivableNode(*paused);
 }
 
+#ifdef USE_WAKEUP_PIPE
+// Queue one message from a connected peer and process it. The flood size decides whether queueing
+// it paused the peer; returns whether processing it woke the socket thread.
+static bool ProcessOneMessageWakesSelect(TestingSetup& setup, unsigned int receive_flood_size, bool expect_paused)
+{
+    auto connman = std::make_unique<ConnmanTestMsg>(0x1337, 0x1337, *setup.m_node.addrman);
+    CConnman::Options options;
+    options.nReceiveFloodSize = receive_flood_size;
+    connman->Init(options);
+    BOOST_REQUIRE(connman->OpenWakeupPipe());
+    auto peerLogic = PeerManager::make(Params(), *connman, *setup.m_node.addrman, nullptr, *setup.m_node.scheduler,
+                                       *setup.m_node.chainman, *setup.m_node.mempool, *setup.m_node.govman,
+                                       setup.m_node.cj_ctx, setup.m_node.llmq_ctx, false);
+
+    CNode node(id++, NODE_NETWORK, INVALID_SOCKET, CAddress(ip(0xa0b0c002), NODE_NONE), 0, 0, CAddress(), "", ConnectionType::INBOUND);
+    node.SetCommonVersion(PROTOCOL_VERSION);
+    node.nVersion = PROTOCOL_VERSION;
+    peerLogic->InitializeNode(&node);
+    node.fSuccessfullyConnected = true;
+
+    // An unknown command is only logged, so processing it has no other effect.
+    CSerializedNetMsg msg;
+    msg.command = "unknowncmd";
+    connman->ReceiveMsgFrom(node, msg);
+    BOOST_REQUIRE_EQUAL(node.fPauseRecv, expect_paused);
+
+    std::atomic<bool> interrupt{false};
+    peerLogic->ProcessMessages(&node, interrupt);
+    BOOST_CHECK(!node.fPauseRecv);
+    const bool woke{connman->WakeupPipeSignaled()};
+
+    peerLogic->FinalizeNode(node);
+    connman->CloseWakeupPipe();
+    return woke;
+}
+
+// Nothing else tells the socket thread that a paused peer can be read again, so without a wakeup
+// the peer waits out SELECT_TIMEOUT_MILLISECONDS, which halves throughput to a peer that pauses often.
+BOOST_AUTO_TEST_CASE(process_messages_wakes_select_on_unpause)
+{
+    // With a flood size of 0, queueing any message pauses the peer.
+    BOOST_CHECK(ProcessOneMessageWakesSelect(*this, 0, /*expect_paused=*/true));
+}
+
+BOOST_AUTO_TEST_CASE(process_messages_does_not_wake_select_without_unpause)
+{
+    BOOST_CHECK(!ProcessOneMessageWakesSelect(*this, 1000 * 1000, /*expect_paused=*/false));
+}
+#endif // USE_WAKEUP_PIPE
+
 BOOST_AUTO_TEST_SUITE_END()

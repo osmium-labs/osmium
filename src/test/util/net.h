@@ -50,6 +50,14 @@ struct ConnmanTestMsg : public CConnman {
         LOCK2(cs_vNodes, cs_mapNodesWithDataToSend);
         return ShouldOnlyPoll();
     }
+
+#ifdef USE_WAKEUP_PIPE
+    // Start() opens the real wakeup pipe along with the network threads; this gives WakeSelect() a pipe without them.
+    bool OpenWakeupPipe();
+    /** Consume one wakeup byte, if WakeSelect() wrote any. */
+    bool WakeupPipeSignaled();
+    void CloseWakeupPipe();
+#endif
 };
 
 constexpr ServiceFlags ALL_SERVICE_FLAGS[]{
