@@ -167,7 +167,11 @@ class CQuorum
 {
     friend class CQuorumManager;
 public:
-    const Consensus::LLMQParams& params;
+    // Stored BY VALUE, not by reference: CChainParams::GetLLMQ() returns
+    // std::optional<LLMQParams> by value, so the only caller
+    // (CQuorumManager::BuildQuorumFromCommitment) would bind this to a temporary
+    // that dies when it returns, while the CQuorum itself is cached and outlives it.
+    const Consensus::LLMQParams params;
     CFinalCommitmentPtr qc;
     const CBlockIndex* m_quorum_base_block_index{nullptr};
     uint256 minedBlockHash;
