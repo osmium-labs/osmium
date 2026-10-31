@@ -34,6 +34,22 @@ struct ConnmanTestMsg : public CConnman {
     void NodeReceiveMsgBytes(CNode& node, Span<const uint8_t> msg_bytes, bool& complete) const;
 
     bool ReceiveMsgFrom(CNode& node, CSerializedNetMsg& ser_msg) const;
+
+    void AddReceivableNode(CNode& node)
+    {
+        LOCK(cs_vNodes);
+        mapReceivableNodes.emplace(node.GetId(), &node);
+    }
+    void RemoveReceivableNode(const CNode& node)
+    {
+        LOCK(cs_vNodes);
+        mapReceivableNodes.erase(node.GetId());
+    }
+    bool OnlyPollNow() const
+    {
+        LOCK2(cs_vNodes, cs_mapNodesWithDataToSend);
+        return ShouldOnlyPoll();
+    }
 };
 
 constexpr ServiceFlags ALL_SERVICE_FLAGS[]{

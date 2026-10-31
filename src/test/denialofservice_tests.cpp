@@ -431,4 +431,41 @@ BOOST_AUTO_TEST_CASE(DoS_mapOrphans)
     BOOST_CHECK(mapOrphanTransactions.empty());
 }
 
+// SocketHandler() polls without waiting while it has work. A node can sit in mapReceivableNodes
+// without being read (paused, sending, disconnecting); counting it as work turns the zero-timeout
+// poll into a spin that a peer can hold for as long as it keeps that state.
+BOOST_AUTO_TEST_CASE(socket_handler_polls_only_for_receivable_nodes)
+{
+    auto connman = std::make_unique<ConnmanTestMsg>(0x1337, 0x1337, *m_node.addrman);
+    auto make_node = [] {
+        return std::make_unique<CNode>(id++, NODE_NONE, INVALID_SOCKET, CAddress(), 0, 0, CAddress(), "", ConnectionType::INBOUND);
+    };
+    BOOST_CHECK(!connman->OnlyPollNow());
+
+    auto readable = make_node();
+    connman->AddReceivableNode(*readable);
+    BOOST_CHECK(connman->OnlyPollNow());
+
+    readable->fPauseRecv = true;
+    BOOST_CHECK(!connman->OnlyPollNow());
+    readable->fPauseRecv = false;
+
+    readable->nSendMsgSize = 1;
+    BOOST_CHECK(!connman->OnlyPollNow());
+    readable->nSendMsgSize = 0;
+
+    readable->fDisconnect = true;
+    BOOST_CHECK(!connman->OnlyPollNow());
+    readable->fDisconnect = false;
+
+    // One unreadable node must not hide a readable one.
+    auto paused = make_node();
+    paused->fPauseRecv = true;
+    connman->AddReceivableNode(*paused);
+    BOOST_CHECK(connman->OnlyPollNow());
+    connman->RemoveReceivableNode(*readable);
+    BOOST_CHECK(!connman->OnlyPollNow());
+    connman->RemoveReceivableNode(*paused);
+}
+
 BOOST_AUTO_TEST_SUITE_END()

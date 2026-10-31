@@ -1781,24 +1781,39 @@ void CConnman::SocketEvents(std::set<SOCKET> &recv_set, std::set<SOCKET> &send_s
     }
 }
 
+bool CConnman::NodeIsReceivable(const CNode& node)
+{
+    return !node.fPauseRecv && node.nSendMsgSize == 0 && !node.fDisconnect;
+}
+
+bool CConnman::ShouldOnlyPoll() const
+{
+    // A node can stay in mapReceivableNodes without being read. Counting it as work would make the
+    // zero-timeout poll spin for as long as a peer keeps it paused, sending or disconnecting.
+    for (const auto& [_, pnode] : mapReceivableNodes) {
+        if (NodeIsReceivable(*pnode)) {
+            return true;
+        }
+    }
+    if (!mapSendableNodes.empty() && !mapNodesWithDataToSend.empty()) {
+        // we must check if at least one of the nodes with pending messages is also sendable, as otherwise a single
+        // node would be able to make the network thread busy with polling
+        for (auto& p : mapNodesWithDataToSend) {
+            if (mapSendableNodes.count(p.first)) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
 void CConnman::SocketHandler()
 {
-    bool fOnlyPoll = false;
+    bool fOnlyPoll;
     {
         // check if we have work to do and thus should avoid waiting for events
         LOCK2(cs_vNodes, cs_mapNodesWithDataToSend);
-        if (!mapReceivableNodes.empty()) {
-            fOnlyPoll = true;
-        } else if (!mapSendableNodes.empty() && !mapNodesWithDataToSend.empty()) {
-            // we must check if at least one of the nodes with pending messages is also sendable, as otherwise a single
-            // node would be able to make the network thread busy with polling
-            for (auto& p : mapNodesWithDataToSend) {
-                if (mapSendableNodes.count(p.first)) {
-                    fOnlyPoll = true;
-                    break;
-                }
-            }
-        }
+        fOnlyPoll = ShouldOnlyPoll();
     }
 
     std::set<SOCKET> recv_set, send_set, error_set;
@@ -1884,7 +1899,7 @@ void CConnman::SocketHandler()
                 //   receiving data. This means properly utilizing TCP flow control signalling.
                 // * Otherwise, if there is space left in the receive buffer (!fPauseRecv), try
                 //   receiving data (which should succeed as the socket signalled as receivable).
-                if (!it->second->fPauseRecv && it->second->nSendMsgSize == 0 && !it->second->fDisconnect) {
+                if (NodeIsReceivable(*it->second)) {
                     it->second->AddRef();
                     vReceivableNodes.emplace_back(it->second);
                 }
