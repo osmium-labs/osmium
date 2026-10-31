@@ -80,6 +80,14 @@ class WalletAddressQueriesTest(BitcoinTestFramework):
         assert_raises_rpc_error(-8, "File has wrong extension",
                                 node.importelectrumwallet, os.path.join(tmpdir, "export.txt"))
 
+        self.log.info("A dot in a directory name does not supply an extension")
+        dotted = os.path.join(tmpdir, "v1.2")
+        os.makedirs(dotted, exist_ok=True)
+        assert_raises_rpc_error(-8, "File has no extension",
+                                node.importelectrumwallet, os.path.join(dotted, "export"))
+        assert_raises_rpc_error(-8, "Cannot open Electrum wallet export file",
+                                node.importelectrumwallet, os.path.join(dotted, "export.json"))
+
         # Past those checks the parser skips whatever it cannot read, so a well-named file of
         # nonsense imports nothing and reports nothing.
         self.log.info("A well-named file of nonsense is accepted and imports nothing")

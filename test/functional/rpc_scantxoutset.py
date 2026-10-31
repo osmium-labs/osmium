@@ -87,6 +87,10 @@ class ScantxoutsetTest(BitcoinTestFramework):
         assert_raises_rpc_error(-8, "End of range is too high", self.nodes[0].scantxoutset, "start", [ {"desc": "desc", "range": [(2 << 31 + 1) - 1000000, (2 << 31 + 1)]}])
         assert_raises_rpc_error(-8, "Range specified as [begin,end] must not have begin after end", self.nodes[0].scantxoutset, "start", [ {"desc": "desc", "range": [2, 1]}])
         assert_raises_rpc_error(-8, "Range is too large", self.nodes[0].scantxoutset, "start", [ {"desc": "desc", "range": [0, 1000001]}])
+        # The highest allowed end, INT_MAX: the expansion loop's counter must not overflow.
+        scan = self.nodes[0].scantxoutset("start", [ {"desc": "combo(tprv8ZgxMBicQKsPd7Uf69XL1XwhmjHopUGep8GuEiJDZmbQz6o58LninorQAfcKZWARbtRtfnLcJ5MQ2AtHcQJCCRUcMRvmDUjyEmNUWwx8UbK/0'/0'/*)", "range": [2147483645, 2147483647]}])
+        assert_equal(scan['success'], True)
+        assert_equal(scan['total_amount'], 0)
 
         self.log.info("Test extended key derivation.")
         # Run various scans, and verify that the sum of the amounts of the matches corresponds to the expected subset.

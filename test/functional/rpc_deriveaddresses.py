@@ -29,6 +29,15 @@ class DeriveaddressesTest(BitcoinTestFramework):
         assert_equal(self.nodes[0].deriveaddresses(ranged_descriptor, [1, 2]), ["sbYZiduANXf6YQ5fEJgrdFjuh7tUwZDXQc", "sKAL7FbCtg6RAsqZpwmHrEBnzsfQoDctZf"])
         assert_equal(self.nodes[0].deriveaddresses(ranged_descriptor, 2), [address, "sbYZiduANXf6YQ5fEJgrdFjuh7tUwZDXQc", "sKAL7FbCtg6RAsqZpwmHrEBnzsfQoDctZf"])
 
+        # A range ending at INT_MAX, the highest it may: the derivation loop's counter must not
+        # overflow testing the condition after the last index. Each address must match the same
+        # index derived on its own.
+        xprv = "tprv8ZgxMBicQKsPd7Uf69XL1XwhmjHopUGep8GuEiJDZmbQz6o58LninorQAfcKZWARbtRtfnLcJ5MQ2AtHcQJCCRUcMRvmDUjyEmNUWwx8UbK"
+        top = [self.nodes[0].deriveaddresses(descsum_create("pkh(%s/1/1/%d)" % (xprv, i)))[0]
+               for i in (2147483645, 2147483646, 2147483647)]
+        assert_equal(self.nodes[0].deriveaddresses(ranged_descriptor, [2147483645, 2147483647]), top)
+        assert_raises_rpc_error(-8, "End of range is too high", self.nodes[0].deriveaddresses, ranged_descriptor, [2147483646, 2147483648])
+
         assert_raises_rpc_error(-8, "Range should not be specified for an un-ranged descriptor", self.nodes[0].deriveaddresses, descsum_create("pkh(tprv8ZgxMBicQKsPd7Uf69XL1XwhmjHopUGep8GuEiJDZmbQz6o58LninorQAfcKZWARbtRtfnLcJ5MQ2AtHcQJCCRUcMRvmDUjyEmNUWwx8UbK/1/1/0)"), [0, 2])
 
         assert_raises_rpc_error(-8, "Range must be specified for a ranged descriptor", self.nodes[0].deriveaddresses, descsum_create("pkh(tprv8ZgxMBicQKsPd7Uf69XL1XwhmjHopUGep8GuEiJDZmbQz6o58LninorQAfcKZWARbtRtfnLcJ5MQ2AtHcQJCCRUcMRvmDUjyEmNUWwx8UbK/1/1/*)"))

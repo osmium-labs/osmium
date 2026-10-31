@@ -3,7 +3,7 @@
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 from test_framework.test_framework import MASTERNODE_COLLATERAL, OsmiumTestFramework
-from test_framework.util import assert_equal
+from test_framework.util import assert_equal, assert_raises_rpc_error
 
 '''
 rpc_masternode.py
@@ -95,6 +95,42 @@ class RPCMasternodeTest(OsmiumTestFramework):
         self.nodes[0].generate(1)
         # we have 3 masternodes that are running already and 2 new outputs we just created
         assert_equal(len(self.nodes[0].masternode("outputs")), 5)
+
+        self.test_payments_edges()
+
+    def test_payments_edges(self):
+        node = self.nodes[0]
+
+        self.log.info("test `masternode payments` rejects the one count std::abs() cannot negate")
+        assert_raises_rpc_error(-8, "count is out of range",
+                                node.masternode, "payments", node.getbestblockhash(), -9223372036854775808)
+
+        self.log.info("test `masternode payments` skips the genesis block in either direction")
+        genesis = node.getblockhash(0)
+        assert_equal(node.masternode("payments", genesis, -5), [])
+        assert_equal([p["height"] for p in node.masternode("payments", genesis, 3)], [1, 2, 3])
+        assert_equal([p["height"] for p in node.masternode("payments", node.getblockhash(2), -5)], [1, 2])
+
+        self.log.info("test `masternode payments` on a block that has left the active chain")
+        old_tip = node.getbestblockhash()
+        old_height = node.getblockcount()
+        node.invalidateblock(old_tip)
+        assert_equal([p["height"] for p in node.masternode("payments", old_tip)], [old_height])
+        node.reconsiderblock(old_tip)
+        assert_equal(node.getbestblockhash(), old_tip)
+
+        self.log.info("test `masternode payments` without -txindex reports a block it cannot price")
+        # Pricing a block's fees needs its spends' inputs. They are confirmed, so once they have
+        # left the mempool only -txindex can find them.
+        txid = node.sendtoaddress(node.getnewaddress(), 1)
+        # Without an InstantSend lock the miner holds a transaction back for
+        # WAIT_FOR_ISLOCK_TIMEOUT (10 minutes) after first seeing it.
+        self.bump_mocktime(10 * 60)
+        spend_block = node.generate(1)[0]
+        assert txid in node.getblock(spend_block)["tx"]
+        self.restart_node(0, extra_args=self.extra_args[0] + ["-txindex=0"])
+        assert_raises_rpc_error(-32603, "not found (is -txindex enabled?)",
+                                node.masternode, "payments", spend_block)
 
 if __name__ == '__main__':
     RPCMasternodeTest().main()

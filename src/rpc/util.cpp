@@ -847,9 +847,10 @@ std::vector<CScript> EvalDescriptorStringOrObject(const UniValue& scanobject, Fl
         range.second = 0;
     }
     std::vector<CScript> ret;
-    for (int i = range.first; i <= range.second; ++i) {
+    // range.second can be INT_MAX; see deriveaddresses.
+    for (int64_t i = range.first; i <= range.second; ++i) {
         std::vector<CScript> scripts;
-        if (!desc->Expand(i, provider, scripts, provider)) {
+        if (!desc->Expand(static_cast<int>(i), provider, scripts, provider)) {
             throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, strprintf("Cannot derive script without private keys: '%s'", desc_str));
         }
         std::move(scripts.begin(), scripts.end(), std::back_inserter(ret));

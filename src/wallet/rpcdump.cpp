@@ -653,11 +653,13 @@ UniValue importelectrumwallet(const JSONRPCRequest& request)
 
     fsbridge::ifstream file;
     std::string strFileName = request.params[0].get_str();
-    size_t nDotPos = strFileName.find_last_of(".");
-    if(nDotPos == std::string::npos)
+    // The extension belongs to the file name, not the path: a directory such as "v1.2" or
+    // ".osmiumcore" would otherwise supply one.
+    std::string strFileExt = fs::path(strFileName).extension().string();
+    if(strFileExt.empty())
         throw JSONRPCError(RPC_INVALID_PARAMETER, "File has no extension, should be .json or .csv");
 
-    std::string strFileExt = strFileName.substr(nDotPos+1);
+    strFileExt.erase(0, 1); // extension() keeps the dot
     if(strFileExt != "json" && strFileExt != "csv")
         throw JSONRPCError(RPC_INVALID_PARAMETER, "File has wrong extension, should be .json or .csv");
 
@@ -1282,10 +1284,11 @@ static UniValue ProcessImportDescriptor(ImportData& import_data, std::map<CKeyID
     const UniValue& priv_keys = data.exists("keys") ? data["keys"].get_array() : UniValue();
 
     // Expand all descriptors to get public keys and scripts, and private keys if available.
-    for (int i = range_start; i <= range_end; ++i) {
+    // range_end can be INT_MAX; see deriveaddresses.
+    for (int64_t i = range_start; i <= range_end; ++i) {
         FlatSigningProvider out_keys;
         std::vector<CScript> scripts_temp;
-        parsed_desc->Expand(i, keys, scripts_temp, out_keys);
+        parsed_desc->Expand(static_cast<int>(i), keys, scripts_temp, out_keys);
         std::copy(scripts_temp.begin(), scripts_temp.end(), std::inserter(script_pub_keys, script_pub_keys.end()));
         for (const auto& key_pair: out_keys.pubkeys) {
             ordered_pubkeys.push_back(key_pair.first);
