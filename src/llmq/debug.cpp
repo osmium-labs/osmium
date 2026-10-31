@@ -195,7 +195,19 @@ void CDKGDebugManager::UpdateLocalMemberStatus(Consensus::LLMQType llmqType, int
         return;
     }
 
-    if (func(it->second.members.at(memberIdx))) {
+    // The debug session's member vector is sized from llmqParams.size at
+    // InitLocalSessionStatus time, while memberIdx indexes CDKGSession::members,
+    // which is sized from the actual masternode list GetAllQuorumMembers returned.
+    // UpdateLLMQParams() rewrites consensus.llmqs entries in place as the masternode
+    // count crosses tier thresholds (LLMQ_400_60 -> llmq_20_60 / llmq_40_60 / llmq_400_60),
+    // so the two can disagree. This is debug-only bookkeeping consumed solely by the
+    // dkgstatus RPC; .at() would throw out_of_range out of the DKG phase thread, and
+    // util::TraceThread rethrows, which terminates the node. Skip instead.
+    if (memberIdx >= it->second.members.size()) {
+        return;
+    }
+
+    if (func(it->second.members[memberIdx])) {
         localStatus.nTime = GetAdjustedTime();
     }
 }
