@@ -7,6 +7,11 @@
 #include <chainparams.h>
 #include <net.h>
 
+#ifdef USE_WAKEUP_PIPE
+#include <fcntl.h>
+#include <unistd.h>
+#endif
+
 void ConnmanTestMsg::NodeReceiveMsgBytes(CNode& node, Span<const uint8_t> msg_bytes, bool& complete) const
 {
     assert(node.ReceiveMsgBytes(msg_bytes, complete));
@@ -37,3 +42,26 @@ bool ConnmanTestMsg::ReceiveMsgFrom(CNode& node, CSerializedNetMsg& ser_msg) con
     NodeReceiveMsgBytes(node, ser_msg.data, complete);
     return complete;
 }
+
+#ifdef USE_WAKEUP_PIPE
+bool ConnmanTestMsg::OpenWakeupPipe()
+{
+    if (pipe(wakeupPipe) != 0) return false;
+    // Non-blocking, so a test asking whether a wakeup happened gets an answer when none did.
+    return fcntl(wakeupPipe[0], F_SETFL, fcntl(wakeupPipe[0], F_GETFL, 0) | O_NONBLOCK) == 0;
+}
+
+bool ConnmanTestMsg::WakeupPipeSignaled()
+{
+    char buf;
+    return read(wakeupPipe[0], &buf, 1) == 1;
+}
+
+void ConnmanTestMsg::CloseWakeupPipe()
+{
+    for (int& fd : wakeupPipe) {
+        if (fd != -1) close(fd);
+        fd = -1;
+    }
+}
+#endif

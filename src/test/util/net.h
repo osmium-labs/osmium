@@ -34,6 +34,31 @@ struct ConnmanTestMsg : public CConnman {
     void NodeReceiveMsgBytes(CNode& node, Span<const uint8_t> msg_bytes, bool& complete) const;
 
     bool ReceiveMsgFrom(CNode& node, CSerializedNetMsg& ser_msg) const;
+
+    void AddReceivableNode(CNode& node)
+    {
+        LOCK(cs_vNodes);
+        mapReceivableNodes.emplace(node.GetId(), &node);
+    }
+    void RemoveReceivableNode(const CNode& node)
+    {
+        LOCK(cs_vNodes);
+        mapReceivableNodes.erase(node.GetId());
+    }
+    bool OnlyPollNow() const
+    {
+        LOCK2(cs_vNodes, cs_mapNodesWithDataToSend);
+        return ShouldOnlyPoll();
+    }
+    size_t RecvDataOnce(CNode& node) { return SocketRecvData(&node); }
+
+#ifdef USE_WAKEUP_PIPE
+    // Start() opens the real wakeup pipe along with the network threads; this gives WakeSelect() a pipe without them.
+    bool OpenWakeupPipe();
+    /** Consume one wakeup byte, if WakeSelect() wrote any. */
+    bool WakeupPipeSignaled();
+    void CloseWakeupPipe();
+#endif
 };
 
 constexpr ServiceFlags ALL_SERVICE_FLAGS[]{

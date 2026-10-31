@@ -627,6 +627,10 @@ private:
 #endif
     void SocketEventsSelect(std::set<SOCKET> &recv_set, std::set<SOCKET> &send_set, std::set<SOCKET> &error_set, bool fOnlyPoll);
     void SocketEvents(std::set<SOCKET> &recv_set, std::set<SOCKET> &send_set, std::set<SOCKET> &error_set, bool fOnlyPoll);
+    /** Whether SocketHandler() reads this node's socket: not paused, nothing queued to send, not disconnecting. */
+    static bool NodeIsReceivable(const CNode& node);
+    /** Whether SocketHandler() has work it will do now, and so polls instead of waiting for socket events. */
+    bool ShouldOnlyPoll() const EXCLUSIVE_LOCKS_REQUIRED(cs_vNodes, cs_mapNodesWithDataToSend);
     void SocketHandler();
     void ThreadSocketHandler();
     void ThreadDNSAddressSeed();

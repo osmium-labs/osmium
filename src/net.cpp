@@ -1587,17 +1587,23 @@ void CConnman::SocketEventsKqueue(std::set<SOCKET> &recv_set, std::set<SOCKET> &
     } else if (n > 0) {
         for (int i = 0; i < n; i++) {
             auto& event = events[i];
-            if ((event.flags & EV_ERROR) || (event.flags & EV_EOF)) {
+            if (event.flags & EV_ERROR) {
                 error_set.insert((SOCKET)event.ident);
                 continue;
             }
 
             if (event.filter == EVFILT_READ) {
+                // EV_EOF here is the peer's FIN, maybe after data: keep reading through the normal
+                // path until recv() returns 0. With EV_CLEAR this event is not reported again.
                 recv_set.insert((SOCKET)event.ident);
             }
 
             if (event.filter == EVFILT_WRITE) {
-                send_set.insert((SOCKET)event.ident);
+                if (event.flags & EV_EOF) {
+                    error_set.insert((SOCKET)event.ident);
+                } else {
+                    send_set.insert((SOCKET)event.ident);
+                }
             }
         }
     }
@@ -1781,24 +1787,39 @@ void CConnman::SocketEvents(std::set<SOCKET> &recv_set, std::set<SOCKET> &send_s
     }
 }
 
+bool CConnman::NodeIsReceivable(const CNode& node)
+{
+    return !node.fPauseRecv && node.nSendMsgSize == 0 && !node.fDisconnect;
+}
+
+bool CConnman::ShouldOnlyPoll() const
+{
+    // A node can stay in mapReceivableNodes without being read. Counting it as work would make the
+    // zero-timeout poll spin for as long as a peer keeps it paused, sending or disconnecting.
+    for (const auto& [_, pnode] : mapReceivableNodes) {
+        if (NodeIsReceivable(*pnode)) {
+            return true;
+        }
+    }
+    if (!mapSendableNodes.empty() && !mapNodesWithDataToSend.empty()) {
+        // we must check if at least one of the nodes with pending messages is also sendable, as otherwise a single
+        // node would be able to make the network thread busy with polling
+        for (auto& p : mapNodesWithDataToSend) {
+            if (mapSendableNodes.count(p.first)) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
 void CConnman::SocketHandler()
 {
-    bool fOnlyPoll = false;
+    bool fOnlyPoll;
     {
         // check if we have work to do and thus should avoid waiting for events
         LOCK2(cs_vNodes, cs_mapNodesWithDataToSend);
-        if (!mapReceivableNodes.empty()) {
-            fOnlyPoll = true;
-        } else if (!mapSendableNodes.empty() && !mapNodesWithDataToSend.empty()) {
-            // we must check if at least one of the nodes with pending messages is also sendable, as otherwise a single
-            // node would be able to make the network thread busy with polling
-            for (auto& p : mapNodesWithDataToSend) {
-                if (mapSendableNodes.count(p.first)) {
-                    fOnlyPoll = true;
-                    break;
-                }
-            }
-        }
+        fOnlyPoll = ShouldOnlyPoll();
     }
 
     std::set<SOCKET> recv_set, send_set, error_set;
@@ -1884,7 +1905,7 @@ void CConnman::SocketHandler()
                 //   receiving data. This means properly utilizing TCP flow control signalling.
                 // * Otherwise, if there is space left in the receive buffer (!fPauseRecv), try
                 //   receiving data (which should succeed as the socket signalled as receivable).
-                if (!it->second->fPauseRecv && it->second->nSendMsgSize == 0 && !it->second->fDisconnect) {
+                if (NodeIsReceivable(*it->second)) {
                     it->second->AddRef();
                     vReceivableNodes.emplace_back(it->second);
                 }
@@ -1971,12 +1992,16 @@ size_t CConnman::SocketRecvData(CNode *pnode)
     // typical socket buffer is 8K-64K
     uint8_t pchBuf[0x10000];
     int nBytes = 0;
+    int nErr = 0;
     {
         LOCK(pnode->cs_hSocket);
         if (pnode->hSocket == INVALID_SOCKET)
             return 0;
         nBytes = recv(pnode->hSocket, (char*)pchBuf, sizeof(pchBuf), MSG_DONTWAIT);
-        if (nBytes < (int)sizeof(pchBuf)) {
+        if (nBytes < 0) nErr = WSAGetLastError();
+        // Only a close or EWOULDBLOCK says the socket is drained; a short read doesn't. Edge-triggered
+        // events (EPOLLET, EV_CLEAR) won't report the socket again, so the peer's close would go unread.
+        if (nBytes == 0 || (nBytes < 0 && nErr == WSAEWOULDBLOCK)) {
             pnode->fHasRecvData = false;
         }
     }
@@ -2018,7 +2043,6 @@ size_t CConnman::SocketRecvData(CNode *pnode)
     else if (nBytes < 0)
     {
         // error
-        int nErr = WSAGetLastError();
         if (nErr != WSAEWOULDBLOCK && nErr != WSAEMSGSIZE && nErr != WSAEINTR && nErr != WSAEINPROGRESS)
         {
             if (!pnode->fDisconnect){
@@ -4201,8 +4225,11 @@ void CConnman::RegisterEvents(CNode *pnode)
     LOCK(pnode->cs_hSocket);
     assert(pnode->hSocket != INVALID_SOCKET);
 
+    // Edge-triggered like the epoll registration below. Level-triggered, a socket SocketHandler() is
+    // not reading (paused, sending, disconnecting) stays readable and returns every kevent() at once.
+    // mapReceivableNodes/fHasRecvData remember unread data across calls, as they do for EPOLLET.
     struct kevent events[2];
-    EV_SET(&events[0], pnode->hSocket, EVFILT_READ, EV_ADD, 0, 0, nullptr);
+    EV_SET(&events[0], pnode->hSocket, EVFILT_READ, EV_ADD | EV_CLEAR, 0, 0, nullptr);
     EV_SET(&events[1], pnode->hSocket, EVFILT_WRITE, EV_ADD | EV_CLEAR, 0, 0, nullptr);
 
     int r = kevent(kqueuefd, events, 2, nullptr, 0, nullptr);
