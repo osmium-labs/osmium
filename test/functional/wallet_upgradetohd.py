@@ -55,10 +55,8 @@ class WalletUpgradeToHDTest(BitcoinTestFramework):
         self.log.info("Should be spendable and should use correct paths")
         for i in range(5):
             txid = node.sendtoaddress(node.getnewaddress(), 1)
-            # Keep the 1-coin output at receive index i unspent. Dash funded these sends from
-            # 500-coin coinbase outputs and never re-selected the 1-coin outputs; Osmium's wallet
-            # holds ~0.1 outputs alongside the premine, so a 1-coin output is an attractive input
-            # and later sends here consumed the ones at indices 0 and 2. The upgrade paths below
+            # Keep the 1-coin output at receive index i unspent, so coin selection cannot spend it
+            # in a later send here (it once consumed the ones at indices 0 and 2). The upgrade paths below
             # depend on a coin existing at each key index -- in particular index 0, which is all a
             # freshly encrypted wallet's one-key keypool can rescan.
             for d in node.gettransaction(txid)["details"]:

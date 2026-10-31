@@ -28,9 +28,8 @@ class P2PBlocksOnly(BitcoinTestFramework):
                 'vout': 0
             }],
             outputs=[{
-                # Dash's block-1 coinbase paid a flat 500; Osmium's is the premine, so take the
-                # fee off whatever this output actually holds or sendrawtransaction rejects the
-                # transaction for exceeding the maximum fee.
+                # Take the fee off what this output actually holds (the subsidy less the devfee,
+                # not Dash's flat 500).
                 self.nodes[0].get_deterministic_priv_key()[0]: prevtx['vout'][0]['value'] - Decimal("0.00125")
             }],
         )

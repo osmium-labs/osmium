@@ -140,7 +140,7 @@ class AssumeValidTest(BitcoinTestFramework):
         height += 1
 
         # Bury the assumed valid block deep enough that ConnectBlock() skips script checks.
-        # validation.cpp:2071 skips them only when GetBlockProofEquivalentTime() between the block
+        # validation.cpp:2069 skips them only when GetBlockProofEquivalentTime() between the block
         # and the best header exceeds two weeks; on a constant-difficulty regtest chain that works
         # out to 14*24*3600 / nPowTargetSpacing blocks. Bitcoin's 600s spacing needed 2100 and
         # Dash's 156s needed ~7754, but Osmium's regtest spacing is 90s, so it takes 13440. Round

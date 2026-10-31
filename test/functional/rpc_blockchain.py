@@ -67,17 +67,7 @@ class BlockchainTest(BitcoinTestFramework):
         self._test_getdifficulty()
         self._test_getnetworkhashps()
         self._test_stopatheight()
-        # PARKED -- regtest-only, NOT a mainnet bug (mainnet's devfee startBlock is 1, so the
-        # rejecting branch is unreachable there; see the note in test_runner.py). CheckBlock() is
-        # called from validation.cpp:4270 with `ChainActive().Height() + 1`, i.e. the height of the
-        # *tip*, not of the block being checked, and its devfee rule uses that height. A fork block
-        # built at height 21 while the tip is at 207 is therefore required to carry a devfee output
-        # (rejected as bad-cb-devfee-payment-not-found) even though height 21 is far below the
-        # devfee start height of 50. _test_waitforblockheight() builds exactly such a fork, so it
-        # cannot pass until CheckBlock() is given the block's own height. Everything else in this
-        # file passes.
-        self.log.warning("SKIPPING _test_waitforblockheight: CheckBlock() uses the tip height for "
-                         "the devfee rule (validation.cpp:4270), so a low fork block is rejected")
+        self._test_waitforblockheight()
         assert self.nodes[0].verifychain(4, 0)
 
     def mine_chain(self):
@@ -256,10 +246,10 @@ class BlockchainTest(BitcoinTestFramework):
         node = self.nodes[0]
         res = node.gettxoutsetinfo()
 
-        # Dash minted a flat 500 per block into a single coinbase output. Osmium's subsidy is the
-        # height-1 premine, then the regtest schedule with its periodic reduction, and every block
-        # past the devfee start height carries a second coinbase output paying the devfee -- so
-        # both the amount and the output count have to be derived rather than hardcoded.
+        # Dash minted a flat 500 per block into a single coinbase output. Osmium's regtest subsidy
+        # is reduced every 150 blocks, and every block past the devfee start height carries a
+        # second coinbase output paying the devfee -- so both the amount and the output count
+        # have to be derived rather than hardcoded.
         heights = range(1, 201)
         total_amount = sum(get_block_subsidy(h) for h in heights)
         txouts = sum(2 if get_devfee(h) else 1 for h in heights)

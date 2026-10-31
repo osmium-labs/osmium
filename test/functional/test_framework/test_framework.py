@@ -1017,11 +1017,10 @@ EVONODE_COLLATERAL = 2000
 def generate_until_balance(node, target, log=None, batch=10):
     """Mine until `node` holds `target`, or fail once mining stops paying.
 
-    Osmium's regtest subsidy decays by 1/7 every nSubsidyHalvingInterval (150) blocks and is
-    effectively zero by height ~10000, so the chain can only ever produce about 8670 coins --
-    nearly all of it the height-1 premine. A target above that can never be reached, and the
-    inherited `while getbalance() < target: generate(10)` loops simply spun forever (measured:
-    24000+ blocks in one test). Stop when the balance stops moving and say why.
+    Osmium's regtest subsidy decays by 1/7 every nSubsidyHalvingInterval (150) blocks and reaches
+    zero by height ~22650, so a miner can only ever receive about 492,000 coins. A target above
+    that can never be reached, and a plain `while getbalance() < target: generate(10)` loop would
+    spin forever. Stop when the balance stops moving and say why.
     """
     stalled = 0
     balance = node.getbalance()
@@ -1034,7 +1033,7 @@ def generate_until_balance(node, target, log=None, batch=10):
             if stalled >= 20:
                 raise AssertionError(
                     "cannot fund %s: balance stuck at %s after mining to height %d. Osmium's "
-                    "regtest subsidy decays to zero (~8670 coins total, mostly the premine), so "
+                    "regtest subsidy decays to zero (~492,000 coins to the miner in total), so "
                     "this target is unreachable -- lower it rather than mining longer."
                     % (target, new_balance, node.getblockcount()))
         else:

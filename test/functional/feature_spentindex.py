@@ -66,9 +66,9 @@ class SpentIndexTest(BitcoinTestFramework):
         privkey = "cU4zhap7nPJAWeMFu4j6jLrfPmqakDAzy8zn8Fhb3oEevdm4e5Lc"
         addressHash = binascii.unhexlify("C5E4FB9171C22409809A3E8047A29C83886E325D")
         scriptPubKey = CScript([OP_DUP, OP_HASH160, addressHash, OP_EQUALVERIFY, OP_CHECKSIG])
-        # Take the largest output. Dash's regtest coinbases are all 500, so any of them worked;
-        # Osmium's are ~0.1 apart from the premine, and the second transaction below subtracts
-        # 0.1 COIN, which would make the output negative (bad-txns-vout-negative).
+        # Take the largest output: the second transaction below subtracts 0.1 COIN, so the
+        # input must comfortably cover it (a small change output would go negative,
+        # bad-txns-vout-negative).
         unspent = sorted(self.nodes[0].listunspent(), key=lambda u: u['amount'], reverse=True)
         tx = CTransaction()
         tx_fee = Decimal('0.00001')

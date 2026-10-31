@@ -146,6 +146,10 @@ class CMainParams : public CChainParams {
 public:
     CMainParams() {
         strNetworkID = CBaseChainParams::MAIN;
+        consensus.nPremineSubsidy = 8000 * COIN;
+        consensus.nEarlySubsidy = COIN / 10;
+        consensus.nEarlySubsidyLastHeight = 500;
+        consensus.nBaseSubsidy = 1 * COIN;
         consensus.nSubsidyHalvingInterval = 172800;
         consensus.BIP16Height = 0;
         consensus.nMasternodePaymentsStartBlock = 250; // not true, but it's ok as long as it's less then nMasternodePaymentsIncreaseBlock
@@ -327,6 +331,10 @@ class CTestNetParams : public CChainParams {
 public:
     CTestNetParams() {
         strNetworkID = CBaseChainParams::TESTNET;
+        consensus.nPremineSubsidy = 8000 * COIN;
+        consensus.nEarlySubsidy = COIN / 10;
+        consensus.nEarlySubsidyLastHeight = 500;
+        consensus.nBaseSubsidy = 1 * COIN;
         consensus.nSubsidyHalvingInterval = 172800;
         consensus.BIP16Height = 0;
         consensus.nMasternodePaymentsStartBlock = 250;
@@ -498,6 +506,10 @@ class CDevNetParams : public CChainParams {
 public:
     explicit CDevNetParams(const ArgsManager& args) {
         strNetworkID = CBaseChainParams::DEVNET;
+        consensus.nPremineSubsidy = 8000 * COIN;
+        consensus.nEarlySubsidy = COIN / 10;
+        consensus.nEarlySubsidyLastHeight = 500;
+        consensus.nBaseSubsidy = 1 * COIN;
         consensus.nSubsidyHalvingInterval = 172800;
         consensus.BIP16Height = 0;
         consensus.nMasternodePaymentsStartBlock = 4010; // not true, but it's ok as long as it's less then nMasternodePaymentsIncreaseBlock
@@ -746,6 +758,11 @@ class CRegTestParams : public CChainParams {
 public:
     explicit CRegTestParams(const ArgsManager& args) {
         strNetworkID =  CBaseChainParams::REGTEST;
+        // A flat 500 per block, the reward Dash's regtest tests are written against
+        consensus.nPremineSubsidy = 500 * COIN;
+        consensus.nEarlySubsidy = 500 * COIN;
+        consensus.nEarlySubsidyLastHeight = 500;
+        consensus.nBaseSubsidy = 500 * COIN;
         consensus.nSubsidyHalvingInterval = 150;
         consensus.BIP16Height = 0; // always enforce P2SH BIP16 on regtest
         consensus.nMasternodePaymentsStartBlock = 500;
@@ -865,7 +882,8 @@ public:
 
         // privKey: cN5rSgw6EfYcobq7ZkM8UcooKcSLJPMYkwmjsMdqqPvrfx35gUah
         std::vector<DevfeeRewardStructure> rewardStructures = {  {INT_MAX, 19}  }; // 5% dev fee
-        consensus.nDevfeePayment = DevfeePayment(rewardStructures, 50, "sZmtmzxjw7cfsy7SC5CmUHKREH2UYnYnuu");
+        // Starts at 0, so every block from height 1 pays the devfee.
+        consensus.nDevfeePayment = DevfeePayment(rewardStructures, 0, "sZmtmzxjw7cfsy7SC5CmUHKREH2UYnYnuu");
 
         checkpointData = {
             {
@@ -877,16 +895,16 @@ public:
             {
                 110,
                 // Regenerated for Osmium: the UTXO set differs from Dash because the coinbase
-                // carries a devfee output in addition to the miner's (170 coins at height 110,
-                // not 110). Computed from the actual regtest chainstate.
-                {AssumeutxoHash{uint256S("0x5e6c5467274e3d54ab08b0a474008edb452379142234703537a70d8351ae8c68")}, 110},
+                // carries a devfee output in addition to the miner's. Measured by activating a
+                // snapshot in validation_chainstatemanager_tests.
+                {AssumeutxoHash{uint256S("0x26278ff6d2472589adc9dbe982faa27900b53f0e291dd1ff9344b90af784fd0b")}, 110},
             },
             {
                 210,
                 // Regenerated for Osmium for the same reason as the height-110 entry above: the
                 // inherited value describes Dash's UTXO set, not ours. Measured by activating a
                 // snapshot of the deterministic test chain at height 210.
-                {AssumeutxoHash{uint256S("0xb8d417e2b5b2fb439f645a7b2d74f35989f4fb45fda7dde1e7723020f44af122")}, 210},
+                {AssumeutxoHash{uint256S("0x7502a3ecbf128dee30569abbd06b3b3dc1263a8892b7ea202f7e3d20b2097baa")}, 210},
             },
         };
 

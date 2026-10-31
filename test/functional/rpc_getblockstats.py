@@ -43,6 +43,9 @@ class GetblockstatsTest(BitcoinTestFramework):
 
     def generate_test_data(self, filename):
         self.nodes[0].setmocktime(self.mocktime)
+        # The sends below need a wallet that owns the coinbases generate() mines.
+        self.nodes[0].createwallet(wallet_name="test")
+        self.nodes[0].importprivkey(self.nodes[0].get_deterministic_priv_key().key)
         self.nodes[0].generate(COINBASE_MATURITY + 1)
 
         address = self.nodes[0].get_deterministic_priv_key().address

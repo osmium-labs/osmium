@@ -68,8 +68,7 @@ class RawTransactionsTest(BitcoinTestFramework):
         self.nodes[2].generate(1)
         self.sync_all()
         self.nodes[0].generate(COINBASE_MATURITY + 1)
-        # node2 mined height 1 and so holds the premine; node0's blocks each pay only the ordinary
-        # regtest subsidy, so it needs a good many more of them before it can fund the sends below.
+        # Make sure node0 can fund the sends below whatever its matured blocks pay.
         generate_until_balance(self.nodes[0], 20, self.log)
         self.sync_all()
         self.nodes[0].sendtoaddress(self.nodes[2].getnewaddress(),1.5)

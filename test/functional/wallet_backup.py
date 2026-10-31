@@ -125,8 +125,8 @@ class WalletBackupTest(BitcoinTestFramework):
         self.nodes[3].generate(COINBASE_MATURITY)
         self.sync_blocks()
 
-        # nodes 0, 1 and 2 mined heights 1, 2 and 3; on Osmium those pay very different amounts
-        # (the premine, then the ordinary subsidy) rather than Dash's uniform 500.
+        # nodes 0, 1 and 2 mined heights 1, 2 and 3; each holds that block's miner share, the
+        # subsidy less the devfee, rather than Dash's 500.
         assert_equal(self.nodes[0].getbalance(), Decimal(get_miner_reward(1)) / COIN)
         assert_equal(self.nodes[1].getbalance(), Decimal(get_miner_reward(2)) / COIN)
         assert_equal(self.nodes[2].getbalance(), Decimal(get_miner_reward(3)) / COIN)
@@ -161,8 +161,8 @@ class WalletBackupTest(BitcoinTestFramework):
         total = balance0 + balance1 + balance2 + balance3
 
         # At this point, there are 214 blocks (103 for setup, then 10 rounds, then 101.)
-        # 114 are mature. Osmium's reward is not flat, so sum the actual matured rewards instead
-        # of multiplying by 500 -- almost all of it is the height-1 premine.
+        # 114 are mature. Osmium's reward is not flat (the subsidy decays every 150 blocks), so
+        # sum the actual matured rewards instead of multiplying by 500.
         mature_height = self.nodes[0].getblockcount() - COINBASE_MATURITY
         expected_total = Decimal(sum(get_miner_reward(h) for h in range(1, mature_height + 1))) / COIN
         assert_equal(total, expected_total)

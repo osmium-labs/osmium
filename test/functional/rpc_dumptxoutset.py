@@ -40,16 +40,16 @@ class DumptxoutsetTest(BitcoinTestFramework):
         # Blockhash should be deterministic based on mocked time.
         assert_equal(
             out['base_hash'],
-            # Regenerated for Osmium: the UTXO set differs from Dash's (different subsidy, plus a
-            # devfee output per block above the start height), so the snapshot hash differs too.
-            '7dedc3f7845b080f9389a6ebcb9b7c54f319f52ecdfc4c815340d8a593762de2')
+            # Regenerated for Osmium: the UTXO set differs from Dash's (a devfee output per block
+            # above the start height), so the snapshot hash differs too.
+            'ab814956b080e492b4fa51ee86a03b7d19b82a5049a01367f0aa2d77fcdda392')
 
         with open(str(expected_path), 'rb') as f:
             digest = hashlib.sha256(f.read()).hexdigest()
             # UTXO snapshot hash should be deterministic based on mocked time.
             assert_equal(
                 # Regenerated for Osmium, same reason as the base_hash above.
-                digest, '7af3ef866420082ae478bd22dcc8929d2c6f25b1c403d33e9435acc4439edec6')
+                digest, '33a0c98758d9558290307753bae511df5cf317793bb01d3399fb7c8001fd8002')
 
         # Specifying a path to an existing file will fail.
         assert_raises_rpc_error(

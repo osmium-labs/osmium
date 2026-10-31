@@ -64,8 +64,8 @@ class MempoolAcceptanceTest(BitcoinTestFramework):
         assert_equal(node.getmempoolinfo()['size'], self.mempool_size)
         coins = node.listunspent()
         # Dash's outputs were a uniform 500, so any coin covered the amounts spent below. Osmium's
-        # are the height-1 premine plus a tail of small subsidies, so sort and take from the top:
-        # the first spend needs 49.3 and the second only 0.025.
+        # differ in size, so sort and take from the top: the first spend needs 49.3 and the second
+        # only 0.025.
         coins.sort(key=lambda c: c['amount'])
 
         self.log.info('Should not accept garbage to testmempoolaccept')

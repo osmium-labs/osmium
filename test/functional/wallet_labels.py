@@ -12,7 +12,7 @@ RPCs tested are:
 from collections import defaultdict
 
 from decimal import Decimal
-from test_framework.blocktools import COIN, COINBASE_MATURITY, get_block_subsidy
+from test_framework.blocktools import COIN, COINBASE_MATURITY, get_miner_reward
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import assert_equal, assert_raises_rpc_error
 from test_framework.wallet_util import test_address
@@ -35,10 +35,9 @@ class WalletLabelsTest(BitcoinTestFramework):
         # the same address, so we call twice to get two addresses w/500 each
         node.generatetoaddress(nblocks=1, address=node.getnewaddress(label='coinbase'))
         node.generatetoaddress(nblocks=COINBASE_MATURITY + 1, address=node.getnewaddress(label='coinbase'))
-        # Osmium's rewards are not Dash's flat 500: the first block mints the premine and the
-        # second pays the ordinary regtest subsidy, so the two groups hold different amounts.
-        first_reward = Decimal(get_block_subsidy(1)) / COIN
-        second_reward = Decimal(get_block_subsidy(2)) / COIN
+        # The miner does not keep Dash's flat 500: every coinbase also pays the devfee.
+        first_reward = Decimal(get_miner_reward(1)) / COIN
+        second_reward = Decimal(get_miner_reward(2)) / COIN
         assert_equal(node.getbalance(), first_reward + second_reward)
 
         # there should be 2 address groups
@@ -77,8 +76,7 @@ class WalletLabelsTest(BitcoinTestFramework):
         # we want to reset so that the "" label has what's expected.
         # otherwise we're off by exactly the fee amount as that's mined
         # and matures in the next 100 blocks
-        # Dash left 500 in the wallet at this point; Osmium's matured block is ~0.1, so the
-        # per-label amount has to come down or every send fails with Insufficient funds.
+        # A small per-label amount, well inside what the matured blocks left in the wallet.
         amount_to_send = Decimal('0.01')
 
         # Create labels and make sure subsequent label API calls

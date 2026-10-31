@@ -28,30 +28,76 @@ BOOST_FIXTURE_TEST_SUITE(subsidy_tests, TestingSetup)
  */
 BOOST_AUTO_TEST_CASE(block_subsidy_test)
 {
-    const auto chainParams = CreateChainParams(*m_node.args, CBaseChainParams::MAIN);
+    // Mainnet and testnet share the schedule. These values must never change: they are what the
+    // live networks pay.
+    for (const auto& network : {CBaseChainParams::MAIN, CBaseChainParams::TESTNET}) {
+        BOOST_TEST_MESSAGE("network: " << network);
+        const auto chainParams = CreateChainParams(*m_node.args, network);
+        const auto& consensus = chainParams->GetConsensus();
+
+        BOOST_CHECK_EQUAL(consensus.nSubsidyHalvingInterval, 172800);
+        BOOST_CHECK_EQUAL(consensus.nSuperblockStartBlock, 500);
+
+        struct Probe { int nPrevHeight; CAmount miner; CAmount superblock; };
+        const Probe probes[] = {
+            {        0, CAmount{800000000000}, CAmount{         0}},  // premine, no superblock cut
+            {        1, CAmount{    10000000}, CAmount{         0}},  // 0.1 tier
+            {        2, CAmount{    10000000}, CAmount{         0}},
+            {      499, CAmount{    10000000}, CAmount{         0}},
+            {      500, CAmount{    10000000}, CAmount{         0}},  // last block of the 0.1 tier
+            {      501, CAmount{    95000000}, CAmount{   5000000}},  // 1 OSMI, superblock cut begins
+            {    26494, CAmount{    95000000}, CAmount{   5000000}},
+            {   172799, CAmount{    95000000}, CAmount{   5000000}},  // last block before 1st reduction
+            {   172800, CAmount{    81428571}, CAmount{   4285714}},  // 1st reduction (-1/7)
+            {   172801, CAmount{    81428571}, CAmount{   4285714}},  // still the 1st reduction
+            {   345600, CAmount{    69795918}, CAmount{   3673469}},  // 2nd reduction
+            {   864000, CAmount{    43953114}, CAmount{   2313321}},  // 5th reduction
+            {  1000000, CAmount{    43953114}, CAmount{   2313321}},  // still the 5th
+            {  1728000, CAmount{    20335538}, CAmount{   1070291}},  // 10th reduction
+        };
+
+        for (const auto& p : probes) {
+            BOOST_CHECK_EQUAL(GetBlockSubsidyInner(0, p.nPrevHeight, consensus, /*fV20Active=*/false), p.miner);
+            BOOST_CHECK_EQUAL(GetSuperblockSubsidyInner(0, p.nPrevHeight, consensus, /*fV20Active=*/false), p.superblock);
+        }
+    }
+}
+
+/*
+ * Regtest pays a flat 500 OSMI from the first block, reduced by 1/7 every 150 blocks (the same
+ * floating-point reduction as mainnet), with no superblock cut until nPrevHeight > 1500.
+ */
+BOOST_AUTO_TEST_CASE(regtest_subsidy_schedule)
+{
+    const auto chainParams = CreateChainParams(*m_node.args, CBaseChainParams::REGTEST);
     const auto& consensus = chainParams->GetConsensus();
 
-    BOOST_CHECK_EQUAL(consensus.nSubsidyHalvingInterval, 172800);
-    BOOST_CHECK_EQUAL(consensus.nSuperblockStartBlock, 500);
+    BOOST_CHECK_EQUAL(consensus.nSubsidyHalvingInterval, 150);
+    BOOST_CHECK_EQUAL(consensus.nSuperblockStartBlock, 1500);
 
     struct Probe { int nPrevHeight; CAmount miner; CAmount superblock; };
     const Probe probes[] = {
-        {        0, CAmount{800000000000}, CAmount{         0}},  // premine, no superblock cut
-        {        1, CAmount{    10000000}, CAmount{         0}},  // 0.1 tier
-        {      500, CAmount{    10000000}, CAmount{         0}},  // last block of the 0.1 tier
-        {      501, CAmount{    95000000}, CAmount{   5000000}},  // 1 OSMI, superblock cut begins
-        {   172799, CAmount{    95000000}, CAmount{   5000000}},  // last block before 1st reduction
-        {   172800, CAmount{    81428571}, CAmount{   4285714}},  // 1st reduction (-1/7)
-        {   172801, CAmount{    81428571}, CAmount{   4285714}},  // still the 1st reduction
-        {   345600, CAmount{    69795918}, CAmount{   3673469}},  // 2nd reduction
-        {   864000, CAmount{    43953114}, CAmount{   2313321}},  // 5th reduction
-        {  1728000, CAmount{    20335538}, CAmount{   1070291}},  // 10th reduction
+        {    0, CAmount{50000000000}, CAmount{        0}},
+        {    1, CAmount{50000000000}, CAmount{        0}},
+        {  149, CAmount{50000000000}, CAmount{        0}},
+        {  150, CAmount{42857142857}, CAmount{        0}},  // 1st reduction
+        {  299, CAmount{42857142857}, CAmount{        0}},
+        {  300, CAmount{36734693877}, CAmount{        0}},  // 2nd reduction
+        { 1500, CAmount{10702915778}, CAmount{        0}},  // 10th reduction
+        { 1501, CAmount{10167769990}, CAmount{535145788}},  // superblock cut begins
     };
 
     for (const auto& p : probes) {
         BOOST_CHECK_EQUAL(GetBlockSubsidyInner(0, p.nPrevHeight, consensus, /*fV20Active=*/false), p.miner);
         BOOST_CHECK_EQUAL(GetSuperblockSubsidyInner(0, p.nPrevHeight, consensus, /*fV20Active=*/false), p.superblock);
     }
+
+    // The devfee starts at block 0: the miner pays it from height 1 (CheckBlock enforces it from
+    // height 2; see feature_devfee.py).
+    auto devfee = consensus.nDevfeePayment;
+    BOOST_CHECK_EQUAL(devfee.getStartBlock(), 0);
+    BOOST_CHECK_EQUAL(devfee.getDevfeePaymentAmount(0, 50000000000), 0);
+    BOOST_CHECK_EQUAL(devfee.getDevfeePaymentAmount(1, 50000000000), 50000000000 / 19);
 }
 
 /*

@@ -53,12 +53,10 @@ static SimpleUTXOMap BuildSimpleUtxoMap(const std::vector<CTransactionRef>& txs)
 /**
  * Hand an output of a just-funded transaction back to the map so later transactions can spend it.
  *
- * Osmium's regtest value is concentrated in the height-1 premine (nSubsidyBase = 8000) while
- * every later coinbase pays ~0.07; funding one 500-coin collateral therefore consumes the premine
- * and produces thousands of coins of change. Dash's uniform 500-coin coinbases made discarding
- * that change harmless, but here it is the difference between funding six masternodes and running
- * dry after the first. The transaction is not mined yet, so the output becomes spendable at the
- * next height.
+ * Osmium's outputs are not a uniform 500 (each coinbase pays its miner the subsidy less the
+ * devfee), so funding a 500-coin collateral leaves change. Dash's uniform 500-coin coinbases made
+ * discarding it harmless; here later transactions need it. The transaction is not mined yet, so
+ * the output becomes spendable at the next height.
  */
 static void AddSpendableOutput(SimpleUTXOMap& utxos, const CMutableTransaction& tx, int n)
 {
@@ -77,10 +75,9 @@ static std::vector<COutPoint> SelectUTXOs(SimpleUTXOMap& utoxs, CAmount amount, 
 
     std::vector<COutPoint> selectedUtxos;
 
-    // Prefer the smallest single output that covers the amount on its own. Osmium's regtest value
-    // is lumpy -- one large premine output and then ~0.07 per block -- so plain first-fit spends a
-    // collateral-sized output on a one-coin transaction and strands the rest as change that cannot
-    // be used again until it is mined.
+    // Prefer the smallest single output that covers the amount on its own, so that a one-coin
+    // transaction does not spend a collateral-sized output and strand the rest as change that
+    // cannot be used again until it is mined.
     auto best = utoxs.end();
     for (auto it = utoxs.begin(); it != utoxs.end(); ++it) {
         if (!IsSpendable(it->second)) continue;
@@ -151,14 +148,15 @@ static void SignTransaction(const CTxMemPool& mempool, CMutableTransaction& tx, 
 /**
  * Recut the chain's spendable value into masternode-sized pieces.
  *
- * Dash's regtest pays ~500 coins per block, so any coinbase output could fund a collateral and the
- * inherited helpers never had to track change. Osmium pays 0.1 (later 1) coin per block and puts
- * everything else in the height-1 premine, so a single output holds the whole balance. That breaks
- * the cases which register several masternodes in one block: the second registration would have to
- * spend the first's change, which is not yet mined, and SignTransaction resolves inputs through the
- * chain and mempool only. Splitting up front gives every registration its own confirmed output.
+ * Dash's regtest pays ~500 coins per block to the miner, so any coinbase output could fund a
+ * collateral and the inherited helpers never had to track change. Osmium's miner gets the subsidy
+ * less the devfee, less than one 500-coin collateral, so a registration has to combine outputs and
+ * leaves change. That breaks the cases which register several masternodes in one block: the second
+ * registration would have to spend the first's change, which is not yet mined, and SignTransaction
+ * resolves inputs through the chain and mempool only. Splitting up front gives every registration
+ * its own confirmed output.
  */
-static void SplitPremine(TestChainSetup& setup, SimpleUTXOMap& utxos)
+static void SplitSpendable(TestChainSetup& setup, SimpleUTXOMap& utxos)
 {
     constexpr CAmount SMALL_OUTPUT = 2 * COIN;
     constexpr size_t NUM_SMALL_OUTPUTS = 8;
@@ -528,7 +526,7 @@ void FuncDIP3Protx(TestChainSetup& setup)
     setup.m_node.sporkman->SetPrivKey(EncodeSecret(sporkKey));
 
     auto utxos = BuildSimpleUtxoMap(setup.m_coinbase_txns);
-    SplitPremine(setup, utxos);
+    SplitSpendable(setup, utxos);
 
     int nHeight = ::ChainActive().Height();
     int port = 1;
@@ -708,7 +706,7 @@ void FuncDIP3Protx(TestChainSetup& setup)
 void FuncTestMempoolReorg(TestChainSetup& setup)
 {
     auto utxos = BuildSimpleUtxoMap(setup.m_coinbase_txns);
-    SplitPremine(setup, utxos);
+    SplitSpendable(setup, utxos);
 
     int nHeight = ::ChainActive().Height();
 
@@ -787,7 +785,7 @@ void FuncTestMempoolReorg(TestChainSetup& setup)
 void FuncTestMempoolDualProregtx(TestChainSetup& setup)
 {
     auto utxos = BuildSimpleUtxoMap(setup.m_coinbase_txns);
-    SplitPremine(setup, utxos);
+    SplitSpendable(setup, utxos);
 
     // Create a MN
     CKey ownerKey1;
@@ -844,7 +842,7 @@ void FuncVerifyDB(TestChainSetup& setup)
     auto& dmnman = *Assert(setup.m_node.dmnman);
 
     auto utxos = BuildSimpleUtxoMap(setup.m_coinbase_txns);
-    SplitPremine(setup, utxos);
+    SplitSpendable(setup, utxos);
 
     int nHeight = ::ChainActive().Height();
 

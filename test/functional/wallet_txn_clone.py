@@ -31,9 +31,8 @@ class TxnMallTest(BitcoinTestFramework):
         self.disconnect_nodes(1, 2)
 
     def run_test(self):
-        # The cached chain does not hand the four nodes equal balances on Osmium the way it does
-        # on Dash (12500 each): the height-1 premine dominates, so whichever node mined it holds
-        # nearly everything. Work from node0's real balance instead of a fixed figure.
+        # The cached chain does not hand node0 Dash's 12500: each coinbase pays the miner the
+        # subsidy less the devfee. Work from node0's real balance instead of a fixed figure.
         starting_balance = self.nodes[0].getbalance()
         assert starting_balance > 100, "node0 holds %s, too little to run this test" % starting_balance
         # Keep the test's proportions -- it was written against a 12500 balance -- by scaling every

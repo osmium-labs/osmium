@@ -119,11 +119,9 @@ class FullBlockTest(BitcoinTestFramework):
         # Create a new block
         b_dup_cb = self.next_block('dup_cb')
         # The BIP30 test needs this height-1 coinbase to be byte-identical to the one b61 builds at
-        # height 120. Dash's subsidy was a flat 500 paid into a single output, so overriding the
-        # scriptSig alone was enough. On Osmium height 1 mints the premine into one output while
-        # height 120 pays the ordinary subsidy split with the devfee, so the whole coinbase has to
-        # be built as the height-120 one -- whose BIP34 height push is DUPLICATE_COINBASE_SCRIPT_SIG
-        # anyway. Claiming less than the height-1 subsidy is allowed.
+        # height 120. Dash's coinbase was a single output, so overriding the scriptSig alone was
+        # enough. Osmium's also carries the devfee output, so build the whole coinbase as the
+        # height-120 one -- whose BIP34 height push is DUPLICATE_COINBASE_SCRIPT_SIG anyway.
         b_dup_cb.vtx[0] = create_coinbase(DUPLICATE_COINBASE_HEIGHT, self.coinbase_pubkey)
         b_dup_cb.vtx[0].rehash()
         duplicate_tx = b_dup_cb.vtx[0]
@@ -1345,7 +1343,7 @@ class FullBlockTest(BitcoinTestFramework):
         b_v1 = self.next_block('b_v1', version=1)
         # Version 1 is the one legacy version an auxpow chain still recognises (IsLegacy()), so it
         # gets past the chain-ID check and is instead rejected by the merge-mining start rule at
-        # validation.cpp:3889 -- not by the outdated-version check that produces bad-version().
+        # validation.cpp:3887 -- not by the outdated-version check that produces bad-version().
         self.send_blocks([b_v1], success=False, force_send=True, reject_reason='late-legacy-block', reconnect=True)
 
         self.move_tip(chain1_tip + 2)
@@ -1384,7 +1382,7 @@ class FullBlockTest(BitcoinTestFramework):
         return tx
 
     # Dash defaulted to a bare version 4. On Osmium the top 16 bits of nVersion carry the auxpow
-    # chain ID, and CheckProofOfWork() (validation.cpp:3716) rejects a header whose chain ID does
+    # chain ID, and CheckProofOfWork() (validation.cpp:3714) rejects a header whose chain ID does
     # not match -- so the base version has to be OR'd into BASE_BLOCK_VERSION, which is what
     # BASE_BLOCK_VERSION already is ((0x0062 << 16) | 4).
     def next_block(self, number, spend=None, additional_coinbase_value=0, script=CScript([OP_TRUE]), *, version=BASE_BLOCK_VERSION):

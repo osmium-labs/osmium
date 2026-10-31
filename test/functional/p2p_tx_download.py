@@ -83,8 +83,8 @@ class TxDownloadTest(BitcoinTestFramework):
 
     def test_inv_block(self):
         self.log.info("Generate a transaction on node 0")
-        # Dash's block-1 coinbase paid a flat 500; Osmium's pays the premine, so a fixed 500 output
-        # would leave thousands of coins as fee and sendrawtransaction would refuse the tx.
+        # Spend what the block-1 coinbase's miner output actually holds: it is the subsidy less
+        # the devfee, not Dash's flat 500.
         coinbase = self.nodes[0].getblock(self.nodes[0].getblockhash(1), 2)['tx'][0]
         tx = self.nodes[0].createrawtransaction(
             inputs=[{  # coinbase

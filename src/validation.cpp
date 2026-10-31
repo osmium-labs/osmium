@@ -1161,18 +1161,16 @@ NOTE:   unlike bitcoin we are using PREVIOUS block height here,
 */
 static std::pair<CAmount, CAmount> GetBlockSubsidyHelper(int nPrevBits, int nPrevHeight, const Consensus::Params& consensusParams, bool fV20Active)
 {
-    double nSubsidyBase;
     const bool isDevnet = Params().NetworkIDString() == CBaseChainParams::DEVNET;
 
+    CAmount nSubsidy;
     if (nPrevHeight == 0) {
-        nSubsidyBase = 8000;
-    } else if (nPrevHeight <= 500) {
-        nSubsidyBase = 0.1;
+        nSubsidy = consensusParams.nPremineSubsidy;
+    } else if (nPrevHeight <= consensusParams.nEarlySubsidyLastHeight) {
+        nSubsidy = consensusParams.nEarlySubsidy;
     } else {
-        nSubsidyBase = 1;
+        nSubsidy = consensusParams.nBaseSubsidy;
     }
-
-    CAmount nSubsidy = nSubsidyBase * COIN;
 
     // semiannual decline of production by ~14.3%, projected ~1.21M coins max by year 2050+.
     double reductionRatio = 1210000 / 172800;

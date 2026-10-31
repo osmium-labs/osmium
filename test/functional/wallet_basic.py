@@ -6,7 +6,7 @@
 from decimal import Decimal
 
 from test_framework.blocktools import COINBASE_MATURITY
-from test_framework.blocktools import COIN, get_block_subsidy
+from test_framework.blocktools import COIN, get_block_subsidy, get_miner_reward
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import (
     assert_array_result,
@@ -56,10 +56,10 @@ class WalletTest(BitcoinTestFramework):
 
         self.nodes[0].generate(1)
 
-        # Osmium's subsidy is not Dash's flat 500: height 1 mints the premine and later regtest
-        # blocks pay 0.1, decaying every halving interval. Derive rather than hardcode.
-        block1_reward = Decimal(get_block_subsidy(1)) / COIN
-        block2_reward = Decimal(get_block_subsidy(2)) / COIN
+        # The miner does not keep Dash's flat 500: every coinbase also pays the devfee. Derive
+        # rather than hardcode.
+        block1_reward = Decimal(get_miner_reward(1)) / COIN
+        block2_reward = Decimal(get_miner_reward(2)) / COIN
 
         walletinfo = self.nodes[0].getwalletinfo()
         assert_equal(walletinfo['immature_balance'], block1_reward)
@@ -153,9 +153,8 @@ class WalletTest(BitcoinTestFramework):
         # The lock on a manually selected output is ignored
         unspent_0 = self.nodes[1].listunspent()[0]
         self.nodes[1].lockunspent(False, [unspent_0])
-        # node1's only mature output is one 0.1-ish regtest reward, not Dash's 500, so the amount
-        # here has to be something it can actually afford.
-        tx = self.nodes[1].createrawtransaction([unspent_0], { self.nodes[1].getnewaddress() : block2_reward / 4 })
+        # node1's only mature output is one block's miner share, so spend a part of it.
+        tx = self.nodes[1].createrawtransaction([unspent_0], { self.nodes[1].getnewaddress() : 100 })
         self.nodes[1].fundrawtransaction(tx,{"lockUnspents": True})
 
         # fundrawtransaction can lock an input
@@ -173,8 +172,8 @@ class WalletTest(BitcoinTestFramework):
         self.nodes[1].generate(COINBASE_MATURITY)
         self.sync_all(self.nodes[0:3])
 
-        # node0 should end up with everything it mined (the height-1 premine plus its later
-        # block's miner share) minus the 210 plus fees sent to node2.
+        # node0 should end up with everything it mined (its two blocks' miner shares) minus the
+        # 210 plus fees sent to node2.
         assert_equal(self.nodes[0].getbalance(), block1_reward + node0_mined_reward - 210)
         assert_equal(self.nodes[2].getbalance(), 210)
 

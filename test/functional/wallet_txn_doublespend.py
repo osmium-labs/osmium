@@ -30,9 +30,9 @@ class TxnMallTest(BitcoinTestFramework):
         self.disconnect_nodes(1, 2)
 
     def run_test(self):
-        # The cached chain does not split evenly on Osmium (the height-1 premine dominates), so
-        # take each node's real balance and scale the test's amounts, which were written against
-        # 12500, by what node0 actually holds.
+        # The cached chain does not give the nodes Dash's 12500 each on Osmium (every coinbase
+        # pays the miner the subsidy less the devfee), so take each node's real balance and
+        # scale the test's amounts, which were written against 12500, by what node0 actually holds.
         starting_balance = None
 
         # All nodes should be out of IBD.
