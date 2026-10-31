@@ -321,11 +321,6 @@ SKIPPED_NEEDS_DECISION = {
                            "SupernodeHeight=2000, which is already handled in the test.)",
     'feature_new_quorum_type_activation.py': 'needs the testdummy BIP9 deployment to reach '
                                              'locked_in/active by signalling, which cannot happen',
-    'feature_llmq_data_recovery.py': 'half the test runs against llmq_test_v17 quorums, and '
-                                     'IsQuorumTypeEnabledInternal() (llmq/options.cpp:143) gates '
-                                     'LLMQ_TEST_V17 on DEPLOYMENT_TESTDUMMY being active -- a BIP9 '
-                                     'deployment that cannot activate, so those quorums never form '
-                                     'and every lookup fails with "quorum not found"',
     # Same root cause, from the other direction: a block that signals a version bit must carry
     # VERSIONBITS_TOP_BITS (0x20000000) in the top bits of nVersion, but those bits hold the auxpow
     # chain ID. CheckProofOfWork() (validation.cpp:3714) rejects such a block outright with "block
