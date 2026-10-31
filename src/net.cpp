@@ -1587,17 +1587,23 @@ void CConnman::SocketEventsKqueue(std::set<SOCKET> &recv_set, std::set<SOCKET> &
     } else if (n > 0) {
         for (int i = 0; i < n; i++) {
             auto& event = events[i];
-            if ((event.flags & EV_ERROR) || (event.flags & EV_EOF)) {
+            if (event.flags & EV_ERROR) {
                 error_set.insert((SOCKET)event.ident);
                 continue;
             }
 
             if (event.filter == EVFILT_READ) {
+                // EV_EOF here is the peer's FIN, maybe after data: keep reading through the normal
+                // path until recv() returns 0. With EV_CLEAR this event is not reported again.
                 recv_set.insert((SOCKET)event.ident);
             }
 
             if (event.filter == EVFILT_WRITE) {
-                send_set.insert((SOCKET)event.ident);
+                if (event.flags & EV_EOF) {
+                    error_set.insert((SOCKET)event.ident);
+                } else {
+                    send_set.insert((SOCKET)event.ident);
+                }
             }
         }
     }
@@ -4219,8 +4225,11 @@ void CConnman::RegisterEvents(CNode *pnode)
     LOCK(pnode->cs_hSocket);
     assert(pnode->hSocket != INVALID_SOCKET);
 
+    // Edge-triggered like the epoll registration below. Level-triggered, a socket SocketHandler() is
+    // not reading (paused, sending, disconnecting) stays readable and returns every kevent() at once.
+    // mapReceivableNodes/fHasRecvData remember unread data across calls, as they do for EPOLLET.
     struct kevent events[2];
-    EV_SET(&events[0], pnode->hSocket, EVFILT_READ, EV_ADD, 0, 0, nullptr);
+    EV_SET(&events[0], pnode->hSocket, EVFILT_READ, EV_ADD | EV_CLEAR, 0, 0, nullptr);
     EV_SET(&events[1], pnode->hSocket, EVFILT_WRITE, EV_ADD | EV_CLEAR, 0, 0, nullptr);
 
     int r = kevent(kqueuefd, events, 2, nullptr, 0, nullptr);
