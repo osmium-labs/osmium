@@ -1205,7 +1205,7 @@ class OsmiumTestFramework(BitcoinTestFramework):
             self.connect_nodes(i, idx)
 
     # TODO: to let creating Evo Nodes without instant-send available
-    def dynamically_add_masternode(self, evo=False, rnd=None, should_be_rejected=False):
+    def dynamically_add_masternode(self, evo=False, rnd=None, should_be_rejected=False, wait_for_islock=True):
         mn_idx = len(self.nodes)
 
         node_p2p_port = p2p_port(mn_idx)
@@ -1213,7 +1213,7 @@ class OsmiumTestFramework(BitcoinTestFramework):
 
         protx_success = False
         try:
-            created_mn_info = self.dynamically_prepare_masternode(mn_idx, node_p2p_port, evo, rnd)
+            created_mn_info = self.dynamically_prepare_masternode(mn_idx, node_p2p_port, evo, rnd, wait_for_islock)
             protx_success = True
         except Exception as e:
             # Log why: a bare "failed" hides whether the node rejected the protx or the test just
@@ -1246,7 +1246,7 @@ class OsmiumTestFramework(BitcoinTestFramework):
         self.log.info("Successfully started and synced proTx:"+str(created_mn_info.proTxHash))
         return created_mn_info
 
-    def dynamically_prepare_masternode(self, idx, node_p2p_port, evo=False, rnd=None):
+    def dynamically_prepare_masternode(self, idx, node_p2p_port, evo=False, rnd=None, wait_for_islock=True):
         bls = self.nodes[0].bls('generate')
         collateral_address = self.nodes[0].getnewaddress()
         funds_address = self.nodes[0].getnewaddress()
@@ -1261,7 +1261,8 @@ class OsmiumTestFramework(BitcoinTestFramework):
         collateral_amount = EVONODE_COLLATERAL if evo else MASTERNODE_COLLATERAL
         outputs = {collateral_address: collateral_amount, funds_address: 1}
         collateral_txid = self.nodes[0].sendmany("", outputs)
-        self.wait_for_instantlock(collateral_txid, self.nodes[0])
+        if wait_for_islock:
+            self.wait_for_instantlock(collateral_txid, self.nodes[0])
         tip = self.nodes[0].generate(1)[0]
         self.sync_all(self.nodes)
 
@@ -1283,7 +1284,8 @@ class OsmiumTestFramework(BitcoinTestFramework):
         else:
             protx_result = self.nodes[0].protx("register", collateral_txid, collateral_vout, ipAndPort, owner_address, bls['public'], voting_address, operatorReward, reward_address, funds_address, True)
 
-        self.wait_for_instantlock(protx_result, self.nodes[0])
+        if wait_for_islock:
+            self.wait_for_instantlock(protx_result, self.nodes[0])
         tip = self.nodes[0].generate(1)[0]
         self.sync_all(self.nodes)
 

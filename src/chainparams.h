@@ -158,6 +158,14 @@ public:
 protected:
     CChainParams() {}
 
+    /** Regtest only (-llmqtesttiers): UpdateLLMQParams() switches LLMQ_TEST between these two by masternode count. */
+    struct LLMQTestTiers {
+        size_t upper_from_mn_count;
+        Consensus::LLMQParams lower;
+        Consensus::LLMQParams upper;
+    };
+    std::optional<LLMQTestTiers> m_llmq_test_tiers;
+
     Consensus::Params consensus;
     CMessageHeader::MessageStartChars pchMessageStart;
     uint16_t nDefaultPort;
