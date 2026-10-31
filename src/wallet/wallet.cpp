@@ -1127,6 +1127,14 @@ bool CWallet::AbandonTransaction(const uint256& hashTx)
             // If a transaction changes 'conflicted' state, that changes the balance
             // available of the outputs it spends. So force those to be recomputed
             MarkInputsDirty(wtx.tx);
+            // AddToSpends() took the inputs out of setWalletUTXO. Put back the ones nothing
+            // else spends now, as LoadWallet() does when it rebuilds the set on restart.
+            for (const CTxIn& txin : wtx.tx->vin) {
+                auto prev = mapWallet.find(txin.prevout.hash);
+                if (prev != mapWallet.end() && IsMine(prev->second.tx->vout[txin.prevout.n]) && !IsSpent(txin.prevout.hash, txin.prevout.n)) {
+                    setWalletUTXO.insert(txin.prevout);
+                }
+            }
         }
     }
 

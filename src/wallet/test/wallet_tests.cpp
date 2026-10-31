@@ -695,6 +695,40 @@ BOOST_FIXTURE_TEST_CASE(ListCoins, ListCoinsTestingSetup)
     BOOST_CHECK_EQUAL(list.begin()->second.size(), 2U);
 }
 
+// Abandoning a transaction must make the coin it spent available again straight away, not only
+// after a restart rebuilds setWalletUTXO. The fixture's one mature coin has no sibling output
+// to keep its parent in the set, which is the case that used to lose it.
+BOOST_FIXTURE_TEST_CASE(abandon_restores_wallet_utxo, ListCoinsTestingSetup)
+{
+    const COutPoint coin{m_coinbase_txns[0]->GetHash(), 0};
+    const CAmount balance{wallet->GetAvailableBalance()};
+    BOOST_CHECK_EQUAL(balance, m_coinbase_txns[0]->vout[0].nValue);
+
+    const auto is_available = [&] {
+        LOCK(wallet->cs_wallet);
+        std::vector<COutput> available;
+        wallet->AvailableCoins(available);
+        return std::any_of(available.begin(), available.end(), [&](const COutput& out) {
+            return COutPoint(out.tx->GetHash(), out.i) == coin;
+        });
+    };
+    BOOST_CHECK(is_available());
+
+    // The fixture's wallet does not broadcast, so the spend stays unconfirmed and out of the mempool.
+    CTransactionRef tx;
+    CAmount fee;
+    int changePos = -1;
+    bilingual_str error;
+    CCoinControl dummy;
+    BOOST_REQUIRE(wallet->CreateTransaction({CRecipient{GetScriptForRawPubKey({}), 1 * COIN, false /* subtract fee */}}, tx, fee, changePos, error, dummy));
+    wallet->CommitTransaction(tx, {}, {});
+    BOOST_CHECK(!is_available());
+
+    BOOST_REQUIRE(WITH_LOCK(wallet->cs_wallet, return wallet->AbandonTransaction(tx->GetHash())));
+    BOOST_CHECK(is_available());
+    BOOST_CHECK_EQUAL(wallet->GetAvailableBalance(), balance);
+}
+
 class CreateTransactionTestSetup : public TestChain100Setup
 {
 public:

@@ -136,18 +136,6 @@ class AbandonConflictTest(BitcoinTestFramework):
 
         # Abandon original transaction and verify inputs are available again
         # including that the child tx was also abandoned
-        #
-        # KNOWN BUG (inherited from Dash, not upstream Bitcoin): abandoning a transaction does
-        # not put its inputs back into CWallet::setWalletUTXO. AddToSpends() erases the outpoint
-        # from that set when the spend is recorded, and AbandonTransaction() never re-inserts it
-        # -- it only clears the mapTxSpends-based IsSpent() verdict. AvailableCoins()/GetBalance()
-        # iterate GetSpendableTXs(), which is built from setWalletUTXO, so a parent transaction
-        # with no *other* unspent output disappears from the wallet's view entirely and its
-        # abandoned output never comes back (short of a wallet reload, which rebuilds the set).
-        # Here txA and txB each have their change spent by the next send, so only txC -- which
-        # still holds its change -- gets its 10-coin output back, and the balance rises by 10
-        # instead of 30. Dash's own suite hides this: its wallet holds 25 equal 500-coin coinbase
-        # outputs, so the three sends never chain their change and every parent stays in the set.
         self.nodes[0].abandontransaction(txAB1)
         newbalance = self.nodes[0].getbalance()
         assert_equal(newbalance, balance + Decimal("30"))
